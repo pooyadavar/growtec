@@ -11,6 +11,7 @@ import {
 import { styled } from "@mui/system"; // Or '@mui/material/styles'
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 import assets from "../../assets";
+import BuildDetailsModal from "./BuildDetailsModal";
 
 // ... (CustomToggleButton component remains unchanged) ...
 const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
@@ -38,6 +39,11 @@ const PhEcControlCard = ({
   const column1Data = reportData && reportData[0] ? reportData[0] : [];
   const column2Data = reportData && reportData[1] ? reportData[1] : [];
 
+  const [openBuildDetailsModal, setOpenBuildDetailsModal] =
+    React.useState(false);
+  const handleOpenBuildDetailsModal = () => setOpenBuildDetailsModal(true);
+  const handleCloseBuildDetailsModal = () => setOpenBuildDetailsModal(false);
+
   // --- 1. محاسبه درصد پُر بودن مخزن ---
   let fillPercentage = 0;
   if (contents?.max_volume > 0) {
@@ -47,6 +53,26 @@ const PhEcControlCard = ({
   // اطمینان از اینکه عدد بین ۰ تا ۱۰۰ است
   fillPercentage = Math.max(0, Math.min(100, fillPercentage));
   // --- پایان محاسبه ---
+
+  const buildDetailsData = [
+    { time: "10:30", type: "pH", volume: "50L", tank: "A", status: "success" },
+    { time: "11:00", type: "EC", volume: "20L", tank: "B", status: "failed" },
+    { time: "11:15", type: "pH", volume: "30L", tank: "A", status: "success" },
+    { time: "12:00", type: "EC", volume: "40L", tank: "C", status: "success" },
+    { time: "12:30", type: "pH", volume: "10L", tank: "B", status: "success" },
+    { time: "13:00", type: "EC", volume: "25L", tank: "A", status: "failed" },
+    { time: "13:45", type: "pH", volume: "60L", tank: "C", status: "success" },
+    { time: "14:00", type: "EC", volume: "15L", tank: "B", status: "success" },
+    { time: "10:30", type: "pH", volume: "50L", tank: "A", status: "success" },
+    { time: "11:00", type: "EC", volume: "20L", tank: "B", status: "failed" },
+    { time: "11:15", type: "pH", volume: "30L", tank: "A", status: "success" },
+    { time: "12:00", type: "EC", volume: "40L", tank: "C", status: "success" },
+    { time: "12:30", type: "pH", volume: "10L", tank: "B", status: "success" },
+    { time: "13:00", type: "EC", volume: "25L", tank: "A", status: "failed" },
+    { time: "13:45", type: "pH", volume: "60L", tank: "C", status: "success" },
+    { time: "14:00", type: "EC", volume: "15L", tank: "B", status: "success" },
+    // ... می‌توانید داده‌های بیشتری اضافه کنید
+  ];
 
   return (
     <Paper
@@ -86,7 +112,7 @@ const PhEcControlCard = ({
             // backgroundColor: "#e0dedeff", // <-- حذف شد
             width: "40px",
             position: "relative", // <-- اضافه شد
-            overflow: "hidden", // <-- اضافه شد
+            // overflow: "hidden", // <-- اضافه شد
           }}
         >
           {/* لایه پس‌زمینه (خالی) */}
@@ -99,6 +125,7 @@ const PhEcControlCard = ({
               bottom: 0,
               backgroundColor: "#e0dedeff",
               zIndex: 0,
+              borderRadius: "15px",
             }}
           />
           {/* لایه آب (پُر) */}
@@ -112,9 +139,9 @@ const PhEcControlCard = ({
               backgroundColor: "#3e7dca", // <-- رنگ آب (مانند فلوتر فعال)
               transition: "height 0.4s ease", // <-- انیمیشن نرم
               zIndex: 1,
+              borderRadius: "0 0 15px 15px",
             }}
           />
-
           {/* لایه فلوترها (رو) */}
           <Box
             sx={{
@@ -129,34 +156,40 @@ const PhEcControlCard = ({
             {/* ... (سه دایره فلوتر داینامیک شما) ... */}
             <Box
               sx={{
-                width: "20px",
-                height: "20px",
+                width: "15px",
+                height: "15px",
                 borderRadius: "50%",
-                backgroundColor: contents?.top_float_switch ? "#00BBFF" : "white",
+                backgroundColor: contents?.top_float_switch
+                  ? "#00BBFF"
+                  : "white",
                 position: "relative",
-                left: "18px",
+                left: "15px",
                 border: "0.5px solid gray",
               }}
             ></Box>
             <Box
               sx={{
-                width: "20px",
-                height: "20px",
+                width: "15px",
+                height: "15px",
                 borderRadius: "50%",
-                backgroundColor: contents?.middle_float_switch ? "#00BBFF" : "white",
+                backgroundColor: contents?.middle_float_switch
+                  ? "#00BBFF"
+                  : "white",
                 position: "relative",
-                left: "18px",
+                left: "15px",
                 border: "0.5px solid gray",
               }}
             ></Box>
             <Box
               sx={{
-                width: "20px",
-                height: "20px",
+                width: "15px",
+                height: "15px",
                 borderRadius: "50%",
-                backgroundColor: contents?.buttom_float_switch ? "#00BBFF" : "white",
+                backgroundColor: contents?.buttom_float_switch
+                  ? "#00BBFF"
+                  : "white",
                 position: "relative",
-                left: "18px",
+                left: "15px",
                 border: "0.5px solid gray",
               }}
             ></Box>
@@ -176,6 +209,7 @@ const PhEcControlCard = ({
           }}
           pl={1}
           pr={0.5}
+          height="97%"
         >
           <Typography
             fontFamily={"IRANSANS"}
@@ -390,7 +424,7 @@ const PhEcControlCard = ({
           </Box>
           <Button
             variant="contained"
-            startIcon={<InfoIcon sx={{ ml: "10px" }} />}
+            startIcon={<InfoIcon sx={{ ml: "8px" }} />}
             sx={{
               backgroundColor: "#A7D9B4",
               color: "#403f3fff",
@@ -414,8 +448,42 @@ const PhEcControlCard = ({
               جزئیات ساخت
             </Typography>
           </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<InfoIcon sx={{ ml: "8px" }} />}
+            onClick={handleOpenBuildDetailsModal}
+            sx={{
+              backgroundColor: "#ffebcc",
+              color: "#403f3fff",
+              borderRadius: "10px",
+              fontWeight: "bold",
+              fontSize: "1rem",
+              padding: "10px 0",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#fde0b5ff",
+                boxShadow: "none",
+              },
+              mt: 0,
+              display: "flex",
+              justifyContent: "center",
+              pr: 1,
+              pl: 1,
+            }}
+          >
+            <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
+              وضعیت محلول{" "}
+            </Typography>
+          </Button>
         </Stack>
       </Box>
+
+      <BuildDetailsModal
+        open={openBuildDetailsModal}
+        onClose={handleCloseBuildDetailsModal}
+        buildDetails={buildDetailsData}
+      />
     </Paper>
   );
 };

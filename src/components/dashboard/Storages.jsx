@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useEffect , useState} from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Container,
@@ -75,7 +75,7 @@ const Storages = () => {
     <Container
       className="storage"
       sx={{
-        width: "350px",
+        width: "340px",
         height: "184px",
         backgroundColor: "#ffffff",
         display: "flex",

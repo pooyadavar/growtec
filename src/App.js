@@ -15,12 +15,12 @@ function App() {
   return (
     <div className="App">
       <Navbar />
-      <Dashboard />
+      {/* <Dashboard /> */}
       {/* <Feeding /> */}
       {/* <Payesh /> */}
       {/* <TimePlans /> */}
       {/* <TimePlansCards /> */}
-      {/* <Login /> */}
+      <Login />
       {/* <AdminSetting /> */}
       <Outlet />
     </div>

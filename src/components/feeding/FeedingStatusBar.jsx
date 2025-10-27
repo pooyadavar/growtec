@@ -17,7 +17,7 @@ const FeedingStatusBar = () => {
   return (
     <Container
       sx={{
-        width: "274px",
+        width: "254px",
         height: "200px",
         borderRadius: "10px",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
@@ -32,7 +32,7 @@ const FeedingStatusBar = () => {
         // className={classes.barContainer}
         style={{
           backgroundColor: "#ffff",
-          width: "230px",
+          width: "220px",
           height: "32px",
           border: "0.5px solid #9F9F9F",
           borderRadius: "20px",

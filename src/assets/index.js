@@ -50,6 +50,8 @@ const assets = {
     auto: require("./svg/auto.svg").default,
     person: require("./svg/person.svg").default,
     phlogo:require("./svg/pH 1.svg").default,
+    tike:require("./svg/tike.svg").default,
+    cross:require("./svg/cross.svg").default,
   },
   // 'An' is mean Animate picture
   img: {
