@@ -1,0 +1,390 @@
+import React from "react";
+import {
+  Box,
+  Paper,
+  Typography,
+  IconButton,
+  TextField,
+  Button,
+  Stack,
+  Slider,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+} from "@mui/material";
+import { styled } from "@mui/system"; // Or '@mui/material/styles'
+
+// Assuming you have your pH SVG icon in src/assets/svg/ph.svg
+// You might need to import it as a React component if using SVGR
+import PhIcon from "../../assets/svg/CloseBtn.svg"; // Adjust path as needed
+import InfoIcon from "@mui/icons-material/InfoOutlined"; // MUI built-in Info icon
+
+// Custom styled slider to match the vertical appearance and track style
+const VerticalSlider = styled(Slider)(({ theme }) => ({
+  '& input[type="range"]': {
+    WebkitAppearance: "slider-vertical",
+  },
+  "& .MuiSlider-rail": {
+    backgroundColor: "#e0e0e0", // Light grey for the rail
+  },
+  "& .MuiSlider-track": {
+    backgroundColor: theme.palette.primary.main, // Or a custom blue
+  },
+  "& .MuiSlider-thumb": {
+    backgroundColor: theme.palette.primary.main, // Or a custom blue
+    width: 16,
+    height: 16,
+  },
+}));
+
+// Custom styled Button for "مجموع" and "استوک"
+const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
+  minWidth: "unset",
+  padding: "4px 12px",
+  borderRadius: "8px",
+  backgroundColor: selected ? "#FFEBCC" : "transparent", // Orange-ish for selected
+  color: selected ? "#E65100" : theme.palette.text.secondary, // Darker orange for text
+  border: selected ? "1px solid #FFCC80" : "1px solid #e0e0e0",
+  fontSize: "0.8rem",
+  fontWeight: "bold",
+  "&:hover": {
+    backgroundColor: selected ? "#FFEBCC" : "#f5f5f5",
+  },
+}));
+
+const PhEcControlCard = () => {
+  const [selectedStockType, setSelectedStockType] = React.useState("total");
+  const [ecTarget, setEcTarget] = React.useState("");
+  const initialStockLevels = {
+    1: "",
+    2: "",
+    3: "",
+    4: "",
+    5: "",
+    6: "",
+    7: "",
+  };
+  const [stockLevels, setStockLevels] = React.useState(initialStockLevels);
+  const [sliderValue, setSliderValue] = React.useState(3); // Example value for the right slider
+
+  const handleStockTypeChange = (event) => {
+    setSelectedStockType(event.target.value);
+  };
+
+  const handleStockLevelChange = (e, index) => {
+    setStockLevels((prev) => ({ ...prev, [index]: e.target.value }));
+  };
+
+  const handleSliderChange = (event, newValue) => {
+    setSliderValue(newValue);
+  };
+  const [stockLevelsCol2, setStockLevelsCol2] =
+    React.useState(initialStockLevels);
+  const handleStockLevelCol2Change = (e, index) => {
+    setStockLevelsCol2((prev) => ({ ...prev, [index]: e.target.value }));
+  };
+
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        width: "350px",
+        height: "320px",
+        backgroundColor: "#ffff",
+        display: "flex",
+        justifyContent: "center",
+        flexDirection: "column",
+        alignItems: "center",
+        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+        borderRadius: "10px",
+        px: 1,
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 1,
+        }}
+      >
+        {/* Right Section: Vertical Sliders */}
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{
+            height: 200,
+            ml: 1,
+            border: "1px solid gray",
+            p: 1,
+            height: "95%",
+            borderRadius: "15px",
+          }}
+        >
+          {/* Left vertical slider (looks like a simple scrollbar visually) */}
+          <Box
+            sx={{
+              width: 12,
+              height: "100%",
+              backgroundColor: "#e0e0e0", // Grey track
+              borderRadius: "6px",
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              alignItems: "center",
+              py: "2px", // Padding for the "scroll thumb"
+            }}
+          >
+            <Box
+              sx={{
+                width: 8,
+                height: 20,
+                backgroundColor: "#bdbdbd",
+                borderRadius: "4px",
+              }}
+            />{" "}
+            {/* "Scroll thumb" */}
+            <Box
+              sx={{
+                width: 8,
+                height: 20,
+                backgroundColor: "#bdbdbd",
+                borderRadius: "4px",
+              }}
+            />{" "}
+            {/* "Scroll thumb" */}
+          </Box>
+
+          {/* Right vertical slider (MUI Slider component) */}
+        </Stack>
+
+        {/* Middle Section: Stock Inputs and Toggle Buttons */}
+        <Stack
+          spacing={1}
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            border: "0.5px solid gray",
+            borderRadius: "15px",
+            pt: 1,
+          }}
+          pl={2}        >
+          <Typography
+            variant="body1"
+            sx={{
+              textAlign: "right",
+              fontWeight: "medium",
+              mb: 1,
+              fontSize: "15px",
+              textAlign: "center",
+            }}
+          >
+            استوک های ریخته شده
+          </Typography>
+          <Stack
+            direction="row"
+            gap={1} 
+            justifyContent="space-between" // <--- Center the buttons
+            sx={{ mb: 1 }}
+          >
+            {/* --- FIX: Corrected button logic and removed the third button --- */}
+            <CustomToggleButton
+              selected={selectedStockType === "stock"}
+              onClick={() => setSelectedStockType("stock")}
+              size="small"
+            >
+              استوک
+            </CustomToggleButton>
+            <CustomToggleButton
+              selected={selectedStockType === "total"}
+              onClick={() => setSelectedStockType("total")}
+              size="small"
+            >
+              مجموع
+            </CustomToggleButton>
+
+            <CustomToggleButton
+              selected={selectedStockType === "time"}
+              onClick={() => setSelectedStockType("time")}
+              size="small"
+            >
+              زمان
+            </CustomToggleButton>
+          </Stack>
+
+          {/* --- Scrollable Box --- */}
+          <Box
+            sx={{
+              maxHeight: 220,
+              overflowY: "scroll",
+              pr: 1,
+              pl: 1, // <--- Added left padding for balance
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              textAlign: "center",
+              // ... (your scrollbar styles)
+            }}
+          >
+            {Object.keys(stockLevels).map((key) => (
+              <Box
+                key={key}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between", // Keeps label left, inputs right
+                  gap: 1,
+                  flexShrink: 0,
+                }}
+              >
+                {/* Column 1: Label */}
+                <Box>
+                  <Typography variant="body2">{key}</Typography>
+                </Box>
+
+                {/* --- ADD: Group for the two text fields --- */}
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  {/* Column 2: NEW TextField */}
+                  <TextField
+                    variant="outlined"
+                    size="small"
+                    value={stockLevelsCol2[key]} // <--- Use new state
+                    onChange={(e) => handleStockLevelCol2Change(e, key)} // <--- Use new handler
+                    sx={{
+                      width: 60, // <--- Adjusted width
+                      backgroundColor: "white",
+                      "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+                      "& input": {
+                        textAlign: "center",
+                        padding: "8px",
+                        height: "unset",
+                      },
+                    }}
+                  />
+
+                  {/* Column 3: Existing TextField */}
+                  <TextField
+                    variant="outlined"
+                    size="small"
+                    value={stockLevels[key]}
+                    onChange={(e) => handleStockLevelChange(e, key)}
+                    sx={{
+                      width: 60, // <--- Adjusted width
+                      backgroundColor: "white",
+                      "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+                      "& input": {
+                        textAlign: "center",
+                        padding: "8px",
+                        height: "unset",
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Stack>
+
+        {/* Left Section: pH Icon, System Status, EC Target */}
+        <Stack
+          spacing={1}
+          alignItems="center"
+          sx={{
+            flexGrow: 1,
+            maxWidth: "140px",
+            border: "0.5px solid gray",
+            height: "100%",
+            borderRadius: "15px",
+          }}
+        >
+          <IconButton
+            sx={{
+              backgroundColor: "#e0e0e0", // Light grey circle background
+              borderRadius: "50%",
+              width: 80,
+              height: 80,
+              p: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* Using img tag for SVG directly or a component if using SVGR */}
+            <img src={PhIcon} alt="pH icon" style={{ width: 60, height: 60 }} />
+          </IconButton>
+          <Typography variant="body2" sx={{ mt: 1, color: "#555" }}>
+            وضعیت سیستم:
+          </Typography>
+          <Box
+            sx={{
+              backgroundColor: "#D1E7DD", // Light green background
+              borderRadius: "8px",
+              padding: "4px 8px",
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{ color: "#0F5132", fontWeight: "bold" }}
+            >
+              در حال چک و اصلاح pH
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2 }}>
+            <Typography variant="body1" sx={{ fontWeight: "medium" }}>
+              EC هدف
+            </Typography>
+            <TextField
+              variant="outlined"
+              size="small"
+              value={ecTarget}
+              onChange={(e) => setEcTarget(e.target.value)}
+              sx={{
+                width: 70,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                  backgroundColor: "white",
+                  "& fieldset": { borderColor: "#ccc" },
+                  "&:hover fieldset": { borderColor: "#aaa" },
+                  "&.Mui-focused fieldset": { borderColor: "#555" },
+                },
+                "& input": {
+                  textAlign: "center",
+                  padding: "8px",
+                  height: "unset", // Override default height
+                },
+              }}
+            />
+          </Box>
+          {/* Bottom Button */}
+          <Button
+            variant="contained"
+            startIcon={<InfoIcon />} // Info icon on the left
+            sx={{
+              backgroundColor: "#A7D9B4", // Light green
+              color: "#286737", // Darker green text
+              borderRadius: "10px",
+              fontWeight: "bold",
+              fontSize: "1rem",
+              padding: "10px 0",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#90C89F",
+                boxShadow: "none",
+              },
+              mt: 2,
+              display: "flex",
+              justifyContent: "center", // Center content
+            }}
+          >
+            جزئیات ساخت
+          </Button>
+        </Stack>
+      </Box>
+    </Paper>
+  );
+};
+
+export default PhEcControlCard;

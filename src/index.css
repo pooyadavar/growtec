@@ -1,0 +1,17 @@
+body {
+  margin: 0;
+  font-family:'IRANSANS';
+  /* -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; */
+}
+@font-face {
+  font-family: IRANSANS;
+  src: url(./assets/fonts/IRANSansX-Medium.woff);
+}
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
