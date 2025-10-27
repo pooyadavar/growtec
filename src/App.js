@@ -20,8 +20,8 @@ function App() {
       {/* <Payesh /> */}
       {/* <TimePlans /> */}
       {/* <TimePlansCards /> */}
-      <Login />
-      {/* <AdminSetting /> */}
+      {/* <Login /> */}
+      <AdminSetting />
       <Outlet />
     </div>
   );
