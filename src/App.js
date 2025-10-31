@@ -14,14 +14,14 @@ import AdminSetting from "./components/admin/AdminSetting";
 function App() {
   return (
     <div className="App">
-      <Navbar />
+      {/* <Navbar /> */}
       {/* <Dashboard /> */}
-      {/* <Feeding /> */}
+      <Feeding />
       {/* <Payesh /> */}
       {/* <TimePlans /> */}
       {/* <TimePlansCards /> */}
       {/* <Login /> */}
-      <AdminSetting />
+      {/* <AdminSetting /> */}
       <Outlet />
     </div>
   );

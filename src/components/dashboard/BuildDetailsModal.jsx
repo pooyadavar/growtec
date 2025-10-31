@@ -7,26 +7,12 @@ import {
   Button,
   Stack,
   Modal,
+  Container, // <-- 1. ایمپورت کردن Container از MUI
 } from "@mui/material";
+// import { Container } from "react-bootstrap"; // <-- این کاملاً حذف شد
 import { styled } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
-import assets from "../../assets"; // Make sure this path is correct
-
-// --- Custom Toggle Button (Copied from PhEcControlCard) ---
-// You might want to move this to its own file later
-const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
-  minWidth: "unset",
-  padding: "4px 6px",
-  borderRadius: "8px",
-  backgroundColor: selected ? "#FFEBCC" : "transparent",
-  color: selected ? "#E65100" : theme.palette.text.secondary,
-  border: selected ? "1px solid #FFCC80" : "1px solid #e0e0e0",
-  fontSize: "0.8rem",
-  fontWeight: "bold",
-  "&:hover": {
-    backgroundColor: selected ? "#FFEBCC" : "#f5f5f5",
-  },
-}));
+import assets from "../../assets"; // مطمئن شوید این مسیر درست است
 
 // --- Styles for the Modal ---
 const modalStyle = {
@@ -34,7 +20,7 @@ const modalStyle = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 510,
+  width: 550,
   bgcolor: "background.paper",
   border: "0.5px solid #9F9F9F",
   borderRadius: "10px",
@@ -42,12 +28,49 @@ const modalStyle = {
   p: 2,
   display: "flex",
   flexDirection: "column",
-  //maxHeight: "90vh",
-  overflowY: "scroll",
-  direction: "rtl", // Set direction for Farsi
-  height: '500px',
-  overflowX: 'hidden',
+  height: "500px",
+  direction: "rtl",
 };
+
+
+const HeaderBox = styled(Paper)(({ theme }) => ({
+  padding: "8px",
+  textAlign: "center",
+  backgroundColor: "#FFEBCC",
+  border: "1px solid #FFCC80",
+  borderRadius: "8px",
+  fontFamily: "IRANSANS",
+  fontSize: "12px",
+  fontWeight: "bold",
+  color: "#E65100", 
+}));
+
+const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
+  height: "40px",
+  border: "1px solid #ddd",
+  borderRadius: "8px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#f9f9f9",
+  padding: "0 4px",
+  ...(isStatus && {
+    backgroundColor: "transparent",
+    border: "none",
+  }),
+}));
+
+// --- استایل برای باکس‌های وضعیت (تیک و ضربدر) ---
+const StatusBox = styled(Box)(({ theme, status }) => ({
+  height: "40px",
+  width: "100%",
+  border: status === "success" ? "1px solid #4CAF50" : "1px solid #F44336",
+  borderRadius: "8px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: status === "success" ? "#E8F5E9" : "#FFEBEE",
+}));
 
 const BuildDetailsModal = ({ open, onClose, buildDetails }) => {
   return (
@@ -57,174 +80,152 @@ const BuildDetailsModal = ({ open, onClose, buildDetails }) => {
       aria-labelledby="build-details-modal-title"
       aria-describedby="build-details-modal-description"
     >
-      <Box sx={modalStyle}>
-        {/* Modal Header */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            width: "100%",
-            mb: 2,
-            pb: 1,
-            borderBottom: "1px solid #eee",
-          }}
-        >
-          <Typography
-            id="build-details-modal-title"
-            variant="h6"
-            component="h2"
-            fontFamily={"IRANSANS"}
-            fontWeight="bold"
+      {/* 2. اضافه کردن تگ کانتینر در اینجا */}
+      <Container sx={{ p: 0 ,overflow: "scroll" , overflowX: "hidden"}}>
+        <Box sx={modalStyle}>
+          {/* Modal Header */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+              mb: 2,
+              pb: 1,
+              direction: "rtl",
+            }}
           >
-            وضعیت ساخت محلول
-          </Typography>
-          <IconButton onClick={onClose} sx={{ p: 0.5 }}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
+            <Typography
+              id="build-details-modal-title"
+              variant="h6"
+              component="h2"
+              fontFamily={"IRANSANS"}
+              fontWeight="bold"
+            >
+              وضعیت ساخت محلول
+            </Typography>
+            <IconButton onClick={onClose} sx={{ p: 0.5 }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
 
-        {/* Table Headers */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr 1fr 0.5fr",
-            gap: 1,
-            width: "98%",
-            mb: 1,
-            backgroundColor: "#FFCB82",
-            borderRadius: "5px",
-            p: 0.5,
-          }}
-        >
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize="12px"
-            textAlign="center"
-            fontWeight="bold"
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", 
+              gap: 1,
+              width: "100%",
+              mb: 1.5,
+            }}
           >
-            وضعیت
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize="12px"
-            textAlign="center"
-            fontWeight="bold"
-          >
-            مخزن
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize="12px"
-            textAlign="center"
-            fontWeight="bold"
-          >
-            حجم
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize="12px"
-            textAlign="center"
-            fontWeight="bold"
-          >
-            نوع
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize="12px"
-            textAlign="center"
-            fontWeight="bold"
-          >
-            زمان
-          </Typography>
-        </Box>
 
-        {/* Table Body */}
-        <Box sx={{ flexGrow: 1, width: "100%", overflowY: "auto" }}>
-          {buildDetails && buildDetails.length > 0 ? (
-            buildDetails.map((detail, index) => (
-              <Box
-                key={index}
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr 1fr 0.5fr",
-                  gap: 1,
-                  width: "98%",
-                  mb: 0.5,
-                  p: 0.5,
-                  border: "0.5px solid #eee",
-                  borderRadius: "5px",
-                  alignItems: "center",
-                  backgroundColor: index % 2 === 0 ? "#eee" : "#ffffff",
-                  height:"30px"
-                  
-                }}
-              >
+            <HeaderBox>وضعیت</HeaderBox>
+            <HeaderBox>مخزن</HeaderBox>
+            <HeaderBox>حجم</HeaderBox>
+            <HeaderBox>نوع</HeaderBox>
+            <HeaderBox>زمان</HeaderBox>
+          </Box>
+
+          <Box
+            sx={{
+              flexGrow: 1,
+              position: "relative",
+              width: "100%",
+              overflowY: "auto", 
+              minHeight: 0,
+              pr: "4px",
+            }}
+          >
+            {buildDetails && buildDetails.length > 0 ? (
+              buildDetails.map((detail, index) => (
                 <Box
+                  key={index}
                   sx={{
-                    display: "flex",
-                    justifyContent: "center",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", 
+                    gap: 1,
+                    width: "100%",
+                    mb: 1, // فاصله بین ردیف‌ها
                     alignItems: "center",
                   }}
                 >
-                  {/* Ensure these asset paths are correct */}
-                  {detail.status === "success" ? (
-                    <img
-                      src={assets.svg.tike}
-                      alt="success"
-                      style={{ width: 16, height: 16 }}
-                    />
-                  ) : (
-                    <img
-                      src={assets.svg.cross}
-                      alt="failed"
-                      style={{ width: 16, height: 16 }}
-                    />
-                  )}
+
+                  {/* سلول وضعیت (باکس آیکون) */}
+                  <DataCell isStatus={true}>
+                    <StatusBox status={detail.status}>
+                      {detail.status === "success" ? (
+                        <img
+                          src={assets.svg.tike}
+                          alt="success"
+                          style={{ width: 16, height: 16 }}
+                        />
+                      ) : (
+                        <img
+                          src={assets.svg.cross} 
+                          alt="failed"
+                          style={{ width: 16, height: 16 }}
+                        />
+                      )}
+                    </StatusBox>
+                  </DataCell>
+                  <DataCell >
+                    {" "}
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize="11px"
+                      textAlign="center"
+                    >
+                      {detail.tank}
+                    </Typography>
+                  </DataCell>
+
+                  {/* سلول حجم */}
+                  <DataCell>
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize="11px"
+                      textAlign="center"
+                    >
+                      {detail.volume}
+                    </Typography>
+                  </DataCell>
+
+                  {/* سلول نوع */}
+                  <DataCell>
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize="11px"
+                      textAlign="center"
+                    >
+                      {detail.type}
+                    </Typography>
+                  </DataCell>
+
+                  {/* سلول زمان */}
+                  <DataCell>
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize="11px"
+                      textAlign="center"
+                    >
+                      {detail.time}
+                    </Typography>
+                  </DataCell>
                 </Box>
-                
-                <Typography
-                  fontFamily={"IRANSANS"}
-                  fontSize="10px"
-                  textAlign="center"
-                >
-                  {detail.tank}
-                </Typography>
-                <Typography
-                  fontFamily={"IRANSANS"}
-                  fontSize="10px"
-                  textAlign="center"
-                >
-                  {detail.volume}
-                </Typography>
-                <Typography
-                  fontFamily={"IRANSANS"}
-                  fontSize="10px"
-                  textAlign="center"
-                >
-                  {detail.type}
-                </Typography>
-                <Typography
-                  fontFamily={"IRANSANS"}
-                  fontSize="10px"
-                  textAlign="center"
-                >
-                  {detail.time}
-                </Typography>
-              </Box>
-            ))
-          ) : (
-            <Typography
-              fontFamily={"IRANSANS"}
-              textAlign="center"
-              mt={3}
-              color="text.secondary"
-            >
-              هیچ جزئیاتی برای نمایش وجود ندارد.
-            </Typography>
-          )}
+              ))
+            ) : (
+              <Typography
+                fontFamily={"IRANSANS"}
+                textAlign="center"
+                mt={3}
+                color="text.secondary"
+              >
+                هیچ جزئیاتی برای نمایش وجود ندارد.
+              </Typography>
+            )}
+          </Box>
         </Box>
-      </Box>
+      </Container>
     </Modal>
   );
 };

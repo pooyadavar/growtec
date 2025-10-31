@@ -3,10 +3,56 @@ import FeedingMixer from "../components/feeding/FeedingMixer";
 import FeedingPlans from "../components/feeding/FeedingPlans";
 import FeedingStatusBar from "../components/feeding/FeedingStatusBar";
 import DailyChart from "../components/feeding/DailyChart";
-import { Container, Typography } from "@mui/material";
-import React from "react";
+import { Box, Container, Typography, Stack, Paper } from "@mui/material";
+import React, { useState } from "react";
+import PhEcControlCard from "../components/dashboard/Mixer";
+import PhEcControlCardMixer from "../components/feeding/FeedingMixer";
+import IconTextButton from "../card/IconTextButton";
+import assets from "../assets";
 
 const Feeding = () => {
+  const apiData = {
+    ec_ph: {
+      /* ... */
+    },
+    contents: {
+      max_volume: 100.0,
+      filled_volume: 80.0,
+      buttom_float_switch: false,
+      middle_float_switch: true,
+      top_float_switch: true,
+    },
+    injected: {
+      /* ... */
+    },
+    stock_dosing_pump: true,
+    acid_dosing_pump: true,
+    input_water: [],
+    input_water_number: 0,
+    output_zone: [],
+    output_zone_number: 0,
+    status: null,
+    status_number: 0,
+    gif_counter: 0,
+    acid_stock_report: [
+      [0, 0.0, 0.0, 0.0, 0.0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.0],
+      [0, 0, 0, 0, 0, 0, 0, 26214, 16230, 52429, 16268],
+    ],
+  };
+
+  const handleHistoryClick = () => console.log("تاریخچه کلیک شد");
+  const handleAiClick = () => console.log("هوش مصنوعی کلیک شد");
+  const handleSettingsClick = () => console.log("تنظیمات کلیک شد");
+
+  const [ecTarget, setEcTarget] = useState(2.1);
+
+  const handleEcChange = (event) => {
+    setEcTarget(event.target.value);
+  };
+
+  const getStatusText = (statusNumber) => {
+    return statusNumber === 0 ? "در حال چک و اصلاح pH" : "وضعیت دیگر";
+  };
   return (
     <Container>
       <div
@@ -15,8 +61,9 @@ const Feeding = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          width: "976px",
+          width: "950px",
           height: "338px",
+          gap: "7px",
         }}
       >
         <div
@@ -43,7 +90,6 @@ const Feeding = () => {
             height: "338px",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
             alignItems: "center",
           }}
         >
@@ -53,19 +99,20 @@ const Feeding = () => {
           <div
             style={{
               width: "100%",
-              height: "310px",
+              // height: "310px",
+              height: "10px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
             }}
           >
             <FeedingStatusBar />
-            <FeedingPlans />
+            {/* <FeedingPlans /> */}
           </div>
         </div>
         <div
           style={{
-            width: "378px",
+            width: "700px",
             height: "338px",
             display: "flex",
             flexDirection: "column",
@@ -79,12 +126,73 @@ const Feeding = () => {
           >
             مخزن ساخت محلول
           </Typography>
-          <FeedingMixer />
+          {/* <FeedingMixer /> */}
+          <PhEcControlCardMixer
+            contents={apiData.contents}
+            statusText={getStatusText(apiData.status_number)}
+            ecTargetValue={ecTarget}
+            onEcTargetChange={handleEcChange}
+            reportData={apiData.acid_stock_report}
+          />
+          <Paper
+            sx={{
+              // boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+              borderRadius: "10px",
+              height: "320px",
+              backgroundColor: "#ffff",
+              mt:"0.5rem"
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={0} // فاصله بین دکمه‌ها
+              gap={1}
+              justifyContent="center"
+              alignItems="center"
+              sx={{
+                width: "97%",
+                margin: "8px 0", // فاصله از بالا و پایین
+                px:"7px"
+              }}
+            >
+              {/* هر دکمه در یک Box قرار می‌گیرد تا بتوانیم عرض مساوی به آنها بدهیم
+        flex: 1 باعث می‌شود هر سه دکمه عرض یکسانی بگیرند
+      */}
+
+              <Box sx={{}}>
+                <IconTextButton
+                  icon={assets.svg.clockicon}
+                  text="تاریخچه ساخت "
+                  bgColor="#FFD799"
+                  textColor="#333"
+                  onClick={handleHistoryClick}
+                />
+              </Box>
+
+              <Box sx={{}}>
+                <IconTextButton
+                  icon={assets.svg.aiicon}
+                  text="هوش مصنوعی Ai"
+                  bgColor="#FF9933"
+                  textColor="#fff"
+                  onClick={handleAiClick}
+                />
+              </Box>
+
+              <Box sx={{}}>
+                <IconTextButton
+                  icon={assets.svg.testtubeicone}
+                  text="تنظیمات محلول"
+                  bgColor="#86CCB2"
+                  textColor="#333"
+                  onClick={handleSettingsClick}
+                />
+              </Box>
+            </Stack>
+          </Paper>
         </div>
       </div>
-      <div style={{ marginTop: "14px" }}>
-        <DailyChart />
-      </div>
+      <div style={{ marginTop: "14px" }}>{/* <DailyChart /> */}</div>
     </Container>
   );
 };

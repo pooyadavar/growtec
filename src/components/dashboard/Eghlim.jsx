@@ -10,34 +10,87 @@ const StyledGridItem = styled(Grid)({
 });
 
 const Eghlim = () => {
-  const apiDomain = "http://192.168.3.47:8000";
-  const [zones, setZones] = useState([]);
-  const [temp, setTemp] = React.useState(0);
-  const [hum, setHum] = React.useState(0);
-  const [error, setError] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
+  // const apiDomain = "http://192.168.3.47:8000";
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        let zoneData = []; // Temporary array to collect API data
+  // const [temp, setTemp] = React.useState(0);
+  // const [hum, setHum] = React.useState(0);
+  // const [error, setError] = React.useState(null);
+  // const [loading, setLoading] = React.useState(true);
 
-        for (let i = 1; i <= 5; i++) {
-          const api = `${apiDomain}/api/v1/info/inside-climent/?zone=${i}`;
-          const response = await axios.get(api);
-          zoneData.push(response.data); // Collect data in local array
-        }
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       let zoneData = []; // Temporary array to collect API data
 
-        setZones(zoneData);
-      } catch (err) {
-        setError(err.message || "Something went wrong"); // Set error message
-      } finally {
-        setLoading(false); // Ensure loading is set to false
-      }
-    };
-    // Call the API immediately when the component mounts
-    fetchData();
-  }, [apiDomain]);
+  //       for (let i = 1; i <= 5; i++) {
+  //         const api = `${apiDomain}/api/v1/info/inside-climent/?zone=${i}`;
+  //         const response = await axios.get(api);
+  //         zoneData.push(response.data); // Collect data in local array
+  //       }
+
+  //       setZones(zoneData);
+  //     } catch (err) {
+  //       setError(err.message || "Something went wrong"); // Set error message
+  //     } finally {
+  //       setLoading(false); // Ensure loading is set to false
+  //     }
+  //   };
+  //   // Call the API immediately when the component mounts
+  //   fetchData();
+  // }, [apiDomain]);
+
+  const sampleZones = [
+    // زون ۱: گرم و خشک، سیستم خنک‌کننده روشن
+    {
+      temperature: 28.5,
+      humidity: 35.2,
+      exhaust_fan: true,
+      circulating_fan: true,
+      pump_pad: true,
+      shade_open: true,
+      heater: false,
+      roof_hatch_opening: true,
+      fogger: true,
+    },
+    // زون ۲: سرد، سیستم گرمایشی روشن
+    {
+      temperature: 19.8,
+      humidity: 50.0,
+      exhaust_fan: false,
+      circulating_fan: true,
+      pump_pad: false,
+      shade_open: false,
+      heater: true,
+      roof_hatch_opening: false,
+      fogger: false,
+    },
+    // زون ۳: متعادل
+    {
+      temperature: 24.1,
+      humidity: 42.7,
+      exhaust_fan: false,
+      circulating_fan: true,
+      pump_pad: false,
+      shade_open: false,
+      heater: false,
+      roof_hatch_opening: true,
+      fogger: false,
+    },
+    // زون ۴: نمونه دیگر
+    {
+      temperature: 22.0,
+      humidity: 60.5,
+      exhaust_fan: true,
+      circulating_fan: false,
+      pump_pad: true,
+      shade_open: false,
+      heater: false,
+      roof_hatch_opening: true,
+      fogger: true,
+    },
+  ];
+
+  const [zones, setZones] = useState(sampleZones);
   return (
     <Container
       className="eghlim"
@@ -69,7 +122,7 @@ const Eghlim = () => {
           flexWrap={"nowrap"}
         >
           {zones.map((card, index) => (
-            <StyledGridItem item>
+            <StyledGridItem item key={index}>
               <EghlimCard
                 zone={index + 1}
                 temp={card.temperature.toFixed(1)}

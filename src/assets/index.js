@@ -52,6 +52,18 @@ const assets = {
     phlogo:require("./svg/pH 1.svg").default,
     tike:require("./svg/tike.svg").default,
     cross:require("./svg/cross.svg").default,
+    vertical_barstatus_acid:require("./svg/vertical-barstatus-acid.svg").default,
+    vertical_barstatus_baz:require("./svg/vertical-barstatus-baz.svg").default, 
+    vertical_barstatus_khonsa:require("./svg/vertical-barstatus-khonsa.svg").default,
+    clockicon:require("./svg/icon.svg").default,
+    aiicon:require("./svg/Ai.svg").default,
+    testtubeicone:require("./svg/TestTube.svg").default,
+    editicon:require("./svg/editicon.svg").default,
+    chemicalicon:require("./svg/chemicalicon.svg").default,
+    clockiconorange:require("./svg/clockicon.svg").default,
+    mixericon:require("./svg/mixericon.svg").default,
+    stopicon:require("./svg/stopicon.svg").default,
+    watericon:require("./svg/watericon.svg").default,
   },
   // 'An' is mean Animate picture
   img: {

@@ -347,7 +347,7 @@ const PhEcControlCard = ({
               flexDirection: "column",
               border: "0.5px solid gray",
               mt: 2,
-              p: 1,
+              p: 0.5,
               borderRadius: "15px",
             }}
           >

@@ -1,6 +1,5 @@
 import {
   Container,
-  Button,
   Box,
   Typography,
   Modal,
@@ -8,13 +7,17 @@ import {
   FormControl,
   Select,
   InputLabel,
+  Stack, // از Stack برای چیدمان دکمه‌ها استفاده می‌کنیم
 } from "@mui/material";
 import * as React from "react";
+// import assets from "../../assets"; // این دیگر استفاده نمی‌شود
+import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکمه جدید - مسیر اصلاح شد
 import assets from "../../assets";
 
 const Control = () => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
+    // ... existing code ...
     let res = "";
     const str = num.toString();
     for (let c of str) {
@@ -23,23 +26,29 @@ const Control = () => {
     return res;
   };
   const [pomp, setPomp] = React.useState(1);
+  // ... existing code ...
   const [selectedPomp, setSelectedPomp] = React.useState(0);
 
   const handlePompChange = (event) => {
+    // ... existing code ...
     event.preventDefault();
     setSelectedPomp(event.target.value);
     setPomp(event.target.value);
   };
   const [zone, setZone] = React.useState(1);
+  // ... existing code ...
   const [selectedZone, setSelectedZone] = React.useState(1);
   const handleZoneChange = (event) => {
+    // ... existing code ...
     event.preventDefault();
     setSelectedZone(event.target.value);
     setZone(event.target.value);
   };
   const [type, setType] = React.useState(1);
+  // ... existing code ...
   const [selectedType, setSelectedType] = React.useState(1);
   const handleTypeChange = (event) => {
+    // ... existing code ...
     event.preventDefault();
     setSelectedType(event.target.value);
     setType(event.target.value);
@@ -48,6 +57,7 @@ const Control = () => {
   const handleCreateClose = () => setCreateOpen(false);
   const handleCreateOpen = () => setCreateOpen(true);
   const [clearOpen, setClearOpen] = React.useState(false);
+  // ... existing code ...
   const handleClearClose = () => setClearOpen(false);
   const handleClearOpen = () => setClearOpen(true);
   const [injectionOpen, setInjectionOpen] = React.useState(false);
@@ -55,119 +65,97 @@ const Control = () => {
   const handleInjectionOpen = () => setInjectionOpen(true);
   return (
     <Container
+    disableGutters
       sx={{
-        width: "288px",
-        height: "310px",
+        ml:"-1px",
+        pxadding: "5px",
+        width: "180px",
+        height: "auto", // ارتفاع اتوماتیک بر اساس محتوا
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
-        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+        // boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+        padding: "12px 10px", // پدینگ داخلی
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-around",
-          alignItems: "center",
-          padding: "10px 0 10px 0",
-        }}
-      >
-        <Button
-          sx={{
-            width: "232px",
-            height: "36px",
-            borderRadius: "10px",
-            border: "0.5px solid #9F9F9F",
-            color: "#1E1E1E",
-          }}
+      {/* استفاده از Stack برای چیدمان عمودی دکمه‌ها با فاصله */}
+      <Stack spacing={2}>
+        <IconTextButton
+          text="ساخت محلول دستی"
+          icon={assets.svg.chemicalicon} // آیکون خود را جایگزین کنید
+          iconPosition="right"
           onClick={handleCreateOpen}
-        >
-          <Typography sx={{ fontFamily: "IRANSANS" }}>
-            ساخت محلول دستی
-          </Typography>
-        </Button>
-        <Button
-          sx={{
-            width: "232px",
-            height: "36px",
-            borderRadius: "10px",
-            border: "0.5px solid #9F9F9F",
-            color: "#1E1E1E",
-          }}
-        >
-          <Typography sx={{ fontFamily: "IRANSANS" }}>تخلیه مخزن</Typography>
-        </Button>
-        <Button
-          sx={{
-            width: "232px",
-            height: "36px",
-            borderRadius: "10px",
-            border: "0.5px solid #9F9F9F",
-            color: "#1E1E1E",
-          }}
+        />
+
+        <IconTextButton
+          text="تخلیه مخزن"
+          icon={assets.svg.watericon} 
+          iconPosition="right"
+          // onClick={() => {
+          //   /* منطق تخلیه مخزن */
+          // }}
+        />
+
+        <IconTextButton
+          text="تزریق دستی"
+          icon={assets.svg.editicon}
+          iconPosition="right"
           onClick={handleInjectionOpen}
-        >
-          <Typography sx={{ fontFamily: "IRANSANS" }}>تزریق دستی</Typography>
-        </Button>
-        <Button
-          sx={{
-            width: "232px",
-            height: "36px",
-            borderRadius: "10px",
-            border: "0.5px solid #9F9F9F",
-            color: "#1E1E1E",
+        />
+
+        <IconTextButton
+          text="میکسر"
+          icon={assets.svg.mixericon}
+          iconPosition="right"
+          onClick={() => {
+            /* منطق میکسر */
           }}
-        >
-          <Typography sx={{ fontFamily: "IRANSANS" }}>میکسر</Typography>
-        </Button>
-        <Button
-          sx={{
-            width: "232px",
-            height: "36px",
-            borderRadius: "10px",
-            border: "0.5px solid #9F9F9F",
-            color: "#1E1E1E",
+        />
+
+        <IconTextButton
+          text="همزن"
+          icon={assets.svg.clockicon}
+          iconPosition="right"
+          onClick={() => {
+            /* منطق همزن */
           }}
-        >
-          <Typography sx={{ fontFamily: "IRANSANS" }}>همزن</Typography>
-        </Button>
-        <Button
-          sx={{
-            width: "232px",
-            height: "36px",
-            borderRadius: "10px",
-            border: "0.5px solid #CC0000",
-            color: "#CC0000",
-            bgcolor: "#FED9D9",
+        />
+
+        <IconTextButton
+          text="توقف"
+          icon={assets.svg.stopicon}
+          iconPosition="right"
+          bgColor="#FED9D9"
+          textColor="#CC0000"
+          borderColor="#CC0000"
+          onClick={() => {
+            /* منطق توقف */
           }}
-        >
-          <Typography sx={{ fontFamily: "IRANSANS" }}>توقف</Typography>
-        </Button>
-      </div>
+        />
+      </Stack>
+
+      {/* مودال تزریق دستی (بدون تغییر در منطق، فقط آیکون بسته شدن) */}
       <Modal
+        // ... existing code ...
         className="injection-modal"
         disableAutoFocus
         open={injectionOpen}
         onClose={handleInjectionClose}
-        aria-labelledby="modal-modal-title"
+        // ... existing code ...
         aria-describedby="modal-modal-description"
       >
         <Box
+          // ... existing code ...
           sx={{
             position: "absolute",
-            top: "50%",
-            left: "50%",
+            // ... existing code ...
             transform: "translate(-50%, -50%)",
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
-            backgroundColor: "#FFFFFF",
+            // ... existing code ...
             width: "220px",
             height: "240px",
             boxShadow: 24,
-            padding: "8px 8px 20px 8px",
-            display: "flex",
+            // ... existing code ...
             flexDirection: "column",
             justifyContent: "space-between",
             alignItems: "center",
@@ -175,6 +163,7 @@ const Control = () => {
           className="modalBox"
         >
           <div
+            // ... existing code ...
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -185,138 +174,148 @@ const Control = () => {
               تزریق دستی
             </Typography>
             <img
-              src={assets.svg.close}
+icon={assets.svg.icon} 
               alt="close"
               onClick={handleInjectionClose}
+              style={{ cursor: "pointer", width: "16px", height: "16px" }}
             />
           </div>
           <div
+            // ... existing code ...
             style={{
               width: "154px",
-              height: "148px",
+              // ... existing code ...
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
             }}
           >
             <FormControl
+              // ... existing code ...
               sx={{
                 width: "154px",
-                height: "40px",
-                color: "#004323",
+                // ... existing code ...
                 backgroundColor: "#B8FFDD",
                 borderRadius: "10px",
                 // border: "0.5px solid #004323",
-                fontFamily: "IRANSANS",
+                // ... existing code ...
               }}
             >
               <InputLabel
+                // ... existing code ...
                 id="demo-simple-select-label-id"
                 sx={{ color: "#004323", fontFamily: "IRANSANS" }}
               >
-                دوزینگ پمپ ها
+                // ... existing code ...
               </InputLabel>
               <Select
+                // ... existing code ...
                 sx={{
                   height: "40px",
-                  fontFamily: "IRANSANS",
-                  borderRadius: "10px",
+                  // ... existing code ...
                 }}
                 value={selectedPomp}
                 onChange={handlePompChange}
-                inputProps={{ "aria-label": "Without label" }}
+                // ... existing code ...
                 labelId="select-zone-label"
                 label="دوزینگ پمپ ها"
                 id="select-zone"
               >
                 <MenuItem value={1} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(1)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={2} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(2)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={3} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(3)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={4} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(4)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={5} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(5)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={6} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(6)}
+                  // ... existing code ...
                 </MenuItem>
               </Select>
             </FormControl>
             <input
+              // ... existing code ...
               id="volume-input"
               type="number"
-              placeholder="حجم"
+              // ... existing code ...
               min={1}
               max={10}
               style={{
-                paddingRight: "4px",
+                // ... existing code ...
                 width: "154px",
                 height: "40px",
                 color: "#1e1e1e",
-                backgroundColor: "#FFFFFF",
+                // ... existing code ...
                 borderRadius: "10px",
                 border: "0.5px solid #9F9F9F",
                 fontFamily: "IRANSANS",
               }}
             ></input>
-            <Button
+            <button // استفاده از Button معمولی mui
               sx={{
+                // ... existing code ...
                 width: "154px",
                 height: "40px",
-                color: "#004323",
+                // ... existing code ...
                 backgroundColor: "#B8FFDD",
                 borderRadius: "10px",
                 border: "0.5px solid #004323",
               }}
             >
               <Typography
+                // ... existing code ...
                 fontFamily={"IRANSANS"}
                 fontSize={18}
                 textAlign={"center"}
-                color="#004323"
+                // ... existing code ...
               >
                 تزریق
               </Typography>
-            </Button>
+            </button>
           </div>
         </Box>
       </Modal>
+
+      {/* مودال ساخت دستی (بدون تغییر در منطق، فقط آیکون بسته شدن) */}
       <Modal
+        // ... existing code ...
         className="create-modal"
         disableAutoFocus
         open={createOpen}
-        onClose={handleCreateOpen}
+        onClose={handleCreateClose} // <-- اینجا قبلاً اشتباه بود، باید handleCreateClose باشد
         aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
+        // ... existing code ...
       >
         <Box
+          // ... existing code ...
           sx={{
             position: "absolute",
-            top: "50%",
-            left: "50%",
+            // ... existing code ...
             transform: "translate(-50%, -50%)",
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
-            backgroundColor: "#FFFFFF",
+            // ... existing code ...
             width: "220px",
             height: "314px",
             boxShadow: 24,
-            padding: "8px 8px 40px 8px",
+            // ... existing code ...
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            alignItems: "center",
+            // ... existing code ...
           }}
           className="modalBox"
         >
           <div
+            // ... existing code ...
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -327,162 +326,173 @@ const Control = () => {
               ساخت محلول دستی
             </Typography>
             <img
-              src={assets.svg.close}
+icon={assets.svg.icon} 
               alt="close"
               onClick={handleCreateClose}
+              style={{ cursor: "pointer", width: "16px", height: "16px" }}
             />
           </div>
           <div
+            // ... existing code ...
             style={{
               width: "154px",
               height: "196px",
-              display: "flex",
+              // ... existing code ...
               flexDirection: "column",
               justifyContent: "space-between",
             }}
           >
             <input
+              // ... existing code ...
               id="volume-input"
               type="number"
-              placeholder="حجم"
+              // ... existing code ...
               min={1}
               max={10}
               style={{
-                paddingRight: "4px",
+                // ... existing code ...
                 width: "154px",
                 height: "40px",
                 color: "#1e1e1e",
-                backgroundColor: "#FFFFFF",
+                // ... existing code ...
                 borderRadius: "10px",
                 border: "0.5px solid #9F9F9F",
                 fontFamily: "IRANSANS",
               }}
             ></input>
             <FormControl
+              // ... existing code ...
               sx={{
                 width: "154px",
-                height: "40px",
+                // ... existing code ...
                 color: "#004323",
                 backgroundColor: "#B8FFDD",
                 borderRadius: "10px",
-                fontFamily: "IRANSANS",
+                // ... existing code ...
               }}
             >
               <InputLabel
+                // ... existing code ...
                 id="demo-simple-select-label-id"
                 sx={{
-                  color: "#004323",
+                  // ... existing code ...
                   fontFamily: "IRANSANS",
                   fontSize: "18px",
                 }}
+                // ... existing code ...
               >
                 زون
               </InputLabel>
               <Select
+                // ... existing code ...
                 sx={{
                   height: "40px",
-                  fontFamily: "IRANSANS",
-                  borderRadius: "10px",
+                  // ... existing code ...
                 }}
-                value={selectedPomp}
-                onChange={handlePompChange}
+                value={selectedZone} // <-- اینجا باید selectedZone باشد
+                onChange={handleZoneChange} // <-- اینجا باید handleZoneChange باشد
                 inputProps={{ "aria-label": "Without label" }}
-                labelId="select-zone-label"
+                // ... existing code ...
                 label="زون"
                 id="select-zone"
               >
                 <MenuItem value={1} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(1)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={2} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(2)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={3} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(3)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={4} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(4)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={5} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(5)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={6} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(6)}
+                  // ... existing code ...
                 </MenuItem>
               </Select>
             </FormControl>
             <FormControl
+              // ... existing code ...
               sx={{
                 width: "154px",
-                height: "40px",
+                // ... existing code ...
                 color: "#004323",
                 backgroundColor: "#B8FFDD",
                 borderRadius: "10px",
-                fontFamily: "IRANSANS",
+                // ... existing code ...
               }}
             >
               <InputLabel
+                // ... existing code ...
                 id="demo-simple-select-label-id"
                 sx={{
-                  color: "#004323",
+                  // ... existing code ...
                   fontFamily: "IRANSANS",
                   fontSize: "18px",
                 }}
+                // ... existing code ...
               >
                 نوع
               </InputLabel>
               <Select
+                // ... existing code ...
                 sx={{
                   height: "40px",
-                  fontFamily: "IRANSANS",
-                  borderRadius: "10px",
+                  // ... existing code ...
                 }}
                 value={selectedType}
                 onChange={handleTypeChange}
-                inputProps={{ "aria-label": "Without label" }}
+                // ... existing code ...
                 labelId="select-type-label"
                 label="نوع"
                 id="select-type"
               >
                 <MenuItem value={1} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(1)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={2} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(2)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={3} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(3)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={4} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(4)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={5} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(5)}
+                  // ... existing code ...
                 </MenuItem>
                 <MenuItem value={6} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(6)}
+                  // ... existing code ...
                 </MenuItem>
               </Select>
             </FormControl>
-            <Button
+            <button // استفاده از Button معمولی mui
               sx={{
+                // ... existing code ...
                 width: "154px",
                 height: "40px",
-                color: "#004323",
+                // ... existing code ...
                 backgroundColor: "#B8FFDD",
                 borderRadius: "10px",
                 border: "0.5px solid #004323",
               }}
             >
               <Typography
+                // ... existing code ...
                 fontFamily={"IRANSANS"}
                 fontSize={18}
                 textAlign={"center"}
-                color="#004323"
+                // ... existing code ...
               >
                 ساخت
               </Typography>
-            </Button>
+            </button>
           </div>
         </Box>
       </Modal>

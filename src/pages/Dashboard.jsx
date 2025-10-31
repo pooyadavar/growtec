@@ -36,25 +36,20 @@ const Dashboard = () => {
     gif_counter: 0,
     acid_stock_report: [
       [
-        // <-- این به ستون اول (چپ) می‌رود
         0, 0.0, 0.0, 0.0, 0.0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.0,
       ],
       [
-        // <-- این به ستون دوم (راست) می‌رود
         0, 0, 0, 0, 0, 0, 0, 26214, 16230, 52429, 16268,
       ],
     ],
   };
 
-  // 2. استیت برای فیلد "EC هدف"
   const [ecTarget, setEcTarget] = useState(2.1);
 
-  // 3. تابعی که به عنوان prop پاس داده می‌شود
   const handleEcChange = (event) => {
     setEcTarget(event.target.value);
   };
 
-  // تابعی برای ترجمه شماره وضعیت به متن
   const getStatusText = (statusNumber) => {
     return statusNumber === 0 ? "در حال چک و اصلاح pH" : "وضعیت دیگر";
   };
@@ -62,7 +57,7 @@ const Dashboard = () => {
   return (
     <Container
       className="dashboard-display"
-      sx={{ marginTop: "2rem", height: "100%" }}
+      sx={{ marginTop: "1rem", height: "100%" }}
     >
       <div
         className="top"

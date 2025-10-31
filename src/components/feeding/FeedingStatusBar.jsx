@@ -1,127 +1,149 @@
-import { Container, Typography } from "@mui/material";
-import assets from "../../assets";
-import { useState } from "react";
+import React from "react";
+import { Paper, Typography, Box, Stack } from "@mui/material";
+import IconTextButton from "../../card/IconTextButton"; // فرض می‌کنیم در همین پوشه است
 
+// آیکون تنظیمات - لطفاً با مسیر asset خودتان جایگزین کنید
+const iconSettings = "https://placehold.co/24x24/333/white?text=Setting";
+
+// داده‌های ساختگی (Mock Data) برای جدول زمان‌بندی
+// شما باید این را با داده‌های واقعی خود جایگزین کنید
+const scheduleData = [
+  { time: "۰۰:۰۰:۰۰", zone: "۱", type: "A", volume: "۵۰", status: "فعال" },
+  { time: "۰۰:۰۰:۰۰", zone: "۱", type: "B", volume: "۳۰", status: "غیرفعال" },
+  { time: "۰۰:۰۰:۰۰", zone: "۱", type: "A", volume: "۲۰", status: "فعال" },
+  // می‌توانید ردیف‌های بیشتری اضافه کنید
+];
+
+/**
+ * کامپوننت نمایش جدول زمان‌بندی ساخت محلول
+ */
 const FeedingStatusBar = () => {
-  const [ec, setEc] = useState(0.0);
-  let ph = 5;
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
-  return (
-    <Container
+  // تابعی برای رندر کردن یک ردیف از جدول
+  const renderScheduleRow = (row, index) => (
+    <Box
+      key={index}
       sx={{
-        width: "254px",
-        height: "200px",
-        borderRadius: "10px",
-        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
         display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
+        flexDirection: "row-reverse",
         alignItems: "center",
-        gap: "10px",
+        justifyContent: "space-between",
+        width: "100%",
+        padding: "8px 0",
+        borderBottom: index < scheduleData.length - 1 ? "1px solid #E0E0E0" : "none",
       }}
     >
-      <div
-        // className={classes.barContainer}
-        style={{
-          backgroundColor: "#ffff",
-          width: "220px",
-          height: "32px",
-          border: "0.5px solid #9F9F9F",
-          borderRadius: "20px",
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "end",
-          justifyContent: "space-around",
-          paddingRight: "1rem",
+      <Box sx={cellStyle}>
+        <Typography sx={textStyle}>{row.time}</Typography>
+      </Box>
+      <Box sx={cellStyle}>
+        <Typography sx={textStyle}>{row.zone}</Typography>
+      </Box>
+      <Box sx={cellStyle}>
+        <Typography sx={textStyle}>{row.type}</Typography>
+      </Box>
+      <Box sx={cellStyle}>
+        <Typography sx={textStyle}>{row.volume}</Typography>
+      </Box>
+      <Box sx={cellStyle}>
+        <Typography sx={textStyle}>{row.status}</Typography>
+      </Box>
+    </Box>
+  );
+
+  // استایل‌ها برای خوانایی بهتر
+  const headerStyle = {
+    fontFamily: "IRANSANS",
+    fontWeight: "bold",
+    fontSize: "12px",
+    color: "#555",
+    textAlign: "center",
+    flex: 1,
+  };
+
+  const cellStyle = {
+    flex: 1,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  };
+
+  const textStyle = {
+    fontFamily: "IRANSANS",
+    fontSize: "12px",
+    color: "#333",
+    backgroundColor: "#F5F5F5",
+    border: "1px solid #E0E0E0",
+    borderRadius: "8px",
+    padding: "3px",
+    width: "38px", 
+    textAlign: "center",
+  };
+
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        width: 240, // عرض تقریبی بر اساس عکس
+        height: "auto",
+        backgroundColor: "#FFFFFF",
+        borderRadius: "10px",
+        // boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+        padding: "16px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      {/* بخش جدول زمان‌بندی */}
+      <Box
+        sx={{
+          width: "100%",
+          maxHeight: "200px", // ارتفاع برای فعال شدن اسکرول
+          overflowY: "auto",
+          paddingRight: "8px", // فضایی برای اسکرول‌بار
         }}
       >
-        <Typography fontFamily={"IRANSANS"} fontSize={13}>
-          {" "}
-          EC : {convert(ec)}
-        </Typography>
-        <div
-          style={{
+        {/* هدر جدول (از راست به چپ) */}
+        <Box
+          sx={{
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: "4px",
+            flexDirection: "row-reverse",
+            justifyContent: "space-between",
+            width: "100%",
+            padding: "0 0 8px 0",
+            borderBottom: "2px solid #E0E0E0",
           }}
         >
-          <img
-            style={{
-              position: "relative",
-              top: "6px",
-              right: `${ph}px`,
-              scale: "1.2",
-              zIndex: "1",
-            }}
-            src={assets.svg.mark}
-            alt="mark"
-          />
-          <img
-            style={{ width: "166px", height: "16px", scale: "0.9" }}
-            src={assets.svg.phBar}
-            alt="bar"
-          />
-        </div>
-      </div>
-      <div
-        // className={classes.barContainer}
-        style={{
-          backgroundColor: "#ffff",
-          width: "230px",
-          height: "32px",
-          border: "0.5px solid #9F9F9F",
-          marginTop: "10px",
-          borderRadius: "20px",
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "end",
-          justifyContent: "space-around",
-          paddingRight: "1rem",
-        }}
-      >
-        <Typography fontFamily={"IRANSANS"} fontSize={13}>
-          {" "}
-          pH : {convert(ph)}
-        </Typography>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: "4px",
+          <Typography sx={headerStyle}>زمان</Typography>
+          <Typography sx={headerStyle}>زون</Typography>
+          <Typography sx={headerStyle}>نوع</Typography>
+          <Typography sx={headerStyle}>حجم</Typography>
+          <Typography sx={headerStyle}>وضعیت</Typography>
+        </Box>
+
+        {/* ردیف‌های جدول */}
+        <Stack spacing={1} sx={{ width: "100%", marginTop: "8px" }}>
+          {scheduleData.map(renderScheduleRow)}
+        </Stack>
+      </Box>
+
+      {/* دکمه تنظیمات */}
+      <Box sx={{ width: "120%", marginTop: "24px" ,justifyContent:"center" , display:"flex"}}>
+        <IconTextButton
+          text="تنظیمات ساخت محلول"
+          icon={iconSettings}
+          iconPosition="right"
+          bgColor="#F7C98C" // رنگ شبیه به عکس
+          textColor="#333"
+          borderColor="#F7C98C"
+          onClick={() => {
+            /* منطق باز کردن تنظیمات */
           }}
-        >
-          <img
-            style={{
-              position: "relative",
-              top: "6px",
-              right: `${ph}px`,
-              scale: "1.2",
-              zIndex: "1",
-            }}
-            src={assets.svg.mark}
-            alt="mark"
-          />
-          <img
-            style={{ width: "166px", height: "16px", scale: "0.9" }}
-            src={assets.svg.ecBar}
-            alt="bar"
-          />
-        </div>
-      </div>
-    </Container>
+        />
+      </Box>
+    </Paper>
   );
 };
+
 export default FeedingStatusBar;
+
