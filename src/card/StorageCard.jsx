@@ -3,12 +3,9 @@ import {
   Typography,
   Box,
   Modal,
-  MenuItem,
-  FormControl,
-  Select,
 } from "@mui/material";
 import assets from "../assets/index";
-import StorageStatus from "./StorageStatus";
+
 
 const style = {
   position: "absolute",
@@ -19,7 +16,8 @@ const style = {
   borderRadius: "10px",
   backgroundColor: "#FFFFFF",
   width: "393px",
-  height: "470px",
+  height: "auto", 
+  minHeight: "250px",
   boxShadow: 24,
   p: "8px",
   display: "flex",
@@ -27,13 +25,22 @@ const style = {
   alignItems: "center",
 };
 
-const StorageCard = ({ storage, zone, capacity, float1, float2, float3 }) => {
-
-  let waterHeight = 100 - capacity;
+const StorageCard = ({
+  maxCapacity,
+  zone,
+  capacity,
+  float1,
+  float2,
+  float3,
+}) => {
+  let waterHeight = 95 - (capacity / maxCapacity *100)
+  if (isNaN(waterHeight) || !isFinite(waterHeight)) {
+    waterHeight = 100;
+  }
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
     let res = "";
-    const str = num.toString();
+    const str = String(num); 
     for (let c of str) {
       res += numbers.charAt(c);
     }
@@ -41,18 +48,10 @@ const StorageCard = ({ storage, zone, capacity, float1, float2, float3 }) => {
   };
 
   const image = `url(${assets.img.mixerBGImage})`;
-  const [zonee, setZonee] = React.useState(1);
+
   const [open, setOpen] = React.useState(false);
   const handleClose = () => setOpen(false);
   const handleOpen = () => setOpen(true);
-
-  const [selectedZone, setSelectedZone] = React.useState(1);
-
-  const handleZoneChange = (event) => {
-    event.preventDefault();
-    setSelectedZone(event.target.value);
-    setZonee(event.target.value);
-  };
 
   return (
     <Box
@@ -176,7 +175,6 @@ const StorageCard = ({ storage, zone, capacity, float1, float2, float3 }) => {
       </Box>
 
 
-
       <Modal
         disableAutoFocus
         open={open}
@@ -185,22 +183,7 @@ const StorageCard = ({ storage, zone, capacity, float1, float2, float3 }) => {
         aria-describedby="modal-modal-description"
       >
         <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            border: "0.5px solid #9F9F9F",
-            borderRadius: "10px",
-            backgroundColor: "#FFFFFF",
-            width: "393px",
-            height: "470px",
-            boxShadow: 24,
-            padding: "8px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
+          sx={style} 
           className="modalBox"
         >
           <div
@@ -208,137 +191,25 @@ const StorageCard = ({ storage, zone, capacity, float1, float2, float3 }) => {
               display: "flex",
               justifyContent: "space-between",
               width: "100%",
+              alignItems: "center",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+            <Typography
+              variant="h4"
+              component="h2"
+              fontFamily={"IRANSANS"}
+              fontSize={"16px"}
+              mr={1}
             >
-              <Typography
-                variant="h4"
-                component="h2"
-                fontFamily={"IRANSANS"}
-                fontSize={"16px"}
-              >
-                وضعیت آبیاری زون
-              </Typography>
-              <FormControl
-                sx={{ width: "60px", height: "24px", fontFamily: "IRANSANS" }}
-              >
-                <Select
-                  sx={{ height: "24px", fontFamily: "IRANSANS" }}
-                  value={selectedZone}
-                  onChange={handleZoneChange}
-                  displayEmpty
-                  inputProps={{ "aria-label": "Without label" }}
-                  labelId="select-zone-label"
-                  id="select-zone"
-                >
-                  <MenuItem value={1} sx={{ fontFamily: "IRANSANS" }}>
-                    {convert(1)}
-                  </MenuItem>
-                  <MenuItem value={2} sx={{ fontFamily: "IRANSANS" }}>
-                    {convert(2)}
-                  </MenuItem>
-                  <MenuItem value={3} sx={{ fontFamily: "IRANSANS" }}>
-                    {convert(3)}
-                  </MenuItem>
-                  <MenuItem value={4} sx={{ fontFamily: "IRANSANS" }}>
-                    {convert(4)}
-                  </MenuItem>
-                  <MenuItem value={5} sx={{ fontFamily: "IRANSANS" }}>
-                    {convert(5)}
-                  </MenuItem>
-                  <MenuItem value={6} sx={{ fontFamily: "IRANSANS" }}>
-                    {convert(6)}
-                  </MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-            <img src={assets.svg.close} alt="close" onClick={handleClose} />
+              وضعیت مخزن زون {convert(zone)} 
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="close"
+              onClick={handleClose}
+              style={{ cursor: "pointer" }}
+            />
           </div>
-          <div
-            style={{
-              width: "330px",
-              marginTop: "2rem",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <div
-              style={{
-                width: "86px",
-                height: "24px",
-                backgroundColor: "#FFCB82",
-                borderRadius: "5px",
-                border: "0.5px solid #9F9F9F",
-              }}
-            >
-              <Typography
-                fontFamily={"IRANSANS"}
-                fontSize={"10px"}
-                textAlign={"center"}
-              >
-                شروع آبیاری
-              </Typography>
-            </div>
-            <div
-              style={{
-                width: "86px",
-                height: "24px",
-                backgroundColor: "#FFCB82",
-                borderRadius: "5px",
-                border: "0.5px solid #9F9F9F",
-              }}
-            >
-              <Typography
-                fontFamily={"IRANSANS"}
-                fontSize={"10px"}
-                textAlign={"center"}
-              >
-                پایان آبیاری
-              </Typography>
-            </div>
-            <div
-              style={{
-                width: "86px",
-                height: "24px",
-                backgroundColor: "#FFCB82",
-                borderRadius: "5px",
-                border: "0.5px solid #9F9F9F",
-              }}
-            >
-              <Typography
-                fontFamily={"IRANSANS"}
-                fontSize={"10px"}
-                textAlign={"center"}
-              >
-                حجم آبیاری
-              </Typography>
-            </div>
-            <div style={{ width: "24px", height: "24px" }}>
-              <Typography></Typography>
-            </div>
-          </div>
-          <Box
-            className="statusBox"
-            sx={{
-              overflowY: "scroll",
-              overflowX: "hidden",
-            }}
-          >
-            {/* {storageTimeLine[zonee - 1].map((obj) => (
-              <StorageStatus
-                start={obj.start}
-                end={obj.end}
-                size={obj.size}
-                status={obj.status}
-              />
-            ))} */}
-          </Box>
         </Box>
       </Modal>
     </Box>

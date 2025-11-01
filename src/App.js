@@ -15,8 +15,8 @@ function App() {
   return (
     <div className="App">
       {/* <Navbar /> */}
-      {/* <Dashboard /> */}
-      <Feeding />
+      <Dashboard />
+      {/* <Feeding /> */}
       {/* <Payesh /> */}
       {/* <TimePlans /> */}
       {/* <TimePlansCards /> */}

@@ -1,12 +1,7 @@
 import React from "react";
 import { Paper, Typography, Box, Stack } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton"; // فرض می‌کنیم در همین پوشه است
-
-// آیکون تنظیمات - لطفاً با مسیر asset خودتان جایگزین کنید
 const iconSettings = "https://placehold.co/24x24/333/white?text=Setting";
-
-// داده‌های ساختگی (Mock Data) برای جدول زمان‌بندی
-// شما باید این را با داده‌های واقعی خود جایگزین کنید
 const scheduleData = [
   { time: "۰۰:۰۰:۰۰", zone: "۱", type: "A", volume: "۵۰", status: "فعال" },
   { time: "۰۰:۰۰:۰۰", zone: "۱", type: "B", volume: "۳۰", status: "غیرفعال" },

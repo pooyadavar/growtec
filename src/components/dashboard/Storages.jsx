@@ -1,76 +1,75 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
-import axios from "axios";
-import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Modal,
-  Button,
-  Fade,
-  Backdrop,
-} from "@mui/material";
+import { Container, Typography, Box, Grid } from "@mui/material";
 import StorageCard from "../../card/StorageCard";
 import styled from "styled-components";
+import { useQuery } from "@tanstack/react-query";
+import { getIrrigationTanksStatus } from "../../api/dashboardApi"; // (مسیر را چک کنید)
 
 const StyledGridItem = styled(Grid)({
   transition: "transform 0.3s ease",
 });
 
 const Storages = () => {
-  // const apiDomain = "http://192.168.3.47:8000";
-  // const [storageObj, setStorageObj] = React.useState(null);
-  // const [storagesArr, setStorageArr] = React.useState([]);
-  // const [error, setError] = React.useState(null);
-  // const [loading, setLoading] = React.useState(true);
+  const {
+    data: storagesList = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["irrigationTanks"],
+    queryFn: getIrrigationTanksStatus,
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       // Replace with your API endpoints
-  //       const api = `${apiDomain}/api/v1/info/irrigation-tanks-status/`;
-  //       const response = await axios.get(api);
-  //       setStorageArr(Object.values(response.data));
-  //     } catch (err) {
-  //       setError(err.message || "Something went wrong"); // Set error message
-  //       console.error("Error fetching data:", err); // Log the error for debugging
-  //     } finally {
-  //       setLoading(false); // Ensure loading is set to false
-  //     }
-  //   };
-  //   fetchData();
-  // }, [apiDomain]); // Add apiDomain as a dependency if it can change
+    // تبدیل آبجکت پاسخ به آرایه
+    // ریسپانس جدید شما شامل `contents` کامل است
+    select: (data) => {
+      if (!data || typeof data !== "object") return [];
+      return Object.entries(data).map(([key, value]) => ({
+        id: key, // "1", "2", "3"
+        ...value.contents, // { filled_value, ec, ph, ... }
+      }));
+    },
+  });
 
-  const storagesArr = [
-    {
-      filled_value: 50,
-      buttom_float_switch: true,
-      middle_float_switch: false,
-      top_float_switch: true,
-    },
-    {
-      filled_value: 70,
-      buttom_float_switch: true,
-      middle_float_switch: true,
-      top_float_switch: true,
-    },
-    {
-      filled_value: 20,
-      buttom_float_switch: false,
-      middle_float_switch: true,
-      top_float_switch: true,
-    },
-  ];
-
-  function useScrollBar(l) {
-    if (l > 3) {
-      return true;
-    } else {
-      return false;
-    }
+  // مدیریت وضعیت Loading
+  if (isLoading) {
+    return (
+      <Container
+        className="storage"
+        sx={{
+          width: "340px",
+          height: "184px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Typography fontFamily={"IRANSANS"}>
+          در حال بارگذاری مخازن...
+        </Typography>
+      </Container>
+    );
   }
-  // let use = useScrollBar(boxes.length);
+
+  // مدیریت وضعیت Error
+  if (isError) {
+    return (
+      <Container
+        className="storage"
+        sx={{
+          width: "340px",
+          height: "184px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Typography fontFamily={"IRANSANS"} color="error">
+          خطا: {error.message}
+        </Typography>
+      </Container>
+    );
+  }
+
   return (
     <Container
       className="storage"
@@ -94,11 +93,13 @@ const Storages = () => {
         mx={"auto"}
       >
         <Grid container width={"60vw"} gap={2}>
-          {storagesArr.map((card, index) => (
-            <StyledGridItem key={index} item>
+          {/* --- رندر کردن لیست با props کامل --- */}
+          {storagesList.map((card) => (
+            <StyledGridItem key={card.id} item>
               <StorageCard
-                capacity={card.filled_value}
-                zone={index + 1}
+                maxCapacity={card.max_volume}
+                zone={card.id}
+                capacity={card.filled_volume}
                 float1={card.buttom_float_switch}
                 float2={card.middle_float_switch}
                 float3={card.top_float_switch}

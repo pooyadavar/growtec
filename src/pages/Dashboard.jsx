@@ -92,7 +92,7 @@ const Dashboard = () => {
           </Typography>
           <PhEcControlCard
             // Props های قبلی
-            contents={apiData.contents}
+            contents={apiData.contents}   
             statusText={getStatusText(apiData.status_number)}
             ecTargetValue={ecTarget}
             onEcTargetChange={handleEcChange}
