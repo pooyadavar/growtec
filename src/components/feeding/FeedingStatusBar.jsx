@@ -1,6 +1,7 @@
 import React from "react";
 import { Paper, Typography, Box, Stack } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton"; // فرض می‌کنیم در همین پوشه است
+import { useNavigate } from "react-router-dom";
 const iconSettings = "https://placehold.co/24x24/333/white?text=Setting";
 const scheduleData = [
   { time: "۰۰:۰۰:۰۰", zone: "۱", type: "A", volume: "۵۰", status: "فعال" },
@@ -13,6 +14,13 @@ const scheduleData = [
  * کامپوننت نمایش جدول زمان‌بندی ساخت محلول
  */
 const FeedingStatusBar = () => {
+  const navigate = useNavigate(); // ۲. تعریف هوک
+
+  // ۳. تعریف تابع هندلر
+  const handleSettingsClick = () => {
+    navigate("/feeding-settings"); // به این آدرس می‌رود
+  };
+  
   // تابعی برای رندر کردن یک ردیف از جدول
   const renderScheduleRow = (row, index) => (
     <Box
@@ -123,17 +131,16 @@ const FeedingStatusBar = () => {
       </Box>
 
       {/* دکمه تنظیمات */}
-      <Box sx={{ width: "120%", marginTop: "24px" ,justifyContent:"center" , display:"flex"}}>
+<Box sx={{ width: "120%", marginTop: "24px", justifyContent: "center", display: "flex" }}>
         <IconTextButton
           text="تنظیمات ساخت محلول"
           icon={iconSettings}
           iconPosition="right"
-          bgColor="#F7C98C" // رنگ شبیه به عکس
+          bgColor="#F7C98C"
           textColor="#333"
           borderColor="#F7C98C"
-          onClick={() => {
-            /* منطق باز کردن تنظیمات */
-          }}
+          // ۴. اصلاح onClick
+          onClick={handleSettingsClick}
         />
       </Box>
     </Paper>

@@ -18,14 +18,11 @@ const Storages = () => {
   } = useQuery({
     queryKey: ["irrigationTanks"],
     queryFn: getIrrigationTanksStatus,
-
-    // تبدیل آبجکت پاسخ به آرایه
-    // ریسپانس جدید شما شامل `contents` کامل است
     select: (data) => {
       if (!data || typeof data !== "object") return [];
       return Object.entries(data).map(([key, value]) => ({
-        id: key, // "1", "2", "3"
-        ...value.contents, // { filled_value, ec, ph, ... }
+        id: key,
+        ...value.contents, 
       }));
     },
   });

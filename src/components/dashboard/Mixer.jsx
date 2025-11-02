@@ -13,7 +13,6 @@ import InfoIcon from "@mui/icons-material/InfoOutlined";
 import assets from "../../assets";
 import BuildDetailsModal from "./BuildDetailsModal";
 
-// ... (CustomToggleButton component remains unchanged) ...
 const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   minWidth: "unset",
   padding: "4px 6px",
@@ -44,16 +43,11 @@ const PhEcControlCard = ({
   const handleOpenBuildDetailsModal = () => setOpenBuildDetailsModal(true);
   const handleCloseBuildDetailsModal = () => setOpenBuildDetailsModal(false);
 
-  // --- 1. محاسبه درصد پُر بودن مخزن ---
   let fillPercentage = 0;
   if (contents?.max_volume > 0) {
-    // محاسبه درصد
     fillPercentage = (contents.filled_volume / contents.max_volume) * 100;
   }
-  // اطمینان از اینکه عدد بین ۰ تا ۱۰۰ است
   fillPercentage = Math.max(0, Math.min(100, fillPercentage));
-  // --- پایان محاسبه ---
-
   const buildDetailsData = [
     { time: "10:30", type: "pH", volume: "50L", tank: "A", status: "success" },
     { time: "11:00", type: "EC", volume: "20L", tank: "B", status: "failed" },
@@ -71,7 +65,6 @@ const PhEcControlCard = ({
     { time: "13:00", type: "EC", volume: "25L", tank: "A", status: "failed" },
     { time: "13:45", type: "pH", volume: "60L", tank: "C", status: "success" },
     { time: "14:00", type: "EC", volume: "15L", tank: "B", status: "success" },
-    // ... می‌توانید داده‌های بیشتری اضافه کنید
   ];
 
   return (
@@ -99,7 +92,6 @@ const PhEcControlCard = ({
           gap: 1,
         }}
       >
-        {/* --- 2. ستون نمایشگر سطح آب (تغییر یافته) --- */}
         <Stack
           direction="row"
           spacing={1}
@@ -109,13 +101,10 @@ const PhEcControlCard = ({
             p: 1,
             height: "95%",
             borderRadius: "15px",
-            // backgroundColor: "#e0dedeff", // <-- حذف شد
             width: "40px",
-            position: "relative", // <-- اضافه شد
-            // overflow: "hidden", // <-- اضافه شد
+            position: "relative",
           }}
         >
-          {/* لایه پس‌زمینه (خالی) */}
           <Box
             sx={{
               position: "absolute",
@@ -135,9 +124,9 @@ const PhEcControlCard = ({
               left: -10,
               right: 0,
               bottom: 0,
-              height: `${fillPercentage}%`, // <-- ارتفاع داینامیک
-              backgroundColor: "#3e7dca", // <-- رنگ آب (مانند فلوتر فعال)
-              transition: "height 0.4s ease", // <-- انیمیشن نرم
+              height: `${fillPercentage}%`, 
+              backgroundColor: "#3e7dca", 
+              transition: "height 0.4s ease", 
               zIndex: 1,
               borderRadius: "0 0 15px 15px",
             }}
@@ -145,8 +134,8 @@ const PhEcControlCard = ({
           {/* لایه فلوترها (رو) */}
           <Box
             sx={{
-              position: "relative", // <-- این باید 'relative' بماند
-              zIndex: 2, // <-- اطمینان از اینکه روی آب است
+              position: "relative", 
+              zIndex: 2, 
               height: "100%",
               display: "flex",
               flexDirection: "column",
@@ -195,7 +184,6 @@ const PhEcControlCard = ({
             ></Box>
           </Box>
         </Stack>
-        {/* --- پایان ستون سطح آب --- */}
 
         {/* --- Middle Section (Unchanged) --- */}
         <Stack
@@ -286,7 +274,6 @@ const PhEcControlCard = ({
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <TextField
                     variant="outlined"
-                    size="small"
                     value={item}
                     InputProps={{
                       readOnly: true,
@@ -299,7 +286,9 @@ const PhEcControlCard = ({
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
+                        fontSize:"10px"
                       },
+                      
                     }}
                   />
                   <TextField
@@ -319,6 +308,7 @@ const PhEcControlCard = ({
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
+                        fontSize:"10px"
                       },
                     }}
                   />

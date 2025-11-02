@@ -1,139 +1,120 @@
 import React from "react";
 import EghlimCard from "../../card/EghlimCard";
-import { Container, Box, Grid } from "@mui/material";
+import {
+  Container,
+  Box,
+  Grid,
+  CircularProgress,
+  Typography,
+} from "@mui/material";
 import styled from "styled-components";
-import axios from "axios";
-import { useEffect, useState } from "react";
+
+import { useQueries } from "@tanstack/react-query";
+import { getInsideCliment } from "../../api/dashboardApi"; // (مسیر را چک کنید)
 
 const StyledGridItem = styled(Grid)({
   transition: "transform 0.3s ease",
 });
 
+const containerStyles = {
+  width: "730px",
+  height: "210px",
+  borderRadius: "10px",
+  boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+  backgroundColor: "#ffffff",
+  display: "flex",
+  overflow: "scroll",
+  direction: "ltr",
+  scrollBehavior: "smooth",
+  overflowY: "hidden",
+};
+
 const Eghlim = () => {
-  // const apiDomain = "http://192.168.3.47:8000";
+  const zoneIds = [1, 2, 3, 4, 5];
 
-  // const [temp, setTemp] = React.useState(0);
-  // const [hum, setHum] = React.useState(0);
-  // const [error, setError] = React.useState(null);
-  // const [loading, setLoading] = React.useState(true);
+  const zoneQueryResults = useQueries({
+    queries: zoneIds.map((id) => {
+      return {
+        queryKey: ["eghlim", id],
+        queryFn: () => getInsideCliment(id), 
+        // refetchInterval: 10000, 
+      };
+    }),
+  });
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       let zoneData = []; // Temporary array to collect API data
+  const isLoading = zoneQueryResults.some((query) => query.isLoading);
+  const isError = zoneQueryResults.some((query) => query.isError);
+  const firstError = zoneQueryResults.find((query) => query.isError)?.error;
 
-  //       for (let i = 1; i <= 5; i++) {
-  //         const api = `${apiDomain}/api/v1/info/inside-climent/?zone=${i}`;
-  //         const response = await axios.get(api);
-  //         zoneData.push(response.data); // Collect data in local array
-  //       }
+  const zones = zoneQueryResults.map((query) => query.data).filter(Boolean); 
 
-  //       setZones(zoneData);
-  //     } catch (err) {
-  //       setError(err.message || "Something went wrong"); // Set error message
-  //     } finally {
-  //       setLoading(false); // Ensure loading is set to false
-  //     }
-  //   };
-  //   // Call the API immediately when the component mounts
-  //   fetchData();
-  // }, [apiDomain]);
+  if (isLoading) {
+    return (
+      <Container
+        className="eghlim"
+        sx={{
+          ...containerStyles,
+          justifyContent: "center",
+          alignItems: "center",
+          overflow: "hidden",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
 
-  const sampleZones = [
-    // زون ۱: گرم و خشک، سیستم خنک‌کننده روشن
-    {
-      temperature: 28.5,
-      humidity: 35.2,
-      exhaust_fan: true,
-      circulating_fan: true,
-      pump_pad: true,
-      shade_open: true,
-      heater: false,
-      roof_hatch_opening: true,
-      fogger: true,
-    },
-    // زون ۲: سرد، سیستم گرمایشی روشن
-    {
-      temperature: 19.8,
-      humidity: 50.0,
-      exhaust_fan: false,
-      circulating_fan: true,
-      pump_pad: false,
-      shade_open: false,
-      heater: true,
-      roof_hatch_opening: false,
-      fogger: false,
-    },
-    // زون ۳: متعادل
-    {
-      temperature: 24.1,
-      humidity: 42.7,
-      exhaust_fan: false,
-      circulating_fan: true,
-      pump_pad: false,
-      shade_open: false,
-      heater: false,
-      roof_hatch_opening: true,
-      fogger: false,
-    },
-    // زون ۴: نمونه دیگر
-    {
-      temperature: 22.0,
-      humidity: 60.5,
-      exhaust_fan: true,
-      circulating_fan: false,
-      pump_pad: true,
-      shade_open: false,
-      heater: false,
-      roof_hatch_opening: true,
-      fogger: true,
-    },
-  ];
+  if (isError) {
+    return (
+      <Container
+        className="eghlim"
+        sx={{
+          ...containerStyles,
+          justifyContent: "center",
+          alignItems: "center",
+          overflow: "hidden",
+        }}
+      >
+        <Typography fontFamily={"IRANSANS"} color="error">
+          خطا: {firstError?.message || "خطا در دریافت اطلاعات اقلیم"}
+        </Typography>
+      </Container>
+    );
+  }
 
-  const [zones, setZones] = useState(sampleZones);
   return (
     <Container
       className="eghlim"
       sx={{
-        width: "730px",
-        height: "210px",
-        borderRadius: "10px",
-        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
-        backgroundColor: "#ffffff",
+        ...containerStyles,
         display: "flex",
         overflow: "scroll",
         direction: "ltr",
         scrollBehavior: "smooth",
-        overflowY: "hidden",
+        overflow: "scroll",
       }}
     >
       <Box
-        display={"flex"}
-        flexDirection={"column"}
-        justifyContent={"center"}
-        mx={"auto"}
-        width={"100%"}
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        mx="auto"
+        width="100%"
       >
-        <Grid
-          container
-          width={"90vw"}
-          gap={1}
-          display={"flex"}
-          flexWrap={"nowrap"}
-        >
+        <Grid container width="90vw" gap={1} display="flex" flexWrap="nowrap">
           {zones.map((card, index) => (
             <StyledGridItem item key={index}>
               <EghlimCard
                 zone={index + 1}
-                temp={card.temperature.toFixed(1)}
-                hum={card.humidity.toFixed(1)}
-                fan1={card.exhaust_fan}
-                fan2={card.circulating_fan}
-                pad={card.pump_pad}
-                parde={card.shade_open}
-                bokhari={card.heater}
-                dariche={card.roof_hatch_opening}
-                mehpash={card.fogger}
+                temp={card.temperature?.toFixed(1) || 0}
+                hum={card.humidity?.toFixed(1) || 0}
+                fan1={card.exhaust_fan || false}
+                fan2={card.circulating_fan || false}
+                pad={card.pump_pad || false}
+                parde={card.shade_open || false}
+                bokhari={card.heater || false}
+                dariche={card.roof_hatch_opening || false}
+                mehpash={card.fogger || false}
               />
             </StyledGridItem>
           ))}
@@ -142,4 +123,5 @@ const Eghlim = () => {
     </Container>
   );
 };
+
 export default Eghlim;

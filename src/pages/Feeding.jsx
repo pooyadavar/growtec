@@ -145,19 +145,16 @@ const Feeding = () => {
           >
             <Stack
               direction="row"
-              spacing={0} // فاصله بین دکمه‌ها
+              spacing={0} 
               gap={1}
               justifyContent="center"
               alignItems="center"
               sx={{
                 width: "97%",
-                margin: "8px 0", // فاصله از بالا و پایین
+                margin: "8px 0", 
                 px:"7px"
               }}
             >
-              {/* هر دکمه در یک Box قرار می‌گیرد تا بتوانیم عرض مساوی به آنها بدهیم
-        flex: 1 باعث می‌شود هر سه دکمه عرض یکسانی بگیرند
-      */}
 
               <Box sx={{}}>
                 <IconTextButton

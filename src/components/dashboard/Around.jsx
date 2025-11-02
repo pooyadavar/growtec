@@ -1,67 +1,91 @@
 import React from "react";
-import { useState, useEffect } from "react";
-import { Container, Typography, Divider } from "@mui/material";
+// import { useState, useEffect } from "react"; // <- حذف شد
+import { 
+  Container, 
+  Typography, 
+  Divider, 
+  Box, // <- اضافه شد
+  CircularProgress // <- اضافه شد
+} from "@mui/material";
 import assets from "../../assets";
-import axios from "axios";
+// import axios from "axios"; // <- حذف شد
+
+// --- ۱. ایمپورت‌های React Query ---
+import { useQuery } from "@tanstack/react-query";
+import { getOutsideCliment } from "../../api/dashboardApi"; // (مسیر را چک کنید)
+
+// استایل کانتینر را برای استفاده در لودینگ/خطا بیرون می‌کشیم
+const containerStyles = {
+  backgroundColor: "#ffff",
+  direction: "ltr",
+  width: "200px",
+  height: "210px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "start",
+  justifyContent: "center",
+  borderRadius: "10px",
+  boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+  padding: "0",
+};
 
 const Around = () => {
-  const apiDomain = "http://192.168.3.47:8000";
-  const [temp, setTemp] = useState(0);
-  const [light, setLight] = useState(0);
-  const [wind, setWind] = useState(0.0);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(null);
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       // Replace with your API endpoints
-  //       const api1 = `${apiDomain}/api/v1/info/outside-climent/`;
+  const {
+    data: outsideData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["outsideCliment"],
+    queryFn: getOutsideCliment,
 
-  //       const response1 = await axios.get(api1);
-
-  //       // Set data in state
-  //       setTemp(response1.data.temperature);
-  //       setLight(response1.data.light);
-  //       setWind(response1.data.wind);
-  //       // console.log(response1.data.wind);
-  //       set;
-  //     } catch (err) {
-  //       setError(err.message || "Something went wrong");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, []);
+  });
 
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
+    const str = String(num || 0);
     let res = "";
-    const str = num.toString();
     for (let c of str) {
       res += numbers.charAt(c);
     }
     return res;
   };
 
+  if (isLoading || !outsideData) {
+    return (
+      <Container
+        sx={{
+          ...containerStyles,
+          alignItems: "center", 
+        }}
+      >
+        <CircularProgress size={24} />
+      </Container>
+    );
+  }
+
+
+  if (isError) {
+    return (
+      <Container
+        sx={{
+          ...containerStyles,
+          alignItems: "center",
+          textAlign: "center"
+        }}
+      >
+        <Typography fontFamily={"IRANSANS"} color="error">
+          خطا: {error.message}
+        </Typography>
+      </Container>
+    );
+  }
+
+  const { temperature: temp, light, wind } = outsideData;
+
   return (
-    <Container
-      sx={{
-        backgroundColor: "#ffff",
-        direction: "ltr",
-        width: "200px",
-        height: "210px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "start",
-        justifyContent: "center",
-        borderRadius: "10px",
-        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
-        padding: "0",
-      }}
-    >
+    <Container sx={containerStyles}>
       <div
         style={{
           marginBottom: "1rem",

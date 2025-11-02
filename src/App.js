@@ -11,17 +11,22 @@ import Payesh from "./components/payesh/Payesh";
 import Login from "./pages/Login";
 import TimePlans from "./components/payesh/TimePlans";
 import AdminSetting from "./components/admin/AdminSetting";
+import FeedingSettingsPage from "./pages/FeedingSettingsPage";
 function App() {
   return (
     <div className="App">
       {/* <Navbar /> */}
-      <Dashboard />
+      {/* <Dashboard /> */}
       {/* <Feeding /> */}
       {/* <Payesh /> */}
       {/* <TimePlans /> */}
       {/* <TimePlansCards /> */}
       {/* <Login /> */}
       {/* <AdminSetting /> */}
+
+      {/* صفحه تنظیمات محلول */}
+      {/* <FeedingSettingsPage/> */}
+      
       <Outlet />
     </div>
   );

@@ -5,46 +5,50 @@ import PhEcControlCard from "../components/dashboard/Mixer";
 import Mixer from "../components/dashboard/Mixer";
 import StatusBar from "../components/dashboard/StatusBar";
 import Storages from "../components/dashboard/Storages";
-import { Container, Typography } from "@mui/material";
+import { Container, Typography, CircularProgress, Alert } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getMixTankStatus } from "../api/dashboardApi";
 
 const Dashboard = () => {
   sessionStorage.setItem("sample", 2);
-
-  const apiData = {
-    ec_ph: {
-      /* ... */
-    },
-    contents: {
-      max_volume: 100.0,
-      filled_volume: 80.0,
-      buttom_float_switch: false,
-      middle_float_switch:true,
-      top_float_switch: true,
-    },
-    injected: {
-      /* ... */
-    },
-    stock_dosing_pump: true,
-    acid_dosing_pump: true,
-    input_water: [],
-    input_water_number: 0,
-    output_zone: [],
-    output_zone_number: 0,
-    status: null,
-    status_number: 0,
-    gif_counter: 0,
-    acid_stock_report: [
-      [
-        0, 0.0, 0.0, 0.0, 0.0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.0,
-      ],
-      [
-        0, 0, 0, 0, 0, 0, 0, 26214, 16230, 52429, 16268,
-      ],
-    ],
-  };
-
   const [ecTarget, setEcTarget] = useState(2.1);
+
+  const {
+    data: mixTankData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["mixTankStatus"],
+    queryFn: getMixTankStatus,
+    refetchInterval: 5000,
+  });
+
+  if (isLoading) {
+    return (
+      <Container
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Container sx={{ marginTop: "2rem" }}>
+        <Alert severity="error">
+          خطا در دریافت اطلاعات داشبورد: {error.message}
+        </Alert>
+      </Container>
+    );
+  }
 
   const handleEcChange = (event) => {
     setEcTarget(event.target.value);
@@ -91,13 +95,11 @@ const Dashboard = () => {
             فرایند ساخت محلول
           </Typography>
           <PhEcControlCard
-            // Props های قبلی
-            contents={apiData.contents}   
-            statusText={getStatusText(apiData.status_number)}
+            contents={mixTankData.contents}
+            statusText={getStatusText(mixTankData.status_number)}
             ecTargetValue={ecTarget}
             onEcTargetChange={handleEcChange}
-            // --- Prop جدید ---
-            reportData={apiData.acid_stock_report}
+            reportData={mixTankData.acid_stock_report}
           />
         </div>
         <div
@@ -121,7 +123,12 @@ const Dashboard = () => {
             >
               وضعیت محلول
             </Typography>
-            <StatusBar />
+            <StatusBar
+              ecValue={mixTankData.ec_ph.ec}
+              phValue={mixTankData.ec_ph.ph}
+              ecRange={mixTankData.ec_ph.range.ec}
+              phRange={mixTankData.ec_ph.range.ph}
+            />
           </div>
           <div>
             <Typography

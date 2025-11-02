@@ -64,6 +64,11 @@ const assets = {
     mixericon:require("./svg/mixericon.svg").default,
     stopicon:require("./svg/stopicon.svg").default,
     watericon:require("./svg/watericon.svg").default,
+    lowStatusDashboard:require("./svg/lowStatusDashboard.svg").default,
+    highStatusDashboard:require("./svg/highStatusDashboard.svg").default,
+    goodStatusDashboard:require("./svg/goodStatusDashboard.svg").default, 
+
+
   },
   // 'An' is mean Animate picture
   img: {

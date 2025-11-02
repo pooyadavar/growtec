@@ -5,7 +5,7 @@ const DailyChart = () => {
     <Container
       sx={{
         width: "976px",
-        height: "370px",
+        height: "200px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
