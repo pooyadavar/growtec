@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import TimePlans from "./components/payesh/TimePlans";
 import AdminSetting from "./components/admin/AdminSetting";
 import FeedingSettingsPage from "./pages/FeedingSettingsPage";
+import FeedingHistoryPage from "./pages/FeedingHistoryPage";
 function App() {
   return (
     <div className="App">
@@ -26,7 +27,9 @@ function App() {
 
       {/* صفحه تنظیمات محلول */}
       {/* <FeedingSettingsPage/> */}
-      
+      {/* تاریخچه ساخت محلول */}
+      <FeedingHistoryPage/>
+
       <Outlet />
     </div>
   );
