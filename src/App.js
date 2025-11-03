@@ -13,12 +13,15 @@ import TimePlans from "./components/payesh/TimePlans";
 import AdminSetting from "./components/admin/AdminSetting";
 import FeedingSettingsPage from "./pages/FeedingSettingsPage";
 import FeedingHistoryPage from "./pages/FeedingHistoryPage";
+import Control from "./components/feeding/Control";
+import FeedingPlans from "./components/feeding/FeedingPlans";
 function App() {
   return (
     <div className="App">
       {/* <Navbar /> */}
       {/* <Dashboard /> */}
       {/* <Feeding /> */}
+      {/* <FeedingPlans/> */}
       {/* <Payesh /> */}
       {/* <TimePlans /> */}
       {/* <TimePlansCards /> */}
@@ -28,7 +31,12 @@ function App() {
       {/* صفحه تنظیمات محلول */}
       {/* <FeedingSettingsPage/> */}
       {/* تاریخچه ساخت محلول */}
-      <FeedingHistoryPage/>
+      {/* <FeedingHistoryPage/> */}
+
+      {/* <Eghlim/> */}
+      <Payesh/>
+      {/* <TimePlans/> */}
+      {/* <Control/> */}
 
       <Outlet />
     </div>

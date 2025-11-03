@@ -14,6 +14,7 @@ import assets from "../../assets";
 import axios from "axios";
 import { AgCharts } from "ag-charts-react";
 import PayeshSetting from "./PayeshSetting";
+import IconTextButton from "../../card/IconTextButton";
 
 const Payesh = () => {
   const [isChanging, setIsChanging] = React.useState(false);
@@ -90,7 +91,44 @@ const Payesh = () => {
     setTempOptions((prev) => ({ ...prev, data: [] }));
     setHumOptions((prev) => ({ ...prev, data: [] }));
   }, [zone]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date().toLocaleTimeString("fa-IR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Tehran",
+      });
 
+      // داده ساختگی دما
+      const mockTemp = {
+        time: now,
+        zone1: 25 + Math.random() * 2,
+        zone2: 26 + Math.random() * 2,
+        zone3: 27 + Math.random() * 2,
+        zone4: 24 + Math.random() * 2,
+        zone5: 28 + Math.random() * 2,
+        zone6: 26 + Math.random() * 2,
+      };
+
+      // داده ساختگی رطوبت
+      const mockHum = {
+        time: now,
+        zone1: 55 + Math.random() * 5,
+        zone2: 60 + Math.random() * 5,
+        zone3: 58 + Math.random() * 5,
+        zone4: 62 + Math.random() * 5,
+        zone5: 59 + Math.random() * 5,
+        zone6: 63 + Math.random() * 5,
+      };
+
+      setTemp((prev) => [...prev.slice(-5), mockTemp]); // نگه‌داشتن فقط 6 داده آخر
+      setHumidity((prev) => [...prev.slice(-5), mockHum]);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
   // const fetchData = async () => {
   //   try {
   //     // Replace with your API endpoints
@@ -233,8 +271,8 @@ const Payesh = () => {
               <img src={assets.svg.auto} alt="" />
               <img
                 onClick={() => {
-                  // changOnAndOff(); // first function
-                  // sendBoolean(); // second function
+                  changOnAndOff(); // first function
+                  //sendBoolean(); // second function
                 }}
                 className={`on-and-off-btn ${isChanging ? "changing" : ""}`}
                 src={activity ? assets.svg.buttonOff : assets.svg.buttonOn}
@@ -243,7 +281,7 @@ const Payesh = () => {
             </Box>
             <Box
               sx={{
-                width: "210px",
+                width: "130px",
                 height: "56px",
                 border: "0.5px solid #9F9F9F",
                 borderRadius: "10px",
@@ -251,13 +289,35 @@ const Payesh = () => {
                 justifyContent: "space-around",
                 alignItems: "center",
                 backgroundColor: "#FFFFFF",
+                px: 1,
               }}
             >
-              <Typography fontFamily={"IRANSANS"} fontSize={16}>
-                وضعیت عملگرها:
+              <Typography fontFamily={"IRANSANS"} fontSize={12}>
+                وضعیت عملگر دما:
               </Typography>
               <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
                 A
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                width: "120px",
+                height: "56px",
+                border: "0.5px solid #9F9F9F",
+                borderRadius: "10px",
+                display: "flex",
+                justifyContent: "space-around",
+                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+                px: 1,
+              }}
+            >
+              <Typography fontFamily={"IRANSANS"} fontSize={12}>
+                وضعیت عملگرها رطوبت:
+              </Typography>
+              <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
+                B
               </Typography>
             </Box>
             <Box
@@ -274,10 +334,15 @@ const Payesh = () => {
                 className="button"
                 onClick={() => {
                   setZone((prev) => Math.min(prev + 1, 6));
-
                   setTempOptions((prev) => ({ ...prev, data: [] }));
                   setHumOptions((prev) => ({ ...prev, data: [] }));
                 }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.15)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
               />
               <Box
                 sx={{
@@ -329,6 +394,12 @@ const Payesh = () => {
                   setTempOptions((prev) => ({ ...prev, data: [] }));
                   setHumOptions((prev) => ({ ...prev, data: [] }));
                 }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.15)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
               />
             </Box>
           </Box>
@@ -438,15 +509,24 @@ const Payesh = () => {
           </Box>
           <Box
             sx={{
-              width: "826px",
+              width: "100%",
               height: "56px",
               display: "flex",
               flexDirection: "row-reverse",
-              justifyContent: "space-around",
+              justifyContent: "flex-start",
               marginTop: "10px",
+              flexGrow: 1,
+              gap: 2,
             }}
           >
-            <Button
+            <IconTextButton
+              icon={assets.svg.setting2}
+              text="تنظیمات"
+              onClick={handleOpen}
+              bgColor="#6CCDB0"
+              textColor="#000000"
+            />
+            {/* <Button
               sx={{
                 width: "246px",
                 height: "56px",
@@ -464,8 +544,16 @@ const Payesh = () => {
               <Typography fontFamily={"IRANSANS"} fontSize={19} color="#000000">
                 تنظیمات
               </Typography>
-            </Button>
-            <Button
+            </Button> */}
+            <IconTextButton
+              icon={assets.svg.warning}
+              text="تداخلات عملگرها"
+              bgColor="#FFCB82"
+              textColor="#000000"
+              onClick={() => {}}
+            />
+
+            {/* <Button
               sx={{
                 width: "234px",
                 height: "56px",
@@ -481,8 +569,16 @@ const Payesh = () => {
               <Typography fontFamily={"IRANSANS"} fontSize={19} color="#000000">
                 تداخلات عملگرها
               </Typography>
-            </Button>
-            <Button
+            </Button> */}
+
+            <IconTextButton
+              icon={assets.svg.schedule}
+              text="برنامه زمانی عملگرها"
+              bgColor="#FFCB82"
+              textColor="#000000"
+              onClick={() => {}}
+            />
+            {/* <Button
               sx={{
                 width: "246px",
                 height: "56px",
@@ -499,7 +595,7 @@ const Payesh = () => {
               <Typography fontFamily={"IRANSANS"} fontSize={19} color="#000000">
                 برنامه زمانی عملگرها
               </Typography>
-            </Button>
+            </Button> */}
           </Box>
         </Box>
       </Box>
@@ -512,7 +608,7 @@ const Payesh = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "50%",
+            top: "48%",
             left: "50%",
             transform: "translate(-50%, -50%)",
           }}

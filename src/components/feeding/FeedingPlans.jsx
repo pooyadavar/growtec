@@ -80,7 +80,7 @@ const FeedingPlans = () => {
         </Typography>
       </Button>
       <Modal
-        open={modalPlans}
+        open={true}
         className="plans-modal"
         disableAutoFocus
         onClose={handleModalPlansClose}
