@@ -15,6 +15,8 @@ import FeedingSettingsPage from "./pages/FeedingSettingsPage";
 import FeedingHistoryPage from "./pages/FeedingHistoryPage";
 import Control from "./components/feeding/Control";
 import FeedingPlans from "./components/feeding/FeedingPlans";
+
+import IrrigationOneStorage from "./components/Irrigation/IrrigationOneStorage";
 function App() {
   return (
     <div className="App">
@@ -34,13 +36,19 @@ function App() {
       {/* <FeedingHistoryPage/> */}
 
       {/* <Eghlim/> */}
-      <Payesh/>
+      {/* <Payesh/> */}
+      {/* <TimePlans/> */}
       {/* <TimePlans/> */}
       {/* <Control/> */}
-
+      {/* <IrrigationCard/> */}
+      {/* <IrrigationManyStorage/> */}
+      <IrrigationOneStorage/>
       <Outlet />
     </div>
   );
 }
 
 export default App;
+
+
+

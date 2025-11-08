@@ -3,19 +3,18 @@ import {
   Typography,
   Box,
   Container,
-  Button,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
   Divider,
 } from "@mui/material";
-import assets from "../assets/index";
+import assets from "../assets/index"; // مسیر `src/card` به `src/assets`
+import IconTextButton from "./IconTextButton"; // ایمپورت دکمه از فایل هم‌جوار
 
+// کامپوننت تمیز شده:
+// - ایمپورت‌های استفاده‌نشده (Button, MenuItem, FormControl, ...) حذف شدند.
+// - منطق استفاده‌نشده (tableArray, zone, handleZoneChange) حذف شد.
+// - پراپ‌های ثابت با پراپ‌های داینامیک (storageNumber, storageCapacity) جایگزین شدند.
 const IrrigationCard = ({
-  storage,
-  capacity,
-  table,
+  storageNumber,
+  storageCapacity,
   float1,
   float2,
   float3,
@@ -23,20 +22,18 @@ const IrrigationCard = ({
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
     let res = "";
-    const str = num.toString();
+    const str = String(num || 0); // اطمینان از اینکه ورودی رشته است
     for (let c of str) {
-      res += numbers.charAt(c);
+      // فقط اعداد را تبدیل کن
+      if (!isNaN(parseInt(c, 10))) {
+        res += numbers.charAt(c);
+      } else {
+        res += c; // کاراکترهای دیگر (مانند "/") را حفظ کن
+      }
     }
     return res;
   };
-  const tableArray = Array.isArray(table) ? table : [];
-  const [zone, setZone] = React.useState(1);
-  const [selectedZone, setSelectedZone] = React.useState(0);
-  const handleZoneChange = (event) => {
-    event.preventDefault();
-    setSelectedZone(event.target.value);
-    setZone(event.target.value);
-  };
+
   return (
     <Container
       sx={{
@@ -68,15 +65,19 @@ const IrrigationCard = ({
             border: "0.5px solid #9F9F9F",
             display: "flex",
             justifyContent: "space-between",
+            alignItems: "center", // اضافه شد برای تراز عمودی
           }}
         >
           <Box
             sx={{
               width: "102px",
               height: "37px",
-              borderRadius: "10px",
-              border: "0.5px solid #9F9F9F",
+              borderRadius: "10px", // اصلاح شد (قبلاً 10px 0 0 10px بود)
+              borderRight: "0.5px solid #9F9F9F", // کادر جداکننده
               backgroundColor: "#FFCB82",
+              display: "flex", // اضافه شد
+              alignItems: "center", // اضافه شد
+              justifyContent: "center", // اضافه شد
             }}
           >
             <Typography
@@ -84,19 +85,17 @@ const IrrigationCard = ({
               fontSize={21}
               textAlign={"center"}
             >
-              {/* {storage}
-               */}
-              مخزن ۱
+              مخزن {convert(storageNumber)}
             </Typography>
           </Box>
           <Typography
             fontFamily={"IRANSANS"}
             fontSize={21}
-            textAlign={"end"}
-            marginLeft={"20px"}
+            textAlign={"center"} // وسط‌چین شد
+            flexGrow={1} // فضای باقی‌مانده را پر می‌کند
             alignContent={"center"}
           >
-            {convert(231)}
+            {convert(storageCapacity)}
           </Typography>
         </Box>
         <Typography color="#5B5B5B" fontFamily={"IRANSANS"} fontSize={18}>
@@ -132,7 +131,9 @@ const IrrigationCard = ({
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
           }}
-        ></Box>
+        >
+          {/* Placeholder for Chart */}
+        </Box>
         <div
           style={{
             display: "flex",
@@ -143,6 +144,7 @@ const IrrigationCard = ({
             right: "-19px",
           }}
         >
+          {/* ... فلوترها بدون تغییر ... */}
           <div
             style={{
               width: "14px",
@@ -192,6 +194,7 @@ const IrrigationCard = ({
           justifyContent: "space-between",
         }}
       >
+        {/* ... جدول خالی (بدون تغییر) ... */}
         <Box
           sx={{
             width: "280px",
@@ -206,7 +209,6 @@ const IrrigationCard = ({
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              // justifyContent: "space-between",
             }}
           >
             <Typography color="initial" fontFamily={"IRANSANS"} fontSize={14}>
@@ -301,7 +303,6 @@ const IrrigationCard = ({
         <Divider
           sx={{
             width: "100%",
-            // marginBottom: "1rem",
             backgroundColor: "#9F9F9F",
           }}
         />
@@ -313,6 +314,7 @@ const IrrigationCard = ({
             justifyContent: "space-between",
           }}
         >
+          {/* ... ردیف دوم ... */}
           <div
             style={{
               display: "flex",
@@ -412,7 +414,6 @@ const IrrigationCard = ({
         <Divider
           sx={{
             width: "100%",
-            // marginBottom: "1rem",
             backgroundColor: "#9F9F9F",
           }}
         />
@@ -424,6 +425,7 @@ const IrrigationCard = ({
             justifyContent: "space-between",
           }}
         >
+          {/* ... ردیف سوم ... */}
           <div
             style={{
               display: "flex",
@@ -520,30 +522,29 @@ const IrrigationCard = ({
             ></Box>
           </div>
         </Box>
-        <Button
-          sx={{
-            width: "246px",
-            height: "56px",
-            backgroundColor: "#FFCB82",
-            color: "#000000",
-            borderRadius: "10px",
-            boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 5px 2px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginX: "auto",
-          }}
-        >
-          <img src={assets.svg.setting2} alt="" />
-          <Typography
-            color="#000000"
-            fontFamily={"IRANSANS"}
-            fontSize={18}
-            marginLeft={5}
-          >
-            تغییر تنظیمات
-          </Typography>
-        </Button>
+        
+        {/* --- دکمه تعویض شده --- */}
+        <Box sx={{ width: "246px", marginX: "auto" , display: "flex", justifyContent: "center" }}>
+          <IconTextButton
+            text="تغییر تنظیمات"
+            icon={assets.svg.setting2} // استفاده از asset
+            iconPosition="left" // آیکون در سمت چپ بود
+            bgColor="#FFCB82"
+            textColor="#000000"
+            width="246px"
+            height="56px"
+            borderColor="#FFCB82" // کادر همرنگ پس‌زمینه
+            sx={{
+              justifyContent: "center", // بازنویسی برای وسط‌چین کردن
+              gap: 2, // ایجاد فاصله بین آیکون و متن
+              // بازنویسی فونت برای مطابقت با دکمه اصلی
+              '& .MuiTypography-root': {
+                fontSize: '18px',
+                marginLeft: '20px' // شبیه‌سازی marginLeft={5} اصلی
+              }
+            }}
+          />
+        </Box>
       </Box>
     </Container>
   );

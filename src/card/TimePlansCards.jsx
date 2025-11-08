@@ -1,38 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Typography,
   Box,
   Container,
-  Button,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
   Divider,
 } from "@mui/material";
-// import assets from "../../assets";
-import axios from "axios";
-import assets from "../assets";
-import { AgCharts } from "ag-charts-react";
-
-const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
-  const tableArray = Array.isArray(table) ? table : [];
-  const [zone, setZone] = React.useState(1);
-  const [selectedZone, setSelectedZone] = React.useState(0);
-  const handleZoneChange = (event) => {
-    event.preventDefault();
-    setSelectedZone(event.target.value);
-    setZone(event.target.value);
-  };
+import assets from "../assets"; // مسیردهی از src/card/ به src/assets/
+import IconTextButton from "./IconTextButton"; // ایمپورت دکمه جدید
+const TimePlansCards = ({ fan, float1, float2, float3 }) => {
 
   return (
     <Container
@@ -49,6 +24,7 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
         alignItems: "center",
       }}
     >
+      {/* ... (بخش عنوان و نمودار بدون تغییر) ... */}
       <Box
         className="irrigation-card-title"
         sx={{
@@ -106,7 +82,9 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
           }}
-        ></Box>
+        >
+          {/* Placeholder for Chart */}
+        </Box>
         <div
           style={{
             width: "14px",
@@ -166,6 +144,7 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
           justifyContent: "space-between",
         }}
       >
+        {/* ... (بخش جدول تاریخچه بدون تغییر) ... */}
         <Box
           sx={{
             width: "280px",
@@ -180,7 +159,6 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              // justifyContent: "space-between",
             }}
           >
             <Typography color="initial" fontFamily={"IRANSANS"} fontSize={14}>
@@ -257,7 +235,6 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
         <Divider
           sx={{
             width: "100%",
-            // marginBottom: "1rem",
             backgroundColor: "#9F9F9F",
           }}
         />
@@ -269,6 +246,7 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
             justifyContent: "space-around",
           }}
         >
+          {/* ... (ردیف دوم جدول) ... */}
           <div
             style={{
               display: "flex",
@@ -349,7 +327,6 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
         <Divider
           sx={{
             width: "100%",
-            // marginBottom: "1rem",
             backgroundColor: "#9F9F9F",
           }}
         />
@@ -361,6 +338,7 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
             justifyContent: "space-around",
           }}
         >
+          {/* ... (ردیف سوم جدول) ... */}
           <div
             style={{
               display: "flex",
@@ -438,30 +416,24 @@ const TimePlansCards = ({ fan, capacity, table, float1, float2, float3 }) => {
             ></Box>
           </div>
         </Box>
-        <Button
-          sx={{
-            width: "246px",
-            height: "56px",
-            backgroundColor: "#FFCB82",
-            color: "#000000",
-            borderRadius: "10px",
-            boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 5px 2px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginX: "auto",
-          }}
-        >
-          <img src={assets.svg.setting2} alt="" />
-          <Typography
-            color="#000000"
-            fontFamily={"IRANSANS"}
-            fontSize={18}
-            marginLeft={5}
-          >
-            تغییر تنظیمات
-          </Typography>
-        </Button>
+
+        {/* --- دکمه تعویض شده --- */}
+        <Box sx={{ width: "246px", marginX: "auto" , display: "flex", justifyContent: "center" }}>
+          <IconTextButton
+            text="تغییر تنظیمات"
+            icon={assets.svg.setting2}
+            iconPosition="left" // آیکون در سمت چپ است (بر اساس کد اصلی شما)
+            bgColor="#FFCB82"
+            textColor="#000000"
+            width="246px"
+            height="56px"
+            borderColor="#FFCB82" // کادر همرنگ پس‌زمینه
+            sx={{
+              justifyContent: "center", // بازنویسی برای وسط‌چین کردن (چون UI اصلی اینطور بود)
+              gap: 2, // ایجاد فاصله بین آیکون و متن
+            }}
+          />
+        </Box>
       </Box>
     </Container>
   );
