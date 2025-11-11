@@ -2,7 +2,7 @@ import React from "react";
 import { Paper, Typography, Box, Stack } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton"; // فرض می‌کنیم در همین پوشه است
 import { useNavigate } from "react-router-dom";
-const iconSettings = "https://placehold.co/24x24/333/white?text=Setting";
+import assets from "../../assets";
 const scheduleData = [
   { time: "۰۰:۰۰:۰۰", zone: "۱", type: "A", volume: "۵۰", status: "فعال" },
   { time: "۰۰:۰۰:۰۰", zone: "۱", type: "B", volume: "۳۰", status: "غیرفعال" },
@@ -92,6 +92,7 @@ const FeedingStatusBar = () => {
         borderRadius: "10px",
         // boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
         padding: "16px",
+        pb:5,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -131,11 +132,11 @@ const FeedingStatusBar = () => {
       </Box>
 
       {/* دکمه تنظیمات */}
-<Box sx={{ width: "120%", marginTop: "24px", justifyContent: "center", display: "flex" }}>
+<Box sx={{ width: "105%", marginTop: "15px", justifyContent: "right", display: "flex" }}>
         <IconTextButton
           text="تنظیمات ساخت محلول"
-          icon={iconSettings}
-          iconPosition="right"
+          icon={assets.svg.setting2}
+          iconPosition="left"
           bgColor="#F7C98C"
           textColor="#333"
           borderColor="#F7C98C"

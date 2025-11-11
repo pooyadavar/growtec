@@ -53,7 +53,7 @@ const Payesh = () => {
 
   const [tempOptions, setTempOptions] = useState({
     title: { text: "دما", fontFamily: "IRANSANS" },
-    data: temp, // Fix: Use the full array, not temp[0]
+    data: temp, 
     series: [
       { type: "line", xKey: "time", yKey: "zone1", yName: "1" },
       { type: "line", xKey: "time", yKey: "zone2", yName: "2" },
@@ -513,10 +513,11 @@ const Payesh = () => {
               height: "56px",
               display: "flex",
               flexDirection: "row-reverse",
-              justifyContent: "flex-start",
+              justifyContent: "center",
               marginTop: "10px",
               flexGrow: 1,
-              gap: 2,
+              gap: 8,
+              mt:3
             }}
           >
             <IconTextButton
@@ -525,6 +526,7 @@ const Payesh = () => {
               onClick={handleOpen}
               bgColor="#6CCDB0"
               textColor="#000000"
+              width="170px"
             />
             {/* <Button
               sx={{
@@ -551,6 +553,7 @@ const Payesh = () => {
               bgColor="#FFCB82"
               textColor="#000000"
               onClick={() => {}}
+              width="170px"
             />
 
             {/* <Button
@@ -577,6 +580,7 @@ const Payesh = () => {
               bgColor="#FFCB82"
               textColor="#000000"
               onClick={() => {}}
+              width="170px"
             />
             {/* <Button
               sx={{

@@ -146,11 +146,11 @@ const Feeding = () => {
             <Stack
               direction="row"
               spacing={0} 
-              gap={1}
+              gap={5}
               justifyContent="center"
               alignItems="center"
               sx={{
-                width: "97%",
+                width: "91%",
                 margin: "8px 0", 
                 px:"7px"
               }}
@@ -163,6 +163,7 @@ const Feeding = () => {
                   bgColor="#FFD799"
                   textColor="#333"
                   onClick={handleHistoryClick}
+                  width="110px"
                 />
               </Box>
 
@@ -173,6 +174,7 @@ const Feeding = () => {
                   bgColor="#FF9933"
                   textColor="#fff"
                   onClick={handleAiClick}
+                  width="110px"
                 />
               </Box>
 
@@ -183,6 +185,7 @@ const Feeding = () => {
                   bgColor="#86CCB2"
                   textColor="#333"
                   onClick={handleSettingsClick}
+                  width="110px"
                 />
               </Box>
             </Stack>

@@ -34,6 +34,7 @@ function App() {
       {/* <FeedingSettingsPage/> */}
       {/* تاریخچه ساخت محلول */}
       {/* <FeedingHistoryPage/> */}
+      <Feeding/>
 
       {/* <Eghlim/> */}
       {/* <Payesh/> */}
@@ -42,7 +43,7 @@ function App() {
       {/* <Control/> */}
       {/* <IrrigationCard/> */}
       {/* <IrrigationManyStorage/> */}
-      <IrrigationOneStorage/>
+      {/* <IrrigationOneStorage/> */}
       <Outlet />
     </div>
   );
