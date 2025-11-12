@@ -21,7 +21,7 @@ function App() {
   return (
     <div className="App">
       {/* <Navbar /> */}
-      {/* <Dashboard /> */}
+      <Dashboard />
       {/* <Feeding /> */}
 
       {/* برنامه زمانی ساخت محلول */}
@@ -37,7 +37,7 @@ function App() {
       {/* <FeedingSettingsPage/> */}
       {/* تاریخچه ساخت محلول */}
       {/* <FeedingHistoryPage/> */}
-      <Feeding/>
+      {/* <Feeding/> */}
 
       {/* <Eghlim/> */}
       {/* <Payesh/> */}
