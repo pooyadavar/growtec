@@ -1,11 +1,12 @@
 import { Container, Box, Typography, Button } from "@mui/material";
 import assets from "../../assets";
+import IconTextButton from "../../card/IconTextButton";
 const DailyChart = () => {
   return (
     <Container
       sx={{
-        width: "976px",
-        height: "200px",
+        width: "950px",
+        height: "370px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
@@ -19,23 +20,26 @@ const DailyChart = () => {
         style={{
           display: "flex",
           flexDirection: "row",
-          justifyContent: "center",
-          width: "80%",
+          justifyContent: "space-between",
+          width: "88%",
+          marginBottom: "-50px",
+          marginTop: "-10px",
         }}
       >
-        <Typography fontFamily={"IRANSANS"}>نمودارهای روزانه</Typography>
-        <Box
-          sx={{
-            textAlign: "center",
-            width: "120px",
-            height: "32px",
-            bgcolor: "#FFCB82",
-            borderRadius: "5px",
-            border: "0.5px solid #9F9F9F",
-          }}
-        >
-          <Typography></Typography>
-        </Box>
+        <div>
+          <Typography fontFamily={"IRANSANS"}>نمودارهای روزانه</Typography>
+        </div>
+        <div>
+          <IconTextButton
+            icon={assets.svg.calibrationsvg}
+            text={"کالیبراسیون سانسور"}
+            bgColor="#6CCDB0"
+            textColor="black"
+            height="15px"
+            iconPosition="left"
+            sx={{ marginLeft: "auto", fontSize: "14px" , marginTop:"-20px" }}
+          />
+        </div>
       </div>
       <div
         style={{
@@ -50,7 +54,7 @@ const DailyChart = () => {
         <Button
           sx={{
             color: "#8A8A8A",
-            width: "20px",
+            width: "5px",
             height: "30px",
             borderRadius: "5px",
             backgroundColor: "#E3E3E3",
@@ -66,12 +70,13 @@ const DailyChart = () => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-around",
+            gap: "5px",
           }}
         >
           <div
             style={{
               width: "860px",
-              height: "82px",
+              height: "90px",
               backgroundColor: "#ffffff",
               borderRadius: "10px",
               border: "0.5px solid #9F9F9F",
@@ -85,7 +90,7 @@ const DailyChart = () => {
           <div
             style={{
               width: "860px",
-              height: "82px",
+              height: "90px",
               backgroundColor: "#ffffff",
               borderRadius: "10px",
               border: "0.5px solid #9F9F9F",
@@ -99,7 +104,7 @@ const DailyChart = () => {
           <div
             style={{
               width: "860px",
-              height: "82px",
+              height: "90px",
               backgroundColor: "#ffffff",
               borderRadius: "10px",
               border: "0.5px solid #9F9F9F",

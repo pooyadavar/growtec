@@ -73,6 +73,10 @@ const Feeding = () => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
+            scale: "0.8",
+            position: "relative",
+            top: "-45px",
+            left: "-20px",
           }}
         >
           <Typography
@@ -91,6 +95,10 @@ const Feeding = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            scale: "1.10",
+            position: "relative",
+            top: "0px",
+            left: "-40px",
           }}
         >
           <Typography fontFamily={"IRANSANS"} fontSize={14}>
@@ -117,6 +125,10 @@ const Feeding = () => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
+            scale: "0.75",
+            position: "relative",
+            top: "-55px",
+            left: "-20px",
           }}
         >
           <Typography
@@ -192,7 +204,7 @@ const Feeding = () => {
           </Paper>
         </div>
       </div>
-      <div style={{ marginTop: "14px" }}>{/* <DailyChart /> */}</div>
+      <div style={{ marginTop: "140px" , position:"relative" , top:"-120px"}}><DailyChart /></div>
     </Container>
   );
 };

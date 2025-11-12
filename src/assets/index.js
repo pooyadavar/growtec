@@ -67,6 +67,7 @@ const assets = {
     lowStatusDashboard:require("./svg/lowStatusDashboard.svg").default,
     highStatusDashboard:require("./svg/highStatusDashboard.svg").default,
     goodStatusDashboard:require("./svg/goodStatusDashboard.svg").default, 
+    calibrationsvg: require("./svg/calibration.svg").default,
 
 
   },

@@ -23,7 +23,10 @@ function App() {
       {/* <Navbar /> */}
       {/* <Dashboard /> */}
       {/* <Feeding /> */}
+
+      {/* برنامه زمانی ساخت محلول */}
       {/* <FeedingPlans/> */}
+
       {/* <Payesh /> */}
       {/* <TimePlans /> */}
       {/* <TimePlansCards /> */}

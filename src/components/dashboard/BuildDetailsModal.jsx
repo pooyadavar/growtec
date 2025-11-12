@@ -7,14 +7,12 @@ import {
   Button,
   Stack,
   Modal,
-  Container, // <-- 1. ایمپورت کردن Container از MUI
+  Container, 
 } from "@mui/material";
-// import { Container } from "react-bootstrap"; // <-- این کاملاً حذف شد
 import { styled } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
-import assets from "../../assets"; // مطمئن شوید این مسیر درست است
+import assets from "../../assets"; 
 
-// --- Styles for the Modal ---
 const modalStyle = {
   position: "absolute",
   top: "50%",
