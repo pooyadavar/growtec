@@ -35,6 +35,10 @@ const PhEcControlCardMixer = ({
   ecTargetValue,
   onEcTargetChange,
   reportData,
+  ecValue,
+  phValue,
+  ecRange,
+  phRange,
 }) => {
   const [selectedStockType, setSelectedStockType] = React.useState("total");
   const column1Data = reportData && reportData[0] ? reportData[0] : [];
@@ -72,9 +76,28 @@ const PhEcControlCardMixer = ({
     { time: "13:00", type: "EC", volume: "25L", tank: "A", status: "failed" },
     { time: "13:45", type: "pH", volume: "60L", tank: "C", status: "success" },
     { time: "14:00", type: "EC", volume: "15L", tank: "B", status: "success" },
-    // ... می‌توانید داده‌های بیشتری اضافه کنید
   ];
 
+  const getVerticalStatusImage = (range) => {
+    if (!range) {
+      return assets.svg.vertical_barstatus_khonsa;
+    }
+
+    const { higher_than_low, higher_than_high } = range;
+
+    if (higher_than_high) {
+      return assets.svg.vertical_barstatus_baz;
+    }
+
+    if (!higher_than_low) {
+      return assets.svg.vertical_barstatus_acid;
+    }
+
+    return assets.svg.vertical_barstatus_khonsa;
+  };
+
+  const phStatusBarImage = getVerticalStatusImage(phRange);
+  const ecStatusBarImage = getVerticalStatusImage(ecRange);
 
   return (
     <Paper
@@ -130,8 +153,8 @@ const PhEcControlCardMixer = ({
               }}
             >
               <img
-                src={assets.svg.vertical_barstatus_acid}
-                alt="vertical_barstatus_acid"
+                src={phStatusBarImage}
+                alt="vertical_barstatus_ph"
                 style={{ height: "100%" }}
               />
               <Typography fontFamily={"IRANSANS"} fontSize={13}>
@@ -140,9 +163,12 @@ const PhEcControlCardMixer = ({
               <TextField
                 variant="outlined"
                 size="small"
-                value={""}
+                value={phValue ?? ""}
+                InputProps={{
+                  readOnly: true,
+                }}
                 sx={{
-                  width: 40,
+                  width: 50,
                   backgroundColor: "#f0f0f0",
                   "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                   "& input": {
@@ -165,19 +191,22 @@ const PhEcControlCardMixer = ({
               }}
             >
               <img
-                src={assets.svg.vertical_barstatus_acid}
-                alt="vertical_barstatus_acid"
+                src={ecStatusBarImage}
+                alt="vertical_barstatus_ec"
                 style={{ height: "100%" }}
               />
               <Typography fontFamily={"IRANSANS"} fontSize={13}>
-                pH :{" "}
+                EC :{" "}
               </Typography>
               <TextField
                 variant="outlined"
                 size="small"
-                value={""}
+                value={ecValue ?? ""}
+                InputProps={{
+                  readOnly: true,
+                }}
                 sx={{
-                  width: 40,
+                  width: 50,
                   backgroundColor: "#f0f0f0",
                   "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                   "& input": {

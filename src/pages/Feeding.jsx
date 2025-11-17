@@ -3,42 +3,33 @@ import FeedingMixer from "../components/feeding/FeedingMixer";
 import FeedingPlans from "../components/feeding/FeedingPlans";
 import FeedingStatusBar from "../components/feeding/FeedingStatusBar";
 import DailyChart from "../components/feeding/DailyChart";
-import { Box, Container, Typography, Stack, Paper } from "@mui/material";
+import {
+  Box,
+  Container,
+  Typography,
+  Stack,
+  Paper,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
 import React, { useState } from "react";
-import PhEcControlCard from "../components/dashboard/Mixer";
 import PhEcControlCardMixer from "../components/feeding/FeedingMixer";
 import IconTextButton from "../card/IconTextButton";
 import assets from "../assets";
+import { useQuery } from "@tanstack/react-query";
+import { getMixTankStatus } from "../api/dashboardApi";
 
 const Feeding = () => {
-  const apiData = {
-    ec_ph: {
-      /* ... */
-    },
-    contents: {
-      max_volume: 100.0,
-      filled_volume: 80.0,
-      buttom_float_switch: false,
-      middle_float_switch: true,
-      top_float_switch: true,
-    },
-    injected: {
-      /* ... */
-    },
-    stock_dosing_pump: true,
-    acid_dosing_pump: true,
-    input_water: [],
-    input_water_number: 0,
-    output_zone: [],
-    output_zone_number: 0,
-    status: null,
-    status_number: 0,
-    gif_counter: 0,
-    acid_stock_report: [
-      [0, 0.0, 0.0, 0.0, 0.0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.0],
-      [0, 0, 0, 0, 0, 0, 0, 26214, 16230, 52429, 16268],
-    ],
-  };
+  const {
+    data: mixTankData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["mixTankStatus"],
+    queryFn: getMixTankStatus,
+    refetchInterval: 5000,
+  });
 
   const handleHistoryClick = () => console.log("تاریخچه کلیک شد");
   const handleAiClick = () => console.log("هوش مصنوعی کلیک شد");
@@ -53,6 +44,32 @@ const Feeding = () => {
   const getStatusText = (statusNumber) => {
     return statusNumber === 0 ? "در حال چک و اصلاح pH" : "وضعیت دیگر";
   };
+
+  if (isLoading) {
+    return (
+      <Container
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Container sx={{ marginTop: "2rem" }}>
+        <Alert severity="error">
+          خطا در دریافت اطلاعات مخزن ساخت محلول: {error.message}
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <div
@@ -140,11 +157,15 @@ const Feeding = () => {
           </Typography>
           {/* <FeedingMixer /> */}
           <PhEcControlCardMixer
-            contents={apiData.contents}
-            statusText={getStatusText(apiData.status_number)}
+            contents={mixTankData.contents}
+            statusText={getStatusText(mixTankData.status_number)}
             ecTargetValue={ecTarget}
             onEcTargetChange={handleEcChange}
-            reportData={apiData.acid_stock_report}
+            reportData={mixTankData.acid_stock_report}
+            ecValue={mixTankData.ec_ph?.ec}
+            phValue={mixTankData.ec_ph?.ph}
+            ecRange={mixTankData.ec_ph?.range?.ec}
+            phRange={mixTankData.ec_ph?.range?.ph}
           />
           <Paper
             sx={{
