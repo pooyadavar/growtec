@@ -18,6 +18,7 @@ const Storages = () => {
   } = useQuery({
     queryKey: ["irrigationTanks"],
     queryFn: getIrrigationTanksStatus,
+    refetchInterval: 5000,
     select: (data) => {
       if (!data || typeof data !== "object") return [];
       return Object.entries(data).map(([key, value]) => ({

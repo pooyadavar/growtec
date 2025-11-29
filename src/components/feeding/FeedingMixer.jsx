@@ -8,13 +8,15 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { styled } from "@mui/system"; // Or '@mui/material/styles'
+import { styled } from "@mui/system";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
+// مسیرهای ایمپورت را طبق پروژه خودتان چک کنید
 import assets from "../../assets";
 import BuildDetailsModal from "../dashboard/BuildDetailsModal";
 import IconTextButton from "../../card/IconTextButton";
+import StatusModal from "../dashboard/StatusModal";
 
-// ... (CustomToggleButton component remains unchanged) ...
+// استایل دکمه‌های تاگل
 const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   minWidth: "unset",
   padding: "4px 6px",
@@ -41,33 +43,39 @@ const PhEcControlCardMixer = ({
   phRange,
 }) => {
   const [selectedStockType, setSelectedStockType] = React.useState("total");
-  const column1Data = reportData && reportData[0] ? reportData[0] : [];
-  const column2Data = reportData && reportData[1] ? reportData[1] : [];
+
+  // ✅ اصلاح شده: بررسی آرایه بودن داده‌ها برای جلوگیری از خطای .map
+  const column1Data =
+    Array.isArray(reportData) && Array.isArray(reportData[0])
+      ? reportData[0]
+      : [];
+  const column2Data =
+    Array.isArray(reportData) && Array.isArray(reportData[1])
+      ? reportData[1]
+      : [];
 
   const [openBuildDetailsModal, setOpenBuildDetailsModal] =
     React.useState(false);
   const handleOpenBuildDetailsModal = () => setOpenBuildDetailsModal(true);
   const handleCloseBuildDetailsModal = () => setOpenBuildDetailsModal(false);
 
-  // --- 1. محاسبه درصد پُر بودن مخزن ---
+  // محاسبه درصد پُر بودن مخزن
   let fillPercentage = 0;
   if (contents?.max_volume > 0) {
-    // محاسبه درصد
     fillPercentage = (contents.filled_volume / contents.max_volume) * 100;
   }
-  // اطمینان از اینکه عدد بین ۰ تا ۱۰۰ است
   fillPercentage = Math.max(0, Math.min(100, fillPercentage));
-  // --- پایان محاسبه ---
 
+  const statusDetailsData = [
+    { parameter: "پمپ A", status: "روشن" },
+    { parameter: "پمپ B", status: "خاموش" },
+    { parameter: "شیر C", status: "باز" },
+    { parameter: "سنسور pH", status: "فعال" },
+    { parameter: "سنسور EC", status: "خطا" },
+  ];
+
+  // داده‌های نمونه برای مودال جزئیات
   const buildDetailsData = [
-    { time: "10:30", type: "pH", volume: "50L", tank: "A", status: "success" },
-    { time: "11:00", type: "EC", volume: "20L", tank: "B", status: "failed" },
-    { time: "11:15", type: "pH", volume: "30L", tank: "A", status: "success" },
-    { time: "12:00", type: "EC", volume: "40L", tank: "C", status: "success" },
-    { time: "12:30", type: "pH", volume: "10L", tank: "B", status: "success" },
-    { time: "13:00", type: "EC", volume: "25L", tank: "A", status: "failed" },
-    { time: "13:45", type: "pH", volume: "60L", tank: "C", status: "success" },
-    { time: "14:00", type: "EC", volume: "15L", tank: "B", status: "success" },
     { time: "10:30", type: "pH", volume: "50L", tank: "A", status: "success" },
     { time: "11:00", type: "EC", volume: "20L", tank: "B", status: "failed" },
     { time: "11:15", type: "pH", volume: "30L", tank: "A", status: "success" },
@@ -82,19 +90,24 @@ const PhEcControlCardMixer = ({
     if (!range) {
       return assets.svg.vertical_barstatus_khonsa;
     }
-
     const { higher_than_low, higher_than_high } = range;
 
     if (higher_than_high) {
       return assets.svg.vertical_barstatus_baz;
     }
-
     if (!higher_than_low) {
       return assets.svg.vertical_barstatus_acid;
     }
-
     return assets.svg.vertical_barstatus_khonsa;
   };
+
+  const [openStatusModal, setOpenStatusModal] = React.useState(false);
+
+  const handleOpenStatusModal = () => {
+    console.log("Attempting to open status modal...");
+    setOpenStatusModal(true);
+  };
+  const handleCloseStatusModal = () => setOpenStatusModal(false);
 
   const phStatusBarImage = getVerticalStatusImage(phRange);
   const ecStatusBarImage = getVerticalStatusImage(ecRange);
@@ -104,14 +117,13 @@ const PhEcControlCardMixer = ({
       elevation={3}
       sx={{
         padding: 2,
-        width: "450x",
+        width: "450px", // اصلاح تایپوگرافی (450x -> 450px)
         height: "320px",
         backgroundColor: "#ffff",
         display: "flex",
         justifyContent: "center",
         flexDirection: "column",
         alignItems: "center",
-        // boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
         borderRadius: "10px",
       }}
     >
@@ -123,6 +135,7 @@ const PhEcControlCardMixer = ({
           gap: 1,
         }}
       >
+        {/* بخش نمایشگرهای گیج (Gauge) */}
         <Stack
           direction="row"
           spacing={1}
@@ -131,16 +144,10 @@ const PhEcControlCardMixer = ({
             height: "100%",
             borderRadius: "15px",
             width: "120px",
-            position: "relative", // <-- اضافه شد
+            position: "relative",
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              height: "100%",
-            }}
-            gap={1}
-          >
+          <Box sx={{ display: "flex", height: "100%" }} gap={1}>
             <Box
               sx={{
                 alignItems: "center",
@@ -164,9 +171,7 @@ const PhEcControlCardMixer = ({
                 variant="outlined"
                 size="small"
                 value={phValue ?? ""}
-                InputProps={{
-                  readOnly: true,
-                }}
+                InputProps={{ readOnly: true }}
                 sx={{
                   width: 50,
                   backgroundColor: "#f0f0f0",
@@ -202,9 +207,7 @@ const PhEcControlCardMixer = ({
                 variant="outlined"
                 size="small"
                 value={ecValue ?? ""}
-                InputProps={{
-                  readOnly: true,
-                }}
+                InputProps={{ readOnly: true }}
                 sx={{
                   width: 50,
                   backgroundColor: "#f0f0f0",
@@ -220,7 +223,7 @@ const PhEcControlCardMixer = ({
           </Box>
         </Stack>
 
-        {/* --- 2. ستون نمایشگر سطح آب (تغییر یافته) --- */}
+        {/* ستون نمایشگر سطح آب */}
         <Stack
           direction="row"
           spacing={1}
@@ -229,13 +232,11 @@ const PhEcControlCardMixer = ({
             border: "0.5px solid gray",
             height: "100%",
             borderRadius: "15px",
-            // backgroundColor: "#e0dedeff", // <-- حذف شد
             width: "40px",
-            position: "relative", // <-- اضافه شد
-            // overflow: "hidden", // <-- اضافه شد
+            position: "relative",
           }}
         >
-          {/* لایه پس‌زمینه (خالی) */}
+          {/* لایه پس‌زمینه */}
           <Box
             sx={{
               position: "absolute",
@@ -248,76 +249,53 @@ const PhEcControlCardMixer = ({
               borderRadius: "15px",
             }}
           />
-          {/* لایه آب (پُر) */}
+          {/* لایه آب */}
           <Box
             sx={{
               position: "absolute",
               left: -10,
               right: 0,
               bottom: 0,
-              height: `${fillPercentage}%`, // <-- ارتفاع داینامیک
-              backgroundColor: "#3e7dca", // <-- رنگ آب (مانند فلوتر فعال)
-              transition: "height 0.4s ease", // <-- انیمیشن نرم
+              height: `${fillPercentage}%`,
+              backgroundColor: "#3e7dca",
+              transition: "height 0.4s ease",
               zIndex: 1,
               borderRadius: "0 0 15px 15px",
             }}
           />
-          {/* لایه فلوترها (رو) */}
+          {/* لایه فلوترها */}
           <Box
             sx={{
-              position: "relative", // <-- این باید 'relative' بماند
-              zIndex: 2, // <-- اطمینان از اینکه روی آب است
+              position: "relative",
+              zIndex: 2,
               height: "100%",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-around",
             }}
           >
-            {/* ... (سه دایره فلوتر داینامیک شما) ... */}
-            <Box
-              sx={{
-                width: "15px",
-                height: "15px",
-                borderRadius: "50%",
-                backgroundColor: contents?.top_float_switch
-                  ? "#00BBFF"
-                  : "white",
-                position: "relative",
-                left: "8px",
-                border: "0.5px solid gray",
-              }}
-            ></Box>
-            <Box
-              sx={{
-                width: "15px",
-                height: "15px",
-                borderRadius: "50%",
-                backgroundColor: contents?.middle_float_switch
-                  ? "#00BBFF"
-                  : "white",
-                position: "relative",
-                left: "8px",
-                border: "0.5px solid gray",
-              }}
-            ></Box>
-            <Box
-              sx={{
-                width: "15px",
-                height: "15px",
-                borderRadius: "50%",
-                backgroundColor: contents?.buttom_float_switch
-                  ? "#00BBFF"
-                  : "white",
-                position: "relative",
-                left: "8px",
-                border: "0.5px solid gray",
-              }}
-            ></Box>
+            {[
+              contents?.top_float_switch,
+              contents?.middle_float_switch,
+              contents?.buttom_float_switch,
+            ].map((isActive, i) => (
+              <Box
+                key={i}
+                sx={{
+                  width: "15px",
+                  height: "15px",
+                  borderRadius: "50%",
+                  backgroundColor: isActive ? "#00BBFF" : "white",
+                  position: "relative",
+                  left: "8px",
+                  border: "0.5px solid gray",
+                }}
+              ></Box>
+            ))}
           </Box>
         </Stack>
-        {/* --- پایان ستون سطح آب --- */}
 
-        {/* --- Middle Section (Unchanged) --- */}
+        {/* بخش میانی (Middle Section) */}
         <Stack
           spacing={1}
           sx={{
@@ -335,11 +313,10 @@ const PhEcControlCardMixer = ({
             fontFamily={"IRANSANS"}
             variant="body1"
             sx={{
-              textAlign: "right",
+              textAlign: "center",
               fontWeight: "medium",
               mb: 1,
               fontSize: "12px",
-              textAlign: "center",
             }}
           >
             استوک های ریخته شده
@@ -350,27 +327,20 @@ const PhEcControlCardMixer = ({
             justifyContent={"space-between"}
             sx={{ mb: 1 }}
           >
-            <CustomToggleButton
-              selected={selectedStockType === "stock"}
-              onClick={() => setSelectedStockType("stock")}
-              size="small"
-            >
-              استوک
-            </CustomToggleButton>
-            <CustomToggleButton
-              selected={selectedStockType === "total"}
-              onClick={() => setSelectedStockType("total")}
-              size="small"
-            >
-              مجموع
-            </CustomToggleButton>
-            <CustomToggleButton
-              selected={selectedStockType === "time"}
-              onClick={() => setSelectedStockType("time")}
-              size="small"
-            >
-              زمان
-            </CustomToggleButton>
+            {["stock", "total", "time"].map((type) => (
+              <CustomToggleButton
+                key={type}
+                selected={selectedStockType === type}
+                onClick={() => setSelectedStockType(type)}
+                size="small"
+              >
+                {type === "stock"
+                  ? "استوک"
+                  : type === "total"
+                  ? "مجموع"
+                  : "زمان"}
+              </CustomToggleButton>
+            ))}
           </Stack>
           <Box
             sx={{
@@ -408,9 +378,7 @@ const PhEcControlCardMixer = ({
                     variant="outlined"
                     size="small"
                     value={item}
-                    InputProps={{
-                      readOnly: true,
-                    }}
+                    InputProps={{ readOnly: true }}
                     sx={{
                       width: 40,
                       backgroundColor: "#f0f0f0",
@@ -428,9 +396,7 @@ const PhEcControlCardMixer = ({
                     value={
                       column2Data[index] !== undefined ? column2Data[index] : ""
                     }
-                    InputProps={{
-                      readOnly: true,
-                    }}
+                    InputProps={{ readOnly: true }}
                     sx={{
                       width: 40,
                       backgroundColor: "#f0f0f0",
@@ -448,7 +414,7 @@ const PhEcControlCardMixer = ({
           </Box>
         </Stack>
 
-        {/* --- Left Section (Unchanged) --- */}
+        {/* بخش سمت چپ (Left Section) */}
         <Stack
           spacing={1}
           alignItems="center"
@@ -545,6 +511,7 @@ const PhEcControlCardMixer = ({
           <Button
             variant="contained"
             startIcon={<InfoIcon sx={{ ml: "8px" }} />}
+            onClick={handleOpenStatusModal}
             sx={{
               backgroundColor: "#A7D9B4",
               color: "#403f3fff",
@@ -553,10 +520,7 @@ const PhEcControlCardMixer = ({
               fontSize: "1rem",
               padding: "10px 0",
               boxShadow: "none",
-              "&:hover": {
-                backgroundColor: "#6CCDB0",
-                boxShadow: "none",
-              },
+              "&:hover": { backgroundColor: "#6CCDB0", boxShadow: "none" },
               mt: 2,
               display: "flex",
               justifyContent: "center",
@@ -581,10 +545,7 @@ const PhEcControlCardMixer = ({
               fontSize: "1rem",
               padding: "10px 0",
               boxShadow: "none",
-              "&:hover": {
-                backgroundColor: "#fde0b5ff",
-                boxShadow: "none",
-              },
+              "&:hover": { backgroundColor: "#fde0b5ff", boxShadow: "none" },
               mt: 0,
               display: "flex",
               justifyContent: "center",
@@ -593,17 +554,23 @@ const PhEcControlCardMixer = ({
             }}
           >
             <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
-              وضعیت محلول{" "}
+              وضعیت محلول
             </Typography>
           </Button>
         </Stack>
-
       </Box>
 
       <BuildDetailsModal
         open={openBuildDetailsModal}
         onClose={handleCloseBuildDetailsModal}
         buildDetails={buildDetailsData}
+      />
+
+      <StatusModal
+        open={openStatusModal}
+        onClose={handleCloseStatusModal}
+        title="جزئیات وضعیت ساخت"
+        details={statusDetailsData}
       />
     </Paper>
   );

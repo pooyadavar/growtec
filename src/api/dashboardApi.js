@@ -13,9 +13,9 @@ export const getMixTankStatus = async () => {
  * داده‌های اقلیم داخل را برای یک زون خاص واکشی می‌کند
  * @param {number} zoneId - شماره زون (مثلاً 1, 2, ...)
  */
-export const getInsideCliment = async (zoneId) => {
-  // ما از apiClient استفاده می‌کنیم و دیگر نیازی به apiDomain نیست
-  return apiClient.get(`/info/inside-climent/?zone=${zoneId}`);
+export const getInsideCliment = async () => {
+  // دیگر نیازی به کوئری پارامتر ?zone=x نیست
+  return apiClient.get('/info/inside-climent/');
 };
 
 export const getOutsideCliment = async () => {

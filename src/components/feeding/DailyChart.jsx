@@ -1,18 +1,310 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { Container, Box, Typography, Button, Alert } from "@mui/material";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  Modal,
+  TextField,
+  IconButton,
+} from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
 import { AgCharts } from "ag-charts-react";
 import assets from "../../assets";
 import IconTextButton from "../../card/IconTextButton";
 import apiClient from "../../api/apiClient";
 
+// --- کامپوننت مودال کالیبراسیون (طراحی جدید) ---
+const CalibrationModalContent = ({
+  open,
+  onClose,
+  calibrateTab,
+  setCalibrateTab,
+  calibrateValues,
+  setCalibrateValues,
+}) => {
+  return (
+    <Modal open={open} onClose={onClose}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 550,
+          bgcolor: "#f5f5f5",
+          borderRadius: "10px",
+          boxShadow: 24,
+          p: 3,
+          outline: "none",
+          fontFamily: "IRANSANS",
+        }}
+      >
+        {/* هدر: تب‌ها و دکمه بستن */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            mb: 0,
+          }}
+        >
+          {/* دکمه بستن */}
+          <IconButton
+            onClick={onClose}
+            sx={{
+              color: "#fff",
+              bgcolor: "#e57373",
+              borderRadius: "4px",
+              padding: "2px",
+              "&:hover": { bgcolor: "#ef5350" },
+            }}
+          >
+            <CloseIcon sx={{ fontSize: "18px" }} />
+          </IconButton>
+          {/* تب‌ها */}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              onClick={() => setCalibrateTab("ec")}
+              sx={{
+                bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
+                color: "#000",
+                borderRadius: "10px 10px 0 0",
+                px: 3,
+                py: 0.5,
+                minWidth: "unset",
+                fontWeight: "bold",
+                boxShadow: "0px -2px 5px rgba(0,0,0,0.05)",
+                "&:hover": {
+                  bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
+                },
+              }}
+            >
+              EC
+            </Button>
+            <Button
+              onClick={() => setCalibrateTab("ph")}
+              sx={{
+                bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
+                color: "#000",
+                borderRadius: "10px 10px 0 0",
+                px: 3,
+                py: 0.5,
+                minWidth: "unset",
+                fontWeight: "bold",
+                boxShadow: "0px -2px 5px rgba(0,0,0,0.05)",
+                "&:hover": {
+                  bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
+                },
+              }}
+            >
+              pH
+            </Button>
+          </Box>
+        </Box>
+
+        {/* کانتینر اصلی سفید */}
+        <Box
+          sx={{
+            bgcolor: "#FFFFFF",
+            borderRadius: "0px 15px 15px 15px",
+            p: 3,
+            boxShadow: "0px 2px 10px rgba(0,0,0,0.05)",
+          }}
+        >
+          {/* باکس نمودار/وضعیت */}
+          <Box
+            sx={{
+              width: "100%",
+              height: "120px",
+              border: "3px solid #66bb6a", // کادر سبز
+              borderRadius: "10px",
+              mb: 4,
+              bgcolor: "#fff",
+            }}
+          />
+
+          {/* بخش ورودی‌ها */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "flex-start",
+              flexDirection: "row-reverse", // راست به چپ
+            }}
+          >
+            {/* ستون سمت راست (بالا) */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1.5,
+                width: "40%",
+              }}
+            >
+              <Typography fontFamily="IRANSANS" color="#555">
+                {calibrateTab === "ec" ? "EC بالا" : "pH بالا"}
+              </Typography>
+
+              <TextField
+                variant="outlined"
+                size="small"
+                value={
+                  calibrateTab === "ec"
+                    ? calibrateValues.ecHigh
+                    : calibrateValues.phHigh
+                }
+                onChange={(e) =>
+                  setCalibrateValues((prev) => ({
+                    ...prev,
+                    [calibrateTab === "ec" ? "ecHigh" : "phHigh"]:
+                      e.target.value,
+                  }))
+                }
+                sx={{
+                  width: "100%",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "10px",
+                    bgcolor: "#fff",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                    "& fieldset": { border: "1px solid #ccc" },
+                  },
+                  "& input": { textAlign: "center", fontFamily: "IRANSANS" },
+                }}
+              />
+
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}
+              >
+                <Button
+                  variant="contained"
+                  sx={{
+                    bgcolor: "#FFCB82",
+                    color: "#000",
+                    fontFamily: "IRANSANS",
+                    borderRadius: "10px",
+                    boxShadow: "none",
+                    minWidth: "80px",
+                    "&:hover": { bgcolor: "#ffb74d" },
+                  }}
+                >
+                  تایید
+                </Button>
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    bgcolor: "#81c784",
+                    borderRadius: "5px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                  }}
+                >
+                  <CheckIcon />
+                </Box>
+              </Box>
+            </Box>
+
+            {/* ستون سمت چپ (پایین) */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1.5,
+                width: "40%",
+              }}
+            >
+              <Typography fontFamily="IRANSANS" color="#555">
+                {calibrateTab === "ec" ? "EC پایین" : "pH پایین"}
+              </Typography>
+
+              <TextField
+                variant="outlined"
+                size="small"
+                value={
+                  calibrateTab === "ec"
+                    ? calibrateValues.ecLow
+                    : calibrateValues.phLow
+                }
+                onChange={(e) =>
+                  setCalibrateValues((prev) => ({
+                    ...prev,
+                    [calibrateTab === "ec" ? "ecLow" : "phLow"]: e.target.value,
+                  }))
+                }
+                sx={{
+                  width: "100%",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "10px",
+                    bgcolor: "#fff",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                    "& fieldset": { border: "1px solid #ccc" },
+                  },
+                  "& input": { textAlign: "center", fontFamily: "IRANSANS" },
+                }}
+              />
+
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}
+              >
+                <Button
+                  variant="contained"
+                  sx={{
+                    bgcolor: "#FFCB82",
+                    color: "#000",
+                    fontFamily: "IRANSANS",
+                    borderRadius: "10px",
+                    boxShadow: "none",
+                    minWidth: "80px",
+                    "&:hover": { bgcolor: "#ffb74d" },
+                  }}
+                >
+                  تایید
+                </Button>
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    bgcolor: "#81c784",
+                    borderRadius: "5px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                  }}
+                >
+                  <CheckIcon />
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    </Modal>
+  );
+};
+
+// --- کامپوننت اصلی نمودار ---
 const SlidingWindowChart = () => {
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
+  const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
+  const [calibrateTab, setCalibrateTab] = useState("ec");
+  const [calibrateValues, setCalibrateValues] = useState({
+    ecLow: "54",
+    ecHigh: "1500",
+    phLow: "",
+    phHigh: "",
+  });
 
-  // استایل باکس‌های جداگانه (همان استایل کد اول شما)
   const chartBoxStyle = {
     width: "100%",
-    height: "80px", // کمی ارتفاع را بیشتر کردم تا نمودار خفه نشود
+    height: "80px",
     backgroundColor: "#fff",
     borderRadius: "12px",
     border: "0.5px solid #9F9F9F",
@@ -21,73 +313,74 @@ const SlidingWindowChart = () => {
     flexDirection: "column",
     justifyContent: "center",
     px: 1.5,
-    overflow: "hidden", // جلوگیری از بیرون زدگی
+    overflow: "hidden",
     pt: 1,
-  };
-
-  // تابع کمکی برای اضافه کردن دیتا به آرایه لغزان
-  const appendPoint = (point) => {
-    setData((prev) => {
-      // اگر زمان تکراری است، آپدیت کن
-      if (prev.length && prev[prev.length - 1].fullTime === point.fullTime) {
-        const next = [...prev];
-        next[next.length - 1] = point;
-        return next;
-      }
-      // اضافه کردن نقطه جدید
-      const next = [...prev, point];
-      // نگهداری فقط ۲۰ نقطه آخر (برای اینکه نمودار شلوغ نشود)
-      if (next.length > 20) {
-        next.shift();
-      }
-      return next;
-    });
   };
 
   const fetchLatest = async () => {
     try {
       setError(null);
       const response = await apiClient.post("/log/soluble/mix-tank-status/", {
-        limit: 2,
+        limit: 50,
       });
       const array = Array.isArray(response) ? response : response.results || [];
       if (!array.length) return;
 
-      const latest = array[array.length - 1];
-      const rawTime = latest.log_date_time || new Date().toISOString();
+      setData((prev) => {
+        const lastPointTime =
+          prev.length > 0 ? prev[prev.length - 1].fullTime : null;
 
-      // فرمت کردن زمان به ساعت و دقیقه (خیلی مهم برای نمایش در محور افقی)
-      const timeObj = new Date(rawTime);
-      const timeStr = timeObj.toLocaleTimeString("en-GB", { hour12: false }); // "14:30:05"
+        const newPoints = array
+          .filter((item) => {
+            if (!item.log_date_time) return false;
+            if (!lastPointTime) return true;
+            return new Date(item.log_date_time) > new Date(lastPointTime);
+          })
+          .map((latest) => {
+            const rawTime = latest.log_date_time;
+            const timeObj = new Date(rawTime);
+            const timeStr = timeObj.toLocaleTimeString("en-GB", {
+              hour12: false,
+            });
 
-      const point = {
-        fullTime: rawTime,
-        time: timeStr,
-        ec: latest.log_data?.ec ?? latest.log_data?.ec_ph?.ec ?? null,
-        pc: latest.log_data?.pc ?? latest.log_data?.ec_ph?.ph ?? null,
-        temp:
-          latest.log_data?.temperature ??
-          latest.log_data?.ec_ph?.temperature ??
-          null,
-      };
-      appendPoint(point);
+            return {
+              fullTime: rawTime,
+              time: timeStr,
+              ec: latest.log_data?.ec ?? latest.log_data?.ec_ph?.ec ?? null,
+              pc: latest.log_data?.pc ?? latest.log_data?.ec_ph?.ph ?? null,
+              temp:
+                latest.log_data?.temperature ??
+                latest.log_data?.ec_ph?.temperature ??
+                null,
+            };
+          });
+
+        if (newPoints.length === 0) return prev;
+        const combinedData = [...prev, ...newPoints];
+        return combinedData.slice(-20);
+      });
     } catch (err) {
       setError(err.message || "خطا در دریافت داده نمودار");
     }
   };
 
+  const intervalRef = useRef(null);
+  const isMounted = useRef(false);
+
   useEffect(() => {
+    if (isMounted.current) return;
+    isMounted.current = true;
+
     fetchLatest();
-    const interval = setInterval(fetchLatest, 2000);
-    return () => clearInterval(interval);
+    intervalRef.current = setInterval(fetchLatest, 15000);
+
+    return () => {
+      clearInterval(intervalRef.current);
+    };
   }, []);
 
-  // تابع ساخت آپشن‌های نمودار به صورت پویا
   const getChartOptions = (key, title, color, shape) => {
-    // فیلتر کردن دیتای معتبر برای این کلید خاص
     const validData = data.filter((d) => typeof d[key] === "number");
-
-    // محاسبه Min/Max برای زوم کردن روی تغییرات
     let min = 0;
     let max = 10;
 
@@ -95,7 +388,6 @@ const SlidingWindowChart = () => {
       const values = validData.map((d) => d[key]);
       const dataMin = Math.min(...values);
       const dataMax = Math.max(...values);
-      // اضافه کردن کمی فاصله (Padding) به بالا و پایین اعداد
       const buffer = (dataMax - dataMin) * 0.2 || 1;
       min = dataMin - buffer;
       max = dataMax + buffer;
@@ -103,13 +395,7 @@ const SlidingWindowChart = () => {
 
     return {
       data: validData,
-      // تنظیمات حیاتی برای نمایش در ارتفاع کم
-      padding: {
-        top: 5,
-        right: 15,
-        bottom: 5,
-        left: 5,
-      },
+      padding: { top: 5, right: 15, bottom: 5, left: 5 },
       series: [
         {
           type: "line",
@@ -132,11 +418,9 @@ const SlidingWindowChart = () => {
         {
           type: "category",
           position: "bottom",
-          // مخفی کردن خط و لیبل محور پایین برای تمیزی (چون فضا کم است)
-          // اگر می‌خواهید زمان دیده شود، fontSize را 8 بگذارید
           label: { fontSize: 8, color: "#666" },
           line: { width: 1, color: "#ccc" },
-          gridStyle: [{ stroke: undefined }], // حذف خطوط عمودی گرید
+          gridStyle: [{ stroke: undefined }],
         },
         {
           type: "number",
@@ -144,12 +428,12 @@ const SlidingWindowChart = () => {
           min: min,
           max: max,
           label: { fontSize: 9, color: "#333" },
-          tick: { count: 3 }, // فقط ۳ عدد در محور عمودی نشان بده که شلوغ نشود
+          tick: { count: 3 },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
         },
       ],
-      legend: { enabled: false }, // حذف راهنما چون عنوان داریم
-      background: { visible: false }, // شفافیت پس زمینه
+      legend: { enabled: false },
+      background: { visible: false },
     };
   };
 
@@ -157,7 +441,7 @@ const SlidingWindowChart = () => {
     <Container
       sx={{
         width: "950px",
-        height: "370px", // ارتفاع کلی کانتینر را بیشتر کردیم تا ۳ تا باکس جا شود
+        height: "370px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
@@ -190,16 +474,11 @@ const SlidingWindowChart = () => {
             textColor="black"
             height="15px"
             iconPosition="left"
-            sx={{ marginLeft: "auto", fontSize: "14px" , mt:"-20px" }}
+            sx={{ marginLeft: "auto", fontSize: "14px", mt: "-20px" }}
+            onClick={() => setIsCalibrateOpen(true)}
           />
         </Box>
       </Box>
-
-      {/* {error && (
-        <Alert severity="error" sx={{ width: "90%", mb: 1 }}>
-          {error}
-        </Alert>
-      )} */}
 
       <Box
         sx={{
@@ -226,15 +505,14 @@ const SlidingWindowChart = () => {
           <img src={assets.svg.right} alt="right" style={{ width: "8px" }} />
         </Button>
 
-        {/* Container for the 3 charts */}
         <Box
           sx={{
             width: "860px",
             display: "flex",
             flexDirection: "column",
-            gap: "10px", 
-            mt:"-8px",
-            mr:"-20px",
+            gap: "10px",
+            mt: "-8px",
+            mr: "-20px",
           }}
         >
           {/* EC Chart */}
@@ -332,6 +610,16 @@ const SlidingWindowChart = () => {
           <img src={assets.svg.left} alt="left" style={{ width: "8px" }} />
         </Button>
       </Box>
+
+      {/* مودال کالیبراسیون */}
+      <CalibrationModalContent
+        open={isCalibrateOpen}
+        onClose={() => setIsCalibrateOpen(false)}
+        calibrateTab={calibrateTab}
+        setCalibrateTab={setCalibrateTab}
+        calibrateValues={calibrateValues}
+        setCalibrateValues={setCalibrateValues}
+      />
     </Container>
   );
 };

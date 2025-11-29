@@ -12,6 +12,7 @@ import { styled } from "@mui/system"; // Or '@mui/material/styles'
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 import assets from "../../assets";
 import BuildDetailsModal from "./BuildDetailsModal";
+import StatusModal from "./StatusModal";
 
 const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   minWidth: "unset",
@@ -42,6 +43,22 @@ const PhEcControlCard = ({
     React.useState(false);
   const handleOpenBuildDetailsModal = () => setOpenBuildDetailsModal(true);
   const handleCloseBuildDetailsModal = () => setOpenBuildDetailsModal(false);
+
+  const [openStatusModal, setOpenStatusModal] = React.useState(false);
+
+  const handleOpenStatusModal = () => {
+    console.log("Attempting to open status modal...");
+    setOpenStatusModal(true);
+  };
+  const handleCloseStatusModal = () => setOpenStatusModal(false);
+
+  const statusDetailsData = [
+    { parameter: "پمپ A", status: "روشن" },
+    { parameter: "پمپ B", status: "خاموش" },
+    { parameter: "شیر C", status: "باز" },
+    { parameter: "سنسور pH", status: "فعال" },
+    { parameter: "سنسور EC", status: "خطا" },
+  ];
 
   let fillPercentage = 0;
   if (contents?.max_volume > 0) {
@@ -124,9 +141,9 @@ const PhEcControlCard = ({
               left: -10,
               right: 0,
               bottom: 0,
-              height: `${fillPercentage}%`, 
-              backgroundColor: "#3e7dca", 
-              transition: "height 0.4s ease", 
+              height: `${fillPercentage}%`,
+              backgroundColor: "#3e7dca",
+              transition: "height 0.4s ease",
               zIndex: 1,
               borderRadius: "0 0 15px 15px",
             }}
@@ -134,8 +151,8 @@ const PhEcControlCard = ({
           {/* لایه فلوترها (رو) */}
           <Box
             sx={{
-              position: "relative", 
-              zIndex: 2, 
+              position: "relative",
+              zIndex: 2,
               height: "100%",
               display: "flex",
               flexDirection: "column",
@@ -286,9 +303,8 @@ const PhEcControlCard = ({
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
-                        fontSize:"10px"
+                        fontSize: "10px",
                       },
-                      
                     }}
                   />
                   <TextField
@@ -308,7 +324,7 @@ const PhEcControlCard = ({
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
-                        fontSize:"10px"
+                        fontSize: "10px",
                       },
                     }}
                   />
@@ -415,6 +431,7 @@ const PhEcControlCard = ({
           <Button
             variant="contained"
             startIcon={<InfoIcon sx={{ ml: "8px" }} />}
+            onClick={handleOpenStatusModal}
             sx={{
               backgroundColor: "#A7D9B4",
               color: "#403f3fff",
@@ -434,7 +451,10 @@ const PhEcControlCard = ({
               pl: 1,
             }}
           >
-            <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
+            <Typography
+              fontFamily={"IRANSANS"}
+              sx={{ fontSize: "12px", pointerEvents: "none" }}
+            >
               جزئیات ساخت
             </Typography>
           </Button>
@@ -473,6 +493,12 @@ const PhEcControlCard = ({
         open={openBuildDetailsModal}
         onClose={handleCloseBuildDetailsModal}
         buildDetails={buildDetailsData}
+      />
+      <StatusModal
+        open={openStatusModal}
+        onClose={handleCloseStatusModal}
+        title="جزئیات وضعیت ساخت"
+        details={statusDetailsData}
       />
     </Paper>
   );

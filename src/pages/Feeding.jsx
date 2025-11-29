@@ -1,6 +1,4 @@
 import Control from "../components/feeding/Control";
-import FeedingMixer from "../components/feeding/FeedingMixer";
-import FeedingPlans from "../components/feeding/FeedingPlans";
 import FeedingStatusBar from "../components/feeding/FeedingStatusBar";
 import DailyChart from "../components/feeding/DailyChart";
 import {
@@ -18,8 +16,10 @@ import IconTextButton from "../card/IconTextButton";
 import assets from "../assets";
 import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus } from "../api/dashboardApi";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const Feeding = () => {
+  const navigate = useNavigate()
   const {
     data: mixTankData,
     isLoading,
@@ -31,9 +31,9 @@ const Feeding = () => {
     refetchInterval: 5000,
   });
 
-  const handleHistoryClick = () => console.log("تاریخچه کلیک شد");
+  const handleHistoryClick = () => navigate("/feeding-history");
   const handleAiClick = () => console.log("هوش مصنوعی کلیک شد");
-  const handleSettingsClick = () => console.log("تنظیمات کلیک شد");
+  const handleSettingsClick = () => navigate("/feeding-settings");
 
   const [ecTarget, setEcTarget] = useState(2.1);
 
