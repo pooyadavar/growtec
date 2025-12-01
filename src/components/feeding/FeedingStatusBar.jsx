@@ -14,7 +14,7 @@ import {
 import { TransitionGroup } from "react-transition-group"; // اضافه شده برای مدیریت انیمیشن لیست
 import IconTextButton from "../../card/IconTextButton";
 import assets from "../../assets";
-import { getFoodstuffSchedule, saveFoodstuffSchedule } from "../../api/solubleApi";
+import { getFoodstuffSchedule, saveFoodstuffSchedule, updateFoodstuffSchedule, deleteFoodstuffSchedule } from "../../api/solubleApi";
 import toast from 'react-hot-toast';
 
 // کامپوننت سطر (الان یک کامپوننت کنترل‌شده است و استیت داخلی ندارد)
@@ -237,26 +237,27 @@ const FeedingStatusBar = () => {
     return res;
   };
 
-  useEffect(() => {
-    const fetchSchedule = async () => {
-      try {
-        const response = await getFoodstuffSchedule();
-        const data = response.data || response;
-        if (Array.isArray(data)) {
-          setRawSchedule(data);
-          const formatted = data.map((item) => ({
-            time: item.time,
-            zone: convert(item.zone),
-            type: convert(item.type),
-            volume: convert(item.volume),
-            status: item.is_active ? "فعال" : "غیرفعال",
-          }));
-          setScheduleData(formatted);
-        }
-      } catch (error) {
-        console.error("Failed to fetch schedule", error);
+  const fetchSchedule = async () => {
+    try {
+      const response = await getFoodstuffSchedule();
+      const data = response.data || response;
+      if (Array.isArray(data)) {
+        setRawSchedule(data);
+        const formatted = data.map((item) => ({
+          time: item.time,
+          zone: convert(item.zone),
+          type: convert(item.type),
+          volume: convert(item.volume),
+          status: item.is_active ? "فعال" : "غیرفعال",
+        }));
+        setScheduleData(formatted);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch schedule", error);
+    }
+  };
+
+  useEffect(() => {
     fetchSchedule();
   }, []);
 
@@ -293,9 +294,27 @@ const FeedingStatusBar = () => {
     ]);
   };
 
-  const handleDeleteRow = (idToDelete) => {
-    if (planRows.length <= 1) return;
-    setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
+  const handleDeleteRow = async (idToDelete) => {
+    const isExisting = rawSchedule.some((r) => r.id === idToDelete);
+    if (isExisting) {
+      try {
+        await deleteFoodstuffSchedule(idToDelete);
+        toast.success("ردیف با موفقیت حذف شد");
+        fetchSchedule();
+        // Also update planRows locally to reflect change immediately or wait for fetch?
+        // fetchSchedule updates rawSchedule. But planRows is local state.
+        // I should probably update planRows too or re-init planRows from fetch?
+        // Since modal is open, re-init might lose unsaved changes in OTHER rows?
+        // Safe to just remove from planRows locally too.
+        setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
+      } catch (error) {
+        console.error("Error deleting row:", error);
+        toast.error("خطا در حذف ردیف");
+      }
+    } else {
+      if (planRows.length <= 1) return;
+      setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
+    }
   };
 
   const handleRowChange = (id, field, value) => {
@@ -308,40 +327,59 @@ const FeedingStatusBar = () => {
     return planRows.filter(row => !rawSchedule.some(raw => raw.id === row.id));
   }, [planRows, rawSchedule]);
 
+  const updatedRows = useMemo(() => {
+    return planRows.filter((row) => {
+      const original = rawSchedule.find((raw) => raw.id === row.id);
+      if (!original) return false;
+      return (
+        String(row.zone) !== String(original.zone) ||
+        String(row.type) !== String(original.type) ||
+        String(row.volume) !== String(original.volume) ||
+        row.time !== original.time ||
+        row.isActive !== original.is_active
+      );
+    });
+  }, [planRows, rawSchedule]);
+
   // تابع دکمه ثبت نهایی
   const handleSave = async () => {
-    if (newRows.length === 0) {
+    if (newRows.length === 0 && updatedRows.length === 0) {
       handleModalPlansClose();
       return;
     }
 
-    const payload = newRows.map((row) => ({
-      is_active: row.isActive,
-      status: row.status || 1,
-      zone: row.zone,
-      volume: row.volume,
-      type: row.type,
-      time: row.time,
-    }));
+    const promises = [];
+
+    // POST new rows
+    newRows.forEach((row) => {
+      const payload = {
+        is_active: row.isActive,
+        status: row.status || 1,
+        zone: row.zone,
+        volume: row.volume,
+        type: row.type,
+        time: row.time,
+      };
+      promises.push(saveFoodstuffSchedule(payload));
+    });
+
+    // PUT updated rows
+    updatedRows.forEach((row) => {
+      const payload = {
+        is_active: row.isActive,
+        status: row.status || 1,
+        zone: row.zone,
+        volume: row.volume,
+        type: row.type,
+        time: row.time,
+      };
+      promises.push(updateFoodstuffSchedule(row.id, payload));
+    });
 
     try {
-      await Promise.all(payload.map(item => saveFoodstuffSchedule(item)));
-      
-      // Refresh data
-      const response = await getFoodstuffSchedule();
-      const data = response.data || response;
-      if (Array.isArray(data)) {
-        setRawSchedule(data);
-        const formatted = data.map((item) => ({
-          time: item.time,
-          zone: convert(item.zone),
-          type: convert(item.type),
-          volume: convert(item.volume),
-          status: item.is_active ? "فعال" : "غیرفعال",
-        }));
-        setScheduleData(formatted);
-      }
-      toast.success(newRows.length > 1 ? "ردیف‌های جدید با موفقیت اضافه شدند" : "ردیف جدید با موفقیت اضافه شد");
+      await Promise.all(promises);
+      fetchSchedule();
+      toast.success("تغییرات با موفقیت ثبت شد");
       handleModalPlansClose();
     } catch (error) {
       console.error("Error saving schedule:", error);
@@ -583,7 +621,7 @@ const FeedingStatusBar = () => {
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={newRows.length === 0}
+              disabled={newRows.length === 0 && updatedRows.length === 0}
               sx={{
                 backgroundColor: "#4CAF50", // رنگ سبز برای ثبت
                 "&:hover": { backgroundColor: "#45a049" },

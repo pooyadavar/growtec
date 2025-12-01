@@ -31,3 +31,15 @@ export const getFoodstuffSchedule = async () => {
 export const saveFoodstuffSchedule = async (data) => {
   return apiClient.post('/soluble/foodstuff-preparation-program-schedule/', data);
 };
+
+export const updateFoodstuffSchedule = async (id, data) => {
+  return apiClient.put(`/soluble/foodstuff-preparation-program-schedule/${id}/`, data);
+};
+
+export const deleteFoodstuffSchedule = async (id) => {
+  return apiClient.delete(`/soluble/foodstuff-preparation-program-schedule/${id}/`);
+};
+
+export const getFoodstuffScheduleById = async (id) => {
+  return apiClient.get(`/soluble/foodstuff-preparation-program-schedule/${id}/`);
+};
