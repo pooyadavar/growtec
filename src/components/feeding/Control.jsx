@@ -17,6 +17,7 @@ import assets from "../../assets";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import { makeManualSoluble } from "../../api/solubleApi"; // Import the new API function
+import toast from 'react-hot-toast';
 
 const Control = () => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
@@ -501,10 +502,11 @@ const Control = () => {
                 try {
                   const response = await makeManualSoluble(data);
                   console.log("Manual soluble creation successful:", response);
+                  toast.success('محلول با موفقیت ساخته شد');
                   handleCreateClose();
                 } catch (error) {
                   console.error("Error creating manual soluble:", error);
-                  // Optionally, add error feedback to the user
+                  toast.error('خطا در ساخت محلول');
                 }
               }}
               sx={{

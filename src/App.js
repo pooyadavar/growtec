@@ -5,10 +5,12 @@ import FeedingSettingsPage from "./pages/FeedingSettingsPage";
 import FeedingHistoryPage from "./pages/FeedingHistoryPage";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <div className="App">
+      <Toaster position="top-center" />
             {/* <Navbar /> */}
       {/* <Dashboard /> */}
       {/* <Feeding /> */}
