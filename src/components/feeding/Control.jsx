@@ -16,8 +16,12 @@ import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکم
 import assets from "../../assets";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
-import { makeManualSoluble } from "../../api/solubleApi"; // Import the new API function
-import toast from 'react-hot-toast';
+import {
+  makeManualSoluble,
+  emptyingTank,
+  manualInjection,
+} from "../../api/solubleApi"; // Import the new API function
+import toast from "react-hot-toast";
 
 const Control = () => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
@@ -32,7 +36,13 @@ const Control = () => {
   };
   const [pomp, setPomp] = React.useState(1);
   // ... existing code ...
+  const [injectionType, setInjectionType] = React.useState("stock");
   const [selectedPomp, setSelectedPomp] = React.useState(0);
+  const [injectionVolume, setInjectionVolume] = React.useState(1); // New state for injection volume
+
+  const handleInjectionVolumeChange = (event) => {
+    setInjectionVolume(parseInt(event.target.value, 10));
+  };
 
   const handlePompChange = (event) => {
     // ... existing code ...
@@ -59,6 +69,10 @@ const Control = () => {
     setType(event.target.value);
   };
 
+  const handleInjectionTypeChange = (event) => {
+    setInjectionType(event.target.value);
+  };
+
   const [volume, setVolume] = React.useState(1000); // State for volume
   const handleVolumeChange = (event) => {
     setVolume(parseInt(event.target.value, 10));
@@ -74,15 +88,40 @@ const Control = () => {
   const [injectionOpen, setInjectionOpen] = React.useState(false);
   const handleInjectionClose = () => setInjectionOpen(false);
   const handleInjectionOpen = () => setInjectionOpen(true);
+
+  const [emptyStatusText, setEmptyStatusText] = React.useState("");
+
+  const handleEmptyingSubmit = async () => {
+    let status = "";
+    if (emptyStatusText === "آغاز") status = "start";
+    else if (emptyStatusText === "تمام") status = "finish";
+    else {
+      toast.error("لطفا وضعیت (آغاز یا تمام) را مشخص کنید");
+      return;
+    }
+
+    const data = {
+      status: status,
+      zone: selectedZone,
+    };
+    try {
+      await emptyingTank(data);
+      toast.success(status === "start" ? "تخلیه شروع شد" : "تخلیه پایان یافت");
+      handleClearClose();
+    } catch (error) {
+      console.error("Error in emptying tank:", error);
+      toast.error("خطا در عملیات تخلیه");
+    }
+  };
   return (
     <Container
       disableGutters
       sx={{
         width: "175px",
-        height: "auto", 
+        height: "auto",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
-        padding: "12px 10px", 
+        padding: "12px 10px",
       }}
     >
       {/* استفاده از Stack برای چیدمان عمودی دکمه‌ها با فاصله */}
@@ -198,13 +237,14 @@ const Control = () => {
           <Box
             style={{
               width: "154px",
-              height: "auto", 
+              height: "auto",
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-start",
               gap: 17,
             }}
           >
+            {/* 2. سلکت باکس جدید برای انتخاب نوع (اسید/استوک) */}
             <FormControl
               sx={{
                 width: "154px",
@@ -215,15 +255,15 @@ const Control = () => {
               }}
             >
               <InputLabel
-                id="select-pomp-label-id" 
+                id="select-type-label-id"
                 sx={{
                   color: "#004323",
                   fontFamily: "IRANSANS",
-                  fontSize: "14px", 
+                  fontSize: "14px",
                   lineHeight: "unset",
                 }}
               >
-                دوزینگ پمپ ها
+                نوع
               </InputLabel>
               <Select
                 sx={{
@@ -231,42 +271,100 @@ const Control = () => {
                   fontFamily: "IRANSANS",
                   borderRadius: "10px",
                 }}
-                value={selectedPomp}
-                onChange={handlePompChange}
-                inputProps={{ "aria-label": "Without label" }}
-                labelId="select-pomp-label-id"
-                label="دوزینگ پمپ ها"
-                id="select-pomp"
+                value={injectionType}
+                onChange={handleInjectionTypeChange}
+                labelId="select-type-label-id"
+                label="نوع"
+                id="select-type"
               >
-                <MenuItem value={1} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(1)}
+                <MenuItem value="stock" sx={{ fontFamily: "IRANSANS" }}>
+                  استوک
                 </MenuItem>
-                <MenuItem value={2} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(2)}
-                </MenuItem>
-                <MenuItem value={3} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(3)}
-                </MenuItem>
-                <MenuItem value={4} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(4)}
-                </MenuItem>
-                <MenuItem value={5} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(5)}
-                </MenuItem>
-                <MenuItem value={6} sx={{ fontFamily: "IRANSANS" }}>
-                  {convert(6)}
+                <MenuItem value="acid" sx={{ fontFamily: "IRANSANS" }}>
+                  اسید
                 </MenuItem>
               </Select>
             </FormControl>
 
+            {/* 3. شرط نمایش دوزینگ پمپ: فقط اگر استوک انتخاب شده باشد نشان بده */}
+            {injectionType === "stock" && (
+              <FormControl
+                sx={{
+                  width: "154px",
+                  height: "40px",
+                  color: "#004323",
+                  borderRadius: "10px",
+                  fontFamily: "IRANSANS",
+                }}
+              >
+                <InputLabel
+                  id="select-pomp-label-id"
+                  sx={{
+                    color: "#004323",
+                    fontFamily: "IRANSANS",
+                    fontSize: "14px",
+                    lineHeight: "unset",
+                  }}
+                >
+                  شماره دوزینگ پمپ
+                </InputLabel>
+                <Select
+                  sx={{
+                    height: "40px",
+                    fontFamily: "IRANSANS",
+                    borderRadius: "10px",
+                  }}
+                  value={selectedPomp}
+                  onChange={handlePompChange}
+                  inputProps={{ "aria-label": "Without label" }}
+                  labelId="select-pomp-label-id"
+                  label="شماره دوزینگ پمپ"
+                  id="select-pomp"
+                >
+                  <MenuItem value={1} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(1)}
+                  </MenuItem>
+                  <MenuItem value={2} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(2)}
+                  </MenuItem>
+                  <MenuItem value={3} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(3)}
+                  </MenuItem>
+                  <MenuItem value={4} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(4)}
+                  </MenuItem>
+                  <MenuItem value={5} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(5)}
+                  </MenuItem>
+                  <MenuItem value={6} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(6)}
+                  </MenuItem>
+                  <MenuItem value={7} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(7)}
+                  </MenuItem>
+                  <MenuItem value={8} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(8)}
+                  </MenuItem>
+                  <MenuItem value={9} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(9)}
+                  </MenuItem>
+                  <MenuItem value={10} sx={{ fontFamily: "IRANSANS" }}>
+                    {convert(10)}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            )}
+
             <input
-              id="volume-input-injection" // [اصلاح شد] - ID باید منحصر به فرد باشد
+              id="volume-input-injection"
               type="number"
               placeholder="حجم"
               min={1}
               max={10}
+              value={injectionVolume}
+              onChange={handleInjectionVolumeChange}
               style={{
-                paddingRight: "8px", // [اصلاح شد]
+                paddingRight: "8px",
                 width: "154px",
                 height: "40px",
                 color: "#1e1e1e",
@@ -274,13 +372,36 @@ const Control = () => {
                 borderRadius: "10px",
                 border: "0.5px solid #9F9F9F",
                 fontFamily: "IRANSANS",
-                boxSizing: "border-box", // [جدید]
+                boxSizing: "border-box",
               }}
             ></input>
 
-            {/* [اصلاح شد] - تبدیل به دکمه MUI */}
             <Button
               variant="contained"
+              onClick={async () => {
+                const data = {
+                  dosing_pump: injectionType, // "stock" or "acid"
+                  volume: injectionVolume,
+                };
+
+                // Only add dosing_pump_number if injectionType is 'stock'
+                if (injectionType === "stock") {
+                  data.dosing_pump_number = selectedPomp;
+                } else {
+                  // If 'acid' is selected, ensure dosing_pump_number is not sent or is null
+                  // Depending on backend, either omit or set to null/0. Omitting is generally safer.
+                }
+
+                try {
+                  const response = await manualInjection(data);
+                  console.log("Manual injection successful:", response);
+                  toast.success("تزریق دستی با موفقیت انجام شد");
+                  handleInjectionClose();
+                } catch (error) {
+                  console.error("Error during manual injection:", error);
+                  toast.error("خطا در تزریق دستی");
+                }
+              }}
               sx={{
                 width: "154px",
                 height: "40px",
@@ -292,7 +413,7 @@ const Control = () => {
                 fontSize: 18,
                 boxShadow: "none",
                 "&:hover": {
-                  backgroundColor: "#a0eed0", // رنگ هاور ملایم
+                  backgroundColor: "#a0eed0",
                 },
               }}
             >
@@ -502,11 +623,11 @@ const Control = () => {
                 try {
                   const response = await makeManualSoluble(data);
                   console.log("Manual soluble creation successful:", response);
-                  toast.success('محلول با موفقیت ساخته شد');
+                  toast.success("محلول با موفقیت ساخته شد");
                   handleCreateClose();
                 } catch (error) {
                   console.error("Error creating manual soluble:", error);
-                  toast.error('خطا در ساخت محلول');
+                  toast.error("خطا در ساخت محلول");
                 }
               }}
               sx={{
@@ -548,16 +669,16 @@ const Control = () => {
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
             backgroundColor: "#FFFFFF",
-            width: "280px", 
+            width: "280px",
             height: "auto",
             boxShadow: 24,
             padding: "16px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 2.5, 
+            gap: 2.5,
             fontFamily: "IRANSANS",
-            p:3,
+            p: 3,
           }}
           className="modalBox"
         >
@@ -602,6 +723,8 @@ const Control = () => {
             >
               <TextField
                 variant="outlined"
+                value={emptyStatusText}
+                onChange={(e) => setEmptyStatusText(e.target.value)}
                 sx={{
                   width: "calc(100% - 40px)", // عرض تطبیقی
                   height: "50px",
@@ -614,19 +737,23 @@ const Control = () => {
               />
               <Stack spacing={0.25}>
                 <CheckCircleOutlineIcon
+                  onClick={() => setEmptyStatusText("آغاز")}
                   sx={{
                     color: "green",
                     fontSize: "22px",
                     border: "1px solid #E0E0E0",
                     borderRadius: "5px",
+                    cursor: "pointer",
                   }}
                 />
                 <HighlightOffIcon
+                  onClick={() => setEmptyStatusText("تمام")}
                   sx={{
                     color: "red",
                     fontSize: "22px",
                     border: "1px solid #E0E0E0",
                     borderRadius: "5px",
+                    cursor: "pointer",
                   }}
                 />
               </Stack>
@@ -686,6 +813,7 @@ const Control = () => {
             {/* ردیف سوم: دکمه تخلیه */}
             <Button
               variant="outlined" // دکمه فقط با کادر
+              onClick={handleEmptyingSubmit}
               sx={{
                 width: "100%",
                 height: "56px",
@@ -694,7 +822,7 @@ const Control = () => {
                 borderRadius: "10px",
                 border: "1px solid #9F9F9F",
                 fontFamily: "IRANSANS",
-                fontSize: 18,   
+                fontSize: 18,
                 "&:hover": {
                   backgroundColor: "#F5F5F5",
                   border: "1px solid #000000",
