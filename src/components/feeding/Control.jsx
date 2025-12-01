@@ -20,6 +20,9 @@ import {
   makeManualSoluble,
   emptyingTank,
   manualInjection,
+  controlMixer,
+  controlStocksMixer,
+  emergencyStop, // Import the new API function
 } from "../../api/solubleApi"; // Import the new API function
 import toast from "react-hot-toast";
 
@@ -43,6 +46,10 @@ const Control = () => {
   const handleInjectionVolumeChange = (event) => {
     setInjectionVolume(parseInt(event.target.value, 10));
   };
+
+  // Toggle states for buttons
+  const [isMixerOn, setIsMixerOn] = React.useState(false);
+  const [isHemzanOn, setIsHemzanOn] = React.useState(false);
 
   const handlePompChange = (event) => {
     // ... existing code ...
@@ -154,8 +161,20 @@ const Control = () => {
           text="میکسر"
           icon={assets.svg.mixericon}
           iconPosition="left"
-          onClick={() => {
-            /* منطق میکسر */
+          bgColor={isMixerOn ? "#B8FFDD" : "#FFFFFF"}
+          textColor={isMixerOn ? "#004323" : "#1E1E1E"}
+          borderColor={isMixerOn ? "#004323" : "#E0E0E0"}
+          onClick={async () => {
+            const newStatus = isMixerOn ? "off" : "on";
+            const data = { status: newStatus };
+            try {
+              await controlMixer(data);
+              setIsMixerOn(!isMixerOn); // Toggle state only on success
+              toast.success(`میکسر ${newStatus === "on" ? "روشن شد" : "خاموش شد"}`);
+            } catch (error) {
+              console.error("Error controlling mixer:", error);
+              toast.error("خطا در کنترل میکسر");
+            }
           }}
           width="120px"
         />
@@ -164,8 +183,20 @@ const Control = () => {
           text="همزن"
           icon={assets.svg.clockicon}
           iconPosition="left"
-          onClick={() => {
-            /* منطق همزن */
+          bgColor={isHemzanOn ? "#B8FFDD" : "#FFFFFF"}
+          textColor={isHemzanOn ? "#004323" : "#1E1E1E"}
+          borderColor={isHemzanOn ? "#004323" : "#E0E0E0"}
+          onClick={async () => {
+            const newStatus = isHemzanOn ? "off" : "on";
+            const data = { status: newStatus };
+            try {
+              await controlStocksMixer(data);
+              setIsHemzanOn(!isHemzanOn); // Toggle state only on success
+              toast.success(`همزن ${newStatus === "on" ? "روشن شد" : "خاموش شد"}`);
+            } catch (error) {
+              console.error("Error controlling stocks mixer:", error);
+              toast.error("خطا در کنترل همزن");
+            }
           }}
           width="120px"
         />
@@ -177,8 +208,14 @@ const Control = () => {
           bgColor="#FED9D9"
           textColor="#CC0000"
           borderColor="#CC0000"
-          onClick={() => {
-            /* منطق توقف */
+          onClick={async () => {
+            try {
+              await emergencyStop();
+              toast.success("توقف اضطراری ارسال شد");
+            } catch (error) {
+              console.error("Error executing emergency stop:", error);
+              toast.error("خطا در توقف اضطراری");
+            }
           }}
           width="120px"
         />

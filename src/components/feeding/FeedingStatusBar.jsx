@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Paper,
   Typography,
@@ -14,13 +14,8 @@ import {
 import { TransitionGroup } from "react-transition-group"; // اضافه شده برای مدیریت انیمیشن لیست
 import IconTextButton from "../../card/IconTextButton";
 import assets from "../../assets";
-
-// داده‌های نمایشی برای لیست اصلی (بیرون مودال)
-const scheduleData = [
-  { time: "۰۰:۰۰:۰۰", zone: "۱", type: "A", volume: "۵۰", status: "فعال" },
-  { time: "۰۰:۰۰:۰۰", zone: "۱", type: "B", volume: "۳۰", status: "غیرفعال" },
-  { time: "۰۰:۰۰:۰۰", zone: "۱", type: "A", volume: "۲۰", status: "فعال" },
-];
+import { getFoodstuffSchedule, saveFoodstuffSchedule } from "../../api/solubleApi";
+import toast from 'react-hot-toast';
 
 // کامپوننت سطر (الان یک کامپوننت کنترل‌شده است و استیت داخلی ندارد)
 const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert }) => {
@@ -228,11 +223,62 @@ const FeedingStatusBar = () => {
       isActive: false,
     },
   ]);
+  const [scheduleData, setScheduleData] = useState([]);
+  const [rawSchedule, setRawSchedule] = useState([]);
 
-  const handleModalPlansOpen = () => setModalPlans(true);
+  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
+  const convert = (num) => {
+    if (num === undefined || num === null) return "";
+    let res = "";
+    const str = num.toString();
+    for (let c of str) {
+      res += numbers.charAt(c) || c;
+    }
+    return res;
+  };
+
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      try {
+        const response = await getFoodstuffSchedule();
+        const data = response.data || response;
+        if (Array.isArray(data)) {
+          setRawSchedule(data);
+          const formatted = data.map((item) => ({
+            time: item.time,
+            zone: convert(item.zone),
+            type: convert(item.type),
+            volume: convert(item.volume),
+            status: item.is_active ? "فعال" : "غیرفعال",
+          }));
+          setScheduleData(formatted);
+        }
+      } catch (error) {
+        console.error("Failed to fetch schedule", error);
+      }
+    };
+    fetchSchedule();
+  }, []);
+
+  // Define handlers before usage
   const handleModalPlansClose = () => setModalPlans(false);
 
-  // اضافه کردن سطر جدید با مقادیر خالی
+  const handleModalPlansOpen = () => {
+    if (rawSchedule.length > 0) {
+      const rows = rawSchedule.map((item) => ({
+        id: item.id || crypto.randomUUID(),
+        zone: item.zone,
+        type: item.type,
+        time: item.time,
+        volume: item.volume,
+        isActive: item.is_active,
+        status: item.status,
+      }));
+      setPlanRows(rows);
+    }
+    setModalPlans(true);
+  };
+
   const handleAddRow = () => {
     setPlanRows((prevRows) => [
       ...prevRows,
@@ -247,37 +293,63 @@ const FeedingStatusBar = () => {
     ]);
   };
 
-  // حذف سطر
   const handleDeleteRow = (idToDelete) => {
     if (planRows.length <= 1) return;
     setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
   };
 
-  // آپدیت کردن مقادیر هر سطر در استیت پدر
   const handleRowChange = (id, field, value) => {
     setPlanRows((prevRows) =>
       prevRows.map((row) => (row.id === id ? { ...row, [field]: value } : row))
     );
   };
 
+  const newRows = useMemo(() => {
+    return planRows.filter(row => !rawSchedule.some(raw => raw.id === row.id));
+  }, [planRows, rawSchedule]);
+
   // تابع دکمه ثبت نهایی
-  const handleSave = () => {
-    console.log("داده‌های نهایی برای ارسال به بکند:", planRows);
-    // اینجا می‌توانید عملیات ارسال به سرور را انجام دهید
-    handleModalPlansClose();
-  };
-
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
+  const handleSave = async () => {
+    if (newRows.length === 0) {
+      handleModalPlansClose();
+      return;
     }
-    return res;
+
+    const payload = newRows.map((row) => ({
+      is_active: row.isActive,
+      status: row.status || 1,
+      zone: row.zone,
+      volume: row.volume,
+      type: row.type,
+      time: row.time,
+    }));
+
+    try {
+      await Promise.all(payload.map(item => saveFoodstuffSchedule(item)));
+      
+      // Refresh data
+      const response = await getFoodstuffSchedule();
+      const data = response.data || response;
+      if (Array.isArray(data)) {
+        setRawSchedule(data);
+        const formatted = data.map((item) => ({
+          time: item.time,
+          zone: convert(item.zone),
+          type: convert(item.type),
+          volume: convert(item.volume),
+          status: item.is_active ? "فعال" : "غیرفعال",
+        }));
+        setScheduleData(formatted);
+      }
+      toast.success(newRows.length > 1 ? "ردیف‌های جدید با موفقیت اضافه شدند" : "ردیف جدید با موفقیت اضافه شد");
+      handleModalPlansClose();
+    } catch (error) {
+      console.error("Error saving schedule:", error);
+      toast.error("خطا در ذخیره سازی برنامه");
+    }
   };
 
-  // رندرهای نمایشی جدول اصلی (بدون تغییر)
+  // رندرهای نمایشی جدول اصلی
   const renderScheduleRow = (row, index) => (
     <Box
       key={index}
@@ -343,7 +415,7 @@ const FeedingStatusBar = () => {
       <Paper
         elevation={3}
         sx={{
-          /* استایل‌های قبلی Paper */ width: 240,
+          width: 240,
           height: "auto",
           backgroundColor: "#FFFFFF",
           borderRadius: "10px",
@@ -354,11 +426,10 @@ const FeedingStatusBar = () => {
           alignItems: "center",
         }}
       >
-        {/* ... محتوای جدول اصلی همانند قبل ... */}
         <Box
           sx={{
             width: "100%",
-            maxHeight: "200px",
+            maxHeight: "180px", // Adjusted for 3 rows
             overflowY: "auto",
             paddingRight: "8px",
           }}
@@ -512,6 +583,7 @@ const FeedingStatusBar = () => {
             <Button
               variant="contained"
               onClick={handleSave}
+              disabled={newRows.length === 0}
               sx={{
                 backgroundColor: "#4CAF50", // رنگ سبز برای ثبت
                 "&:hover": { backgroundColor: "#45a049" },
