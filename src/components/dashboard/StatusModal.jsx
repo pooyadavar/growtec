@@ -1,14 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
   Typography,
   IconButton,
   Modal,
-  // Container, // این ایمپورت دیگر نیاز نیست
 } from "@mui/material";
 import { styled } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
+import { getMixTankStatus } from "../../api/solubleApi";
 
 const modalStyle = {
   position: "absolute",
@@ -25,7 +25,7 @@ const modalStyle = {
   flexDirection: "column",
   maxHeight: "90vh",
   direction: "rtl",
-  outline: "none", // حذف خط دور آبی هنگام فوکوس
+  outline: "none", 
 };
 
 const HeaderBox = styled(Paper)(({ theme }) => ({
@@ -52,7 +52,35 @@ const DataCell = styled(Box)(({ theme }) => ({
   textAlign: "center",
 }));
 
-const StatusModal = ({ open, onClose, title, details }) => {
+const FIELD_TRANSLATIONS = {
+  stock_injection_volume: "حجم تزریق استوک",
+  acid_injection_volume: "حجم تزریق اسید",
+  stock_injection_count: "تعداد تزریق استوک",
+  acid_injection_count: "تعداد تزریق اسید",
+};
+
+const StatusModal = ({ open, onClose, title }) => {
+  const [details, setDetails] = useState([]);
+
+  useEffect(() => {
+    if (open) {
+      const fetchData = async () => {
+        try {
+          const response = await getMixTankStatus();
+          const data = response.detail || {}; 
+          const formatted = Object.entries(data).map(([key, value]) => ({
+            name: FIELD_TRANSLATIONS[key] || key,
+            value: value,
+          }));
+          setDetails(formatted);
+        } catch (error) {
+          console.error("Failed to fetch mix tank status", error);
+        }
+      };
+      fetchData();
+    }
+  }, [open]);
+
   return (
     <Modal
       open={open}
@@ -60,7 +88,6 @@ const StatusModal = ({ open, onClose, title, details }) => {
       aria-labelledby="status-modal-title"
       aria-describedby="status-modal-description"
     >
-      {/* Container را حذف کردیم تا Box فرزند مستقیم باشد */}
       <Box sx={modalStyle}>
         {/* Modal Header */}
         <Box
@@ -122,17 +149,17 @@ const StatusModal = ({ open, onClose, title, details }) => {
                   alignItems: "center",
                 }}
               >
-                {/* Status Cell */}
+                {/* Status Cell (Name) */}
                 <DataCell>
                   <Typography fontFamily={"IRANSANS"} fontSize="12px">
-                    {item.status}
+                    {item.name}
                   </Typography>
                 </DataCell>
 
-                {/* Parameter Cell */}
+                {/* Parameter Cell (Value) */}
                 <DataCell>
                   <Typography fontFamily={"IRANSANS"} fontSize="12px">
-                    {item.parameter}
+                    {item.value}
                   </Typography>
                 </DataCell>
               </Box>

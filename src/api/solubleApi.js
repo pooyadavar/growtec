@@ -43,3 +43,7 @@ export const deleteFoodstuffSchedule = async (id) => {
 export const getFoodstuffScheduleById = async (id) => {
   return apiClient.get(`/soluble/foodstuff-preparation-program-schedule/${id}/`);
 };
+
+export const getMixTankStatus = async () => {
+  return apiClient.get('/soluble/mix-tank-status/');
+};
