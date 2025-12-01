@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -12,6 +12,7 @@ import {
 import { styled } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
 import assets from "../../assets"; 
+import { getFoodstuffSchedule } from "../../api/solubleApi";
 
 const modalStyle = {
   position: "absolute",
@@ -62,15 +63,41 @@ const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
 const StatusBox = styled(Box)(({ theme, status }) => ({
   height: "40px",
   width: "100%",
-  border: status === "success" ? "1px solid #4CAF50" : "1px solid #F44336",
+  border: status === 3 ? "1px solid #4CAF50" : "1px solid #F44336",
   borderRadius: "8px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  backgroundColor: status === "success" ? "#E8F5E9" : "#FFEBEE",
+  backgroundColor: status === 3 ? "#E8F5E9" : "#FFEBEE",
 }));
 
-const BuildDetailsModal = ({ open, onClose, buildDetails }) => {
+const BuildDetailsModal = ({ open, onClose }) => {
+  const [details, setDetails] = useState([]);
+
+  useEffect(() => {
+    if (open) {
+      const fetchData = async () => {
+        try {
+          const response = await getFoodstuffSchedule();
+          const data = response.data || response;
+          if (Array.isArray(data)) {
+            const formatted = data.map((item) => ({
+              time: item.time,
+              tank: item.zone,
+              type: item.type,
+              volume: item.volume,
+              status: item.status,
+            }));
+            setDetails(formatted);
+          }
+        } catch (error) {
+          console.error("Failed to fetch schedule", error);
+        }
+      };
+      fetchData();
+    }
+  }, [open]);
+
   return (
     <Modal
       open={open}
@@ -134,8 +161,8 @@ const BuildDetailsModal = ({ open, onClose, buildDetails }) => {
               pr: "4px",
             }}
           >
-            {buildDetails && buildDetails.length > 0 ? (
-              buildDetails.map((detail, index) => (
+            {details && details.length > 0 ? (
+              details.map((detail, index) => (
                 <Box
                   key={index}
                   sx={{
@@ -151,7 +178,7 @@ const BuildDetailsModal = ({ open, onClose, buildDetails }) => {
                   {/* سلول وضعیت (باکس آیکون) */}
                   <DataCell isStatus={true}>
                     <StatusBox status={detail.status}>
-                      {detail.status === "success" ? (
+                      {detail.status === 3 ? (
                         <img
                           src={assets.svg.tike}
                           alt="success"
