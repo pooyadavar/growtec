@@ -18,7 +18,7 @@ import { getFoodstuffSchedule, saveFoodstuffSchedule, updateFoodstuffSchedule, d
 import toast from 'react-hot-toast';
 
 // کامپوننت سطر (الان یک کامپوننت کنترل‌شده است و استیت داخلی ندارد)
-const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert }) => {
+const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew }) => {
   const [isChanging, setIsChanging] = useState(false);
 
   // هندل کردن تغییر وضعیت دکمه
@@ -38,6 +38,12 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert }) => {
         justifyContent: "space-around",
         alignItems: "center",
         paddingBottom: "10px",
+        backgroundColor: isNew ? "#E3F2FD" : "transparent",
+        borderRadius: "8px",
+        paddingTop: isNew ? "10px" : "0",
+        marginBottom: isNew ? "10px" : "0",
+        border: isNew ? "1px dashed #2196F3" : "none",
+        transition: "all 0.3s ease",
       }}
     >
       <Box sx={{ width: "100px" }}>
@@ -282,7 +288,6 @@ const FeedingStatusBar = () => {
 
   const handleAddRow = () => {
     setPlanRows((prevRows) => [
-      ...prevRows,
       {
         id: crypto.randomUUID(),
         zone: "",
@@ -291,6 +296,7 @@ const FeedingStatusBar = () => {
         volume: "",
         isActive: false,
       },
+      ...prevRows,
     ]);
   };
 
@@ -589,7 +595,9 @@ const FeedingStatusBar = () => {
             >
               {/* استفاده از TransitionGroup برای انیمیشن لیست */}
               <TransitionGroup>
-                {planRows.map((row) => (
+                {planRows.map((row) => {
+                   const isNew = !rawSchedule.some((raw) => raw.id === row.id);
+                   return (
                   <Collapse key={row.id}>
                     <PlanRow
                       id={row.id}
@@ -598,9 +606,10 @@ const FeedingStatusBar = () => {
                       onDelete={() => handleDeleteRow(row.id)}
                       canBeDeleted={planRows.length > 1}
                       convert={convert}
+                      isNew={isNew}
                     />
                   </Collapse>
-                ))}
+                )})}
               </TransitionGroup>
             </Box>
           </div>
