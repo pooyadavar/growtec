@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   Container,
   Box,
@@ -8,14 +8,23 @@ import {
   TextField,
   IconButton,
 } from "@mui/material";
-import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { AgCharts } from "ag-charts-react";
 import assets from "../../assets";
 import IconTextButton from "../../card/IconTextButton";
 import apiClient from "../../api/apiClient";
 
-// --- کامپوننت مودال کالیبراسیون (طراحی جدید) ---
+const SENSORS = [
+  { id: 1, name: "سنسور شماره ۱" },
+  { id: 2, name: "سنسور شماره ۲" },
+  { id: 3, name: "سنسور شماره ۳" },
+  { id: 4, name: "سنسور شماره ۴" },
+  { id: 5, name: "سنسور شماره ۵" },
+];
+
+// --- کامپوننت مودال کالیبراسیون ---
 const CalibrationModalContent = ({
   open,
   onClose,
@@ -23,6 +32,7 @@ const CalibrationModalContent = ({
   setCalibrateTab,
   calibrateValues,
   setCalibrateValues,
+  sensorName,
 }) => {
   return (
     <Modal open={open} onClose={onClose}>
@@ -41,16 +51,17 @@ const CalibrationModalContent = ({
           fontFamily: "IRANSANS",
         }}
       >
-        {/* هدر: تب‌ها و دکمه بستن */}
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
-            mb: 0,
+            alignItems: "center",
+            mb: 2,
           }}
         >
-          {/* دکمه بستن */}
+          <Typography fontFamily="IRANSANS" fontWeight="bold" fontSize={16}>
+            کالیبراسیون: {sensorName}
+          </Typography>
           <IconButton
             onClick={onClose}
             sx={{
@@ -63,48 +74,41 @@ const CalibrationModalContent = ({
           >
             <CloseIcon sx={{ fontSize: "18px" }} />
           </IconButton>
-          {/* تب‌ها */}
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              onClick={() => setCalibrateTab("ec")}
-              sx={{
-                bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
-                color: "#000",
-                borderRadius: "10px 10px 0 0",
-                px: 3,
-                py: 0.5,
-                minWidth: "unset",
-                fontWeight: "bold",
-                boxShadow: "0px -2px 5px rgba(0,0,0,0.05)",
-                "&:hover": {
-                  bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
-                },
-              }}
-            >
-              EC
-            </Button>
-            <Button
-              onClick={() => setCalibrateTab("ph")}
-              sx={{
-                bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
-                color: "#000",
-                borderRadius: "10px 10px 0 0",
-                px: 3,
-                py: 0.5,
-                minWidth: "unset",
-                fontWeight: "bold",
-                boxShadow: "0px -2px 5px rgba(0,0,0,0.05)",
-                "&:hover": {
-                  bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
-                },
-              }}
-            >
-              pH
-            </Button>
-          </Box>
         </Box>
-
-        {/* کانتینر اصلی سفید */}
+        <Box sx={{ display: "flex", gap: 1, mb: 0 }}>
+          <Button
+            onClick={() => setCalibrateTab("ec")}
+            sx={{
+              bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
+              color: "#000",
+              borderRadius: "10px 10px 0 0",
+              px: 3,
+              py: 0.5,
+              fontWeight: "bold",
+              "&:hover": {
+                bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
+              },
+            }}
+          >
+            EC
+          </Button>
+          <Button
+            onClick={() => setCalibrateTab("ph")}
+            sx={{
+              bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
+              color: "#000",
+              borderRadius: "10px 10px 0 0",
+              px: 3,
+              py: 0.5,
+              fontWeight: "bold",
+              "&:hover": {
+                bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
+              },
+            }}
+          >
+            pH
+          </Button>
+        </Box>
         <Box
           sx={{
             bgcolor: "#FFFFFF",
@@ -113,28 +117,24 @@ const CalibrationModalContent = ({
             boxShadow: "0px 2px 10px rgba(0,0,0,0.05)",
           }}
         >
-          {/* باکس نمودار/وضعیت */}
           <Box
             sx={{
               width: "100%",
               height: "120px",
-              border: "3px solid #66bb6a", // کادر سبز
+              border: "3px solid #66bb6a",
               borderRadius: "10px",
               mb: 4,
               bgcolor: "#fff",
             }}
           />
-
-          {/* بخش ورودی‌ها */}
           <Box
             sx={{
               display: "flex",
               justifyContent: "space-around",
               alignItems: "flex-start",
-              flexDirection: "row-reverse", // راست به چپ
+              flexDirection: "row-reverse",
             }}
           >
-            {/* ستون سمت راست (بالا) */}
             <Box
               sx={{
                 display: "flex",
@@ -147,7 +147,6 @@ const CalibrationModalContent = ({
               <Typography fontFamily="IRANSANS" color="#555">
                 {calibrateTab === "ec" ? "EC بالا" : "pH بالا"}
               </Typography>
-
               <TextField
                 variant="outlined"
                 size="small"
@@ -165,51 +164,23 @@ const CalibrationModalContent = ({
                 }
                 sx={{
                   width: "100%",
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "10px",
-                    bgcolor: "#fff",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                    "& fieldset": { border: "1px solid #ccc" },
-                  },
                   "& input": { textAlign: "center", fontFamily: "IRANSANS" },
+                  "& .MuiOutlinedInput-root": { borderRadius: "10px" },
                 }}
               />
-
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}
+              <Button
+                variant="contained"
+                sx={{
+                  bgcolor: "#FFCB82",
+                  color: "#000",
+                  fontFamily: "IRANSANS",
+                  borderRadius: "10px",
+                  "&:hover": { bgcolor: "#ffb74d" },
+                }}
               >
-                <Button
-                  variant="contained"
-                  sx={{
-                    bgcolor: "#FFCB82",
-                    color: "#000",
-                    fontFamily: "IRANSANS",
-                    borderRadius: "10px",
-                    boxShadow: "none",
-                    minWidth: "80px",
-                    "&:hover": { bgcolor: "#ffb74d" },
-                  }}
-                >
-                  تایید
-                </Button>
-                <Box
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    bgcolor: "#81c784",
-                    borderRadius: "5px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                  }}
-                >
-                  <CheckIcon />
-                </Box>
-              </Box>
+                تایید
+              </Button>
             </Box>
-
-            {/* ستون سمت چپ (پایین) */}
             <Box
               sx={{
                 display: "flex",
@@ -222,7 +193,6 @@ const CalibrationModalContent = ({
               <Typography fontFamily="IRANSANS" color="#555">
                 {calibrateTab === "ec" ? "EC پایین" : "pH پایین"}
               </Typography>
-
               <TextField
                 variant="outlined"
                 size="small"
@@ -239,48 +209,22 @@ const CalibrationModalContent = ({
                 }
                 sx={{
                   width: "100%",
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "10px",
-                    bgcolor: "#fff",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                    "& fieldset": { border: "1px solid #ccc" },
-                  },
                   "& input": { textAlign: "center", fontFamily: "IRANSANS" },
+                  "& .MuiOutlinedInput-root": { borderRadius: "10px" },
                 }}
               />
-
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}
+              <Button
+                variant="contained"
+                sx={{
+                  bgcolor: "#FFCB82",
+                  color: "#000",
+                  fontFamily: "IRANSANS",
+                  borderRadius: "10px",
+                  "&:hover": { bgcolor: "#ffb74d" },
+                }}
               >
-                <Button
-                  variant="contained"
-                  sx={{
-                    bgcolor: "#FFCB82",
-                    color: "#000",
-                    fontFamily: "IRANSANS",
-                    borderRadius: "10px",
-                    boxShadow: "none",
-                    minWidth: "80px",
-                    "&:hover": { bgcolor: "#ffb74d" },
-                  }}
-                >
-                  تایید
-                </Button>
-                <Box
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    bgcolor: "#81c784",
-                    borderRadius: "5px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                  }}
-                >
-                  <CheckIcon />
-                </Box>
-              </Box>
+                تایید
+              </Button>
             </Box>
           </Box>
         </Box>
@@ -289,22 +233,13 @@ const CalibrationModalContent = ({
   );
 };
 
-// --- کامپوننت اصلی نمودار ---
-const SlidingWindowChart = () => {
+// --- آیتم تکی نمودار ---
+const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
   const [data, setData] = useState([]);
-  const [error, setError] = useState(null);
-  const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
-  const [calibrateTab, setCalibrateTab] = useState("ec");
-  const [calibrateValues, setCalibrateValues] = useState({
-    ecLow: "54",
-    ecHigh: "1500",
-    phLow: "",
-    phHigh: "",
-  });
 
   const chartBoxStyle = {
-    width: "100%",
-    height: "80px",
+    width: "98%",
+    height: "100px",
     backgroundColor: "#fff",
     borderRadius: "12px",
     border: "0.5px solid #9F9F9F",
@@ -315,23 +250,30 @@ const SlidingWindowChart = () => {
     px: 1.5,
     overflow: "hidden",
     pt: 1,
+    
   };
 
-  const fetchLatest = async () => {
+  const fetchLatest = useCallback(async () => {
     try {
-      setError(null);
-      const response = await apiClient.post("/log/soluble/mix-tank-status/", {
-        limit: 50,
+      const response = await apiClient.post("/log/soluble/ec-ph-temperature/", {
+        sensor_number: sensor.id,
+        limit: 100,
       });
+
       const array = Array.isArray(response) ? response : response.results || [];
       if (!array.length) return;
 
       setData((prev) => {
+        const sortedArray = [...array].sort(
+          (a, b) => new Date(a.log_date_time) - new Date(b.log_date_time)
+        );
+
         const lastPointTime =
           prev.length > 0 ? prev[prev.length - 1].fullTime : null;
 
-        const newPoints = array
+        const newPoints = sortedArray
           .filter((item) => {
+            if (item.log_data.sensot_number !== sensor.id) return false;
             if (!item.log_date_time) return false;
             if (!lastPointTime) return true;
             return new Date(item.log_date_time) > new Date(lastPointTime);
@@ -339,51 +281,44 @@ const SlidingWindowChart = () => {
           .map((latest) => {
             const rawTime = latest.log_date_time;
             const timeObj = new Date(rawTime);
-            const timeStr = timeObj.toLocaleTimeString("en-GB", {
-              hour12: false,
-            });
-
             return {
               fullTime: rawTime,
-              time: timeStr,
-              ec: latest.log_data?.ec ?? latest.log_data?.ec_ph?.ec ?? null,
-              pc: latest.log_data?.pc ?? latest.log_data?.ec_ph?.ph ?? null,
-              temp:
-                latest.log_data?.temperature ??
-                latest.log_data?.ec_ph?.temperature ??
-                null,
+              dateObj: timeObj,
+              time: rawTime.split(" ")[1],
+              ec: latest.log_data.ec,
+              pc: latest.log_data.ph,
+              temp: latest.log_data.temperature,
             };
           });
 
         if (newPoints.length === 0) return prev;
         const combinedData = [...prev, ...newPoints];
-        return combinedData.slice(-20);
+        
+        if (isActive && combinedData.length > 0) {
+            onTimeUpdate(combinedData[combinedData.length - 1].time);
+        }
+        
+        return combinedData;
       });
     } catch (err) {
-      setError(err.message || "خطا در دریافت داده نمودار");
+      console.error(`Fetch Error Sensor ${sensor.id}:`, err);
     }
-  };
-
-  const intervalRef = useRef(null);
-  const isMounted = useRef(false);
+  }, [sensor.id, isActive, onTimeUpdate]);
 
   useEffect(() => {
-    if (isMounted.current) return;
-    isMounted.current = true;
-
     fetchLatest();
-    intervalRef.current = setInterval(fetchLatest, 15000);
-
+    let interval = null;
+    if (isActive) {
+        interval = setInterval(fetchLatest, 5000);
+    }
     return () => {
-      clearInterval(intervalRef.current);
+      if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [isActive, fetchLatest]);
 
   const getChartOptions = (key, title, color, shape) => {
     const validData = data.filter((d) => typeof d[key] === "number");
-    let min = 0;
-    let max = 10;
-
+    let min = 0, max = 10;
     if (validData.length > 0) {
       const values = validData.map((d) => d[key]);
       const dataMin = Math.min(...values);
@@ -392,226 +327,230 @@ const SlidingWindowChart = () => {
       min = dataMin - buffer;
       max = dataMax + buffer;
     }
-
     return {
       data: validData,
       padding: { top: 5, right: 15, bottom: 5, left: 5 },
-      series: [
-        {
-          type: "line",
-          xKey: "time",
-          yKey: key,
-          yName: title,
-          stroke: color,
-          strokeWidth: 2.5,
-          marker: {
-            enabled: true,
-            shape: shape,
-            size: 5,
-            fill: color,
-            stroke: "#fff",
-            strokeWidth: 1,
-          },
-        },
-      ],
+      series: [{
+        type: "line", xKey: "dateObj", yKey: key, yName: title, stroke: color, strokeWidth: 2,
+        marker: { enabled: false },
+        tooltip: {
+            renderer: ({ datum, xKey, yKey }) => {
+                const date = datum[xKey];
+                const timeString = date.toLocaleTimeString("en-GB", { hour12: false });
+                return { title: timeString, content: `${title}: ${datum[yKey]}` };
+            }
+        }
+      }],
       axes: [
         {
-          type: "category",
-          position: "bottom",
-          label: { fontSize: 8, color: "#666" },
-          line: { width: 1, color: "#ccc" },
-          gridStyle: [{ stroke: undefined }],
+          type: "time", position: "bottom", nice: true,
+          label: { fontSize: 10, color: "#666", format: "%H:%M", autoRotate: false, rotation: 0 },
+          line: { width: 1, color: "#ccc" }, gridStyle: [{ stroke: undefined }],
         },
         {
-          type: "number",
-          position: "left",
-          min: min,
-          max: max,
-          label: { fontSize: 9, color: "#333" },
-          tick: { count: 3 },
-          gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
+          type: "number", position: "left", min, max,
+          label: { fontSize: 9, color: "#333" }, tick: { count: 3 }, gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
         },
       ],
-      legend: { enabled: false },
-      background: { visible: false },
+      legend: { enabled: false }, background: { visible: false },
     };
   };
 
   return (
+    <Box sx={{ width: "96%", display: "flex", flexDirection: "column", gap: "4px", px: "2px" }}>
+      <Box sx={chartBoxStyle}>
+        <Box sx={{ display: "flex", justifyContent: "right", px: 1, mb: -1, zIndex: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: "bold", color: "#0077FF" }}>EC</Typography>
+        </Box>
+        <Box sx={{ height: "100%", width: "100%" }}><AgCharts options={getChartOptions("ec", "EC", "#0077FF", "circle")} style={{ height: "80%" }} /></Box>
+      </Box>
+      <Box sx={chartBoxStyle}>
+        <Box sx={{ display: "flex", justifyContent: "right", px: 1, mb: -1, zIndex: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: "bold", color: "#FF5E57" }}>PC (pH)</Typography>
+        </Box>
+        <Box sx={{ height: "100%", width: "100%" }}><AgCharts options={getChartOptions("pc", "PC", "#FF5E57", "square")} style={{ height: "80%" }} /></Box>
+      </Box>
+      <Box sx={chartBoxStyle}>
+        <Box sx={{ display: "flex", justifyContent: "right", px: 1, mb: -1, zIndex: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: "bold", color: "#2ECC71" }}>Temp</Typography>
+        </Box>
+        <Box sx={{ height: "100%", width: "100%" }}><AgCharts options={getChartOptions("temp", "Temp", "#2ECC71", "triangle")} style={{ height: "80%" }} /></Box>
+      </Box>
+    </Box>
+  );
+};
+
+// --- کامپوننت اصلی با اسلایدر Native ---
+const SlidingWindowChart = () => {
+  const scrollRef = useRef(null);
+  
+  const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
+  const [calibrateTab, setCalibrateTab] = useState("ec");
+  const [calibrateValues, setCalibrateValues] = useState({ ecLow: "54", ecHigh: "1500", phLow: "", phHigh: "" });
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [lastUpdateTime, setLastUpdateTime] = useState("---");
+
+  // وضعیت دکمه‌های اسکرول
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // بررسی وضعیت دکمه‌ها و آپدیت ایندکس فعال
+  const handleScrollEvents = useCallback(() => {
+    const el = scrollRef.current;
+    if (el) {
+      // 1. بررسی دکمه‌ها (با کمی تولرانس)
+      const isAtStart = el.scrollLeft <= 5;
+      const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 5;
+      
+      // نکته: در حالت direction: ltr:
+      // start یعنی سمت چپ (اول لیست) -> دکمه Back باید غیرفعال شود
+      // end یعنی سمت راست (آخر لیست) -> دکمه Forward باید غیرفعال شود
+      setCanScrollLeft(!isAtStart);
+      setCanScrollRight(!isAtEnd);
+
+      // 2. پیدا کردن ایندکس فعال
+      const index = Math.round(el.scrollLeft / el.clientWidth);
+      if (index !== activeIndex && index >= 0 && index < SENSORS.length) {
+        setActiveIndex(index);
+      }
+    }
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener('scroll', handleScrollEvents);
+      window.addEventListener('resize', handleScrollEvents);
+      
+      // تاخیر کوچک برای اطمینان از رندر شدن DOM و محاسبه عرض‌ها
+      setTimeout(handleScrollEvents, 100);
+      
+      return () => {
+        el.removeEventListener('scroll', handleScrollEvents);
+        window.removeEventListener('resize', handleScrollEvents);
+      };
+    }
+  }, [handleScrollEvents]);
+
+  // تابع اسکرول با دکمه
+  const slide = (direction) => {
+    const el = scrollRef.current;
+    if (el) {
+      const width = el.clientWidth;
+      el.scrollBy({
+        left: direction === 'left' ? -width : width,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const handleTimeUpdate = useCallback((time) => {
+    setLastUpdateTime(time);
+  }, []);
+
+  const currentSensor = SENSORS[activeIndex] || SENSORS[0];
+
+  return (
     <Container
       sx={{
-        width: "950px",
-        height: "370px",
-        bgcolor: "#FFFFFF",
-        borderRadius: "10px",
+        width: "950px", height: "370px", bgcolor: "#FFFFFF", borderRadius: "10px",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        alignItems: "center",
-        py: 2,
+        display: "flex", flexDirection: "column", gap: 2, alignItems: "center", py: 2,
+        position: "relative"
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          width: "88%",
-          mb: 1,
-        }}
-      >
+      <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "88%", mb: 1 }}>
         <Box>
-          <Typography fontFamily={"IRANSANS"}>
-            نمودار وضعیت مخزن (EC / PC / Temp)
+          <Typography fontFamily={"IRANSANS"} fontWeight="bold">
+            نمودار وضعیت مخزن - {currentSensor.name}
+          </Typography>
+          <Typography fontFamily={"IRANSANS"} fontSize={12} color="#666" mt={0.5}>
+            آخرین داده: <span style={{ direction: "ltr", display: "inline-block" }}>{lastUpdateTime}</span>
           </Typography>
         </Box>
         <Box>
           <IconTextButton
             icon={assets.svg.calibrationsvg}
-            text={"کالیبراسیون سنسور"}
-            bgColor="#6CCDB0"
-            textColor="black"
-            height="15px"
-            iconPosition="left"
+            text={`کالیبراسیون ${currentSensor.name}`}
+            bgColor="#6CCDB0" textColor="black" height="15px" iconPosition="left"
             sx={{ marginLeft: "auto", fontSize: "14px", mt: "-20px" }}
             onClick={() => setIsCalibrateOpen(true)}
           />
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          width: "100%",
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 4,
-        }}
-      >
-        <Button
+      {/* بخش اسلایدر */}
+      <Box sx={{ width: "100%", display: "flex", flexDirection: "row", alignItems: "center", gap: 2, justifyContent: "center"  , position:"relative" , bottom:9}}>
+        
+        {/* دکمه چپ: با زدن این، اسکرول مثبت (به راست) می‌رود = سنسور بعدی */}
+        {/* این منطق ممکن است برعکس به نظر بیاید ولی چون دکمه چپ در UI برای "بعدی" استفاده شده اینطور تنظیم شد */}
+        {/* اگر می‌خواهید دکمه سمت چپ به سنسور "قبلی" برگردد، slide('left') را صدا بزنید */}
+        <IconButton
+          onClick={() => slide('right')} 
+          disabled={!canScrollRight}
           sx={{
-            color: "#8A8A8A",
-            minWidth: "20px",
-            width: "20px",
-            height: "30px",
-            borderRadius: "5px",
-            backgroundColor: "#E3E3E3",
-            border: "0.5px solid #9F9F9F",
-            visibility: "visible",
-            p: 0,
+            width: "30px", height: "40px", borderRadius: "5px",
+            backgroundColor: "#E3E3E3", border: "0.5px solid #9F9F9F",
+            "&:hover": { backgroundColor: "#d0d0d0" },
+            opacity: canScrollRight ? 1 : 0.5
           }}
         >
-          <img src={assets.svg.right} alt="right" style={{ width: "8px" }} />
-        </Button>
+          <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
+        </IconButton>
 
+        {/* ناحیه اسکرول */}
         <Box
+          ref={scrollRef}
           sx={{
-            width: "860px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            mt: "-8px",
-            mr: "-20px",
+            width: "860px", 
+            height: "280px",
+            display: 'flex',
+            overflowX: "auto",
+            scrollBehavior: "smooth",
+            scrollSnapType: 'x mandatory', // قفل شدن اسکرول
+            direction: 'ltr', // *** مهم: اجبار به LTR برای محاسبات صحیح اسکرول ***
+            "&::-webkit-scrollbar": { display: "none" },
+            msOverflowStyle: "none",
+            scrollbarWidth: "none",
           }}
         >
-          {/* EC Chart */}
-          <Box sx={chartBoxStyle}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                px: 1,
-                mb: -1,
-                zIndex: 2,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ fontWeight: "bold", color: "#0077FF" }}
-              >
-                EC
-              </Typography>
-            </Box>
-            <Box sx={{ height: "100%", width: "100%" }}>
-              <AgCharts
-                options={getChartOptions("ec", "EC", "#0077FF", "circle")}
-                style={{ height: "80%" }}
-              />
-            </Box>
-          </Box>
+            {SENSORS.map((sensor, index) => (
+              <Box
+                key={sensor.id}
+                sx={{
+                    minWidth: "100%", // اطمینان از پر کردن کل عرض
+                    flexShrink: 0,    // *** مهم: جلوگیری از جمع شدن آیتم‌ها ***
+                    scrollSnapAlign: 'center',
+                    display: "flex",
+                    justifyContent: "center",
 
-          {/* PC Chart */}
-          <Box sx={chartBoxStyle}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                px: 1,
-                mb: -1,
-                zIndex: 2,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ fontWeight: "bold", color: "#FF5E57" }}
+                }}
               >
-                PC (pH)
-              </Typography>
-            </Box>
-            <Box sx={{ height: "100%", width: "100%" }}>
-              <AgCharts
-                options={getChartOptions("pc", "PC", "#FF5E57", "square")}
-                style={{ height: "80%" }}
-              />
-            </Box>
-          </Box>
-
-          {/* Temp Chart */}
-          <Box sx={chartBoxStyle}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                px: 1,
-                mb: -1,
-                zIndex: 2,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ fontWeight: "bold", color: "#2ECC71" }}
-              >
-                Temp
-              </Typography>
-            </Box>
-            <Box sx={{ height: "100%", width: "100%" }}>
-              <AgCharts
-                options={getChartOptions("temp", "Temp", "#2ECC71", "triangle")}
-                style={{ height: "80%" }}
-              />
-            </Box>
-          </Box>
+                <SensorChartItem 
+                    sensor={sensor} 
+                    isActive={index === activeIndex}
+                    onTimeUpdate={handleTimeUpdate}
+                />
+              </Box>
+            ))}
         </Box>
 
-        <Button
+        {/* دکمه راست: با زدن این، اسکرول منفی (به چپ) می‌رود = سنسور قبلی */}
+        <IconButton
+          onClick={() => slide('left')}
+          disabled={!canScrollLeft}
           sx={{
-            color: "#8A8A8A",
-            minWidth: "20px",
-            width: "20px",
-            height: "30px",
-            borderRadius: "5px",
-            backgroundColor: "#E3E3E3",
-            border: "0.5px solid #9F9F9F",
-            visibility: "visible",
-            p: 0,
+            width: "30px", height: "40px", borderRadius: "5px",
+            backgroundColor: "#E3E3E3", border: "0.5px solid #9F9F9F",
+            "&:hover": { backgroundColor: "#d0d0d0" },
+            opacity: canScrollLeft ? 1 : 0.5
           }}
         >
-          <img src={assets.svg.left} alt="left" style={{ width: "8px" }} />
-        </Button>
+          <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
+        </IconButton>
       </Box>
 
-      {/* مودال کالیبراسیون */}
       <CalibrationModalContent
         open={isCalibrateOpen}
         onClose={() => setIsCalibrateOpen(false)}
@@ -619,6 +558,7 @@ const SlidingWindowChart = () => {
         setCalibrateTab={setCalibrateTab}
         calibrateValues={calibrateValues}
         setCalibrateValues={setCalibrateValues}
+        sensorName={currentSensor.name}
       />
     </Container>
   );
