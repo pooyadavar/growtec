@@ -16,6 +16,7 @@ import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکم
 import assets from "../../assets";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
+import { makeManualSoluble } from "../../api/solubleApi"; // Import the new API function
 
 const Control = () => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
@@ -56,6 +57,12 @@ const Control = () => {
     setSelectedType(event.target.value);
     setType(event.target.value);
   };
+
+  const [volume, setVolume] = React.useState(1000); // State for volume
+  const handleVolumeChange = (event) => {
+    setVolume(parseInt(event.target.value, 10));
+  };
+
   const [createOpen, setCreateOpen] = React.useState(false);
   const handleCreateClose = () => setCreateOpen(false);
   const handleCreateOpen = () => setCreateOpen(true);
@@ -359,7 +366,9 @@ const Control = () => {
               type="number"
               placeholder="حجم"
               min={1}
-              max={10}
+              max={10000} // Increased max for better flexibility
+              value={volume}
+              onChange={handleVolumeChange}
               style={{
                 paddingRight: "8px", // [اصلاح شد]
                 width: "154px",
@@ -483,6 +492,21 @@ const Control = () => {
 
             <Button
               variant="contained"
+              onClick={async () => {
+                const data = {
+                  soluble_type: selectedType,
+                  volume: volume,
+                  zone: selectedZone,
+                };
+                try {
+                  const response = await makeManualSoluble(data);
+                  console.log("Manual soluble creation successful:", response);
+                  handleCreateClose();
+                } catch (error) {
+                  console.error("Error creating manual soluble:", error);
+                  // Optionally, add error feedback to the user
+                }
+              }}
               sx={{
                 width: "154px",
                 height: "40px",
