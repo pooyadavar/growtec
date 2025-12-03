@@ -117,7 +117,7 @@ const PhEcControlCardMixer = ({
       elevation={3}
       sx={{
         padding: 2,
-        width: "450px", // اصلاح تایپوگرافی (450x -> 450px)
+        width: "490px", // اصلاح تایپوگرافی (450x -> 450px)
         height: "320px",
         backgroundColor: "#ffff",
         display: "flex",
@@ -132,7 +132,7 @@ const PhEcControlCardMixer = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          gap: 1,
+          gap: 3,
         }}
       >
         {/* بخش نمایشگرهای گیج (Gauge) */}
@@ -380,13 +380,14 @@ const PhEcControlCardMixer = ({
                     value={item}
                     InputProps={{ readOnly: true }}
                     sx={{
-                      width: 40,
+                      width: 37,
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
+                        fontSize: "0.75rem",
                       },
                     }}
                   />
@@ -398,13 +399,14 @@ const PhEcControlCardMixer = ({
                     }
                     InputProps={{ readOnly: true }}
                     sx={{
-                      width: 40,
+                      width: 37,
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
+                        fontSize: "0.75rem",
                       },
                     }}
                   />

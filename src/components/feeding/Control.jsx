@@ -124,7 +124,7 @@ const Control = () => {
     <Container
       disableGutters
       sx={{
-        width: "175px",
+        width: "205px",
         height: "auto",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
@@ -138,7 +138,7 @@ const Control = () => {
           icon={assets.svg.chemicalicon}
           iconPosition="left"
           onClick={handleCreateOpen}
-          width="120px"
+          width="150px"
         />
 
         <IconTextButton
@@ -146,16 +146,14 @@ const Control = () => {
           icon={assets.svg.watericon}
           iconPosition="left"
           onClick={handleClearOpen}
-          width="120px"
-        />
+          width="150px"        />
 
         <IconTextButton
           text="تزریق دستی"
           icon={assets.svg.editicon}
           iconPosition="left"
           onClick={handleInjectionOpen}
-          width="120px"
-        />
+          width="150px"        />
 
         <IconTextButton
           text="میکسر"
@@ -176,8 +174,7 @@ const Control = () => {
               toast.error("خطا در کنترل میکسر");
             }
           }}
-          width="120px"
-        />
+          width="150px"        />
 
         <IconTextButton
           text="همزن"
@@ -198,8 +195,7 @@ const Control = () => {
               toast.error("خطا در کنترل همزن");
             }
           }}
-          width="120px"
-        />
+          width="150px"        />
 
         <IconTextButton
           text="توقف"
@@ -217,8 +213,7 @@ const Control = () => {
               toast.error("خطا در توقف اضطراری");
             }
           }}
-          width="120px"
-        />
+          width="150px"        />
       </Stack>
 
       {/* مودال تزریق دستی (بدون تغییر در منطق، فقط آیکون بسته شدن) */}

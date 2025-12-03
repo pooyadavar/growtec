@@ -42,7 +42,7 @@ const Feeding = () => {
   };
 
   const getStatusText = (statusNumber) => {
-    return statusNumber === 0 ? "در حال چک و اصلاح pH" : "وضعیت دیگر";
+    return statusNumber === 0 ? "در حال اصلاح pH" : "وضعیت دیگر";
   };
 
   if (isLoading) {
@@ -93,7 +93,7 @@ const Feeding = () => {
             scale: "0.8",
             position: "relative",
             top: "-45px",
-            left: "-20px",
+            left: "20px",
           }}
         >
           <Typography
@@ -115,7 +115,7 @@ const Feeding = () => {
             scale: "1.10",
             position: "relative",
             top: "0px",
-            left: "-40px",
+            left: "0px",
           }}
         >
           <Typography fontFamily={"IRANSANS"} fontSize={14}>
@@ -145,7 +145,7 @@ const Feeding = () => {
             scale: "0.75",
             position: "relative",
             top: "-55px",
-            left: "-20px",
+            left: "0px",
           }}
         >
           <Typography
@@ -196,7 +196,7 @@ const Feeding = () => {
                   bgColor="#FFD799"
                   textColor="#333"
                   onClick={handleHistoryClick}
-                  width="110px"
+                  width="125px"
                 />
               </Box>
 
@@ -207,7 +207,7 @@ const Feeding = () => {
                   bgColor="#FF9933"
                   textColor="#fff"
                   onClick={handleAiClick}
-                  width="110px"
+                  width="125px"
                 />
               </Box>
 
@@ -218,7 +218,7 @@ const Feeding = () => {
                   bgColor="#86CCB2"
                   textColor="#333"
                   onClick={handleSettingsClick}
-                  width="110px"
+                  width="125px"
                 />
               </Box>
             </Stack>

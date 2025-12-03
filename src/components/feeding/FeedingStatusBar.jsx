@@ -402,7 +402,7 @@ const FeedingStatusBar = () => {
         flexDirection: "row-reverse",
         alignItems: "center",
         justifyContent: "space-between",
-        width: "100%",
+        width: "98%",
         padding: "8px 0",
         borderBottom:
           index < scheduleData.length - 1 ? "1px solid #E0E0E0" : "none",
@@ -444,7 +444,7 @@ const FeedingStatusBar = () => {
 
   const textStyle = {
     fontFamily: "IRANSANS",
-    fontSize: "12px",
+    fontSize: "10px",
     color: "#333",
     backgroundColor: "#F5F5F5",
     border: "1px solid #E0E0E0",
@@ -459,7 +459,7 @@ const FeedingStatusBar = () => {
       <Paper
         elevation={3}
         sx={{
-          width: 240,
+          width: 260,
           height: "auto",
           backgroundColor: "#FFFFFF",
           borderRadius: "10px",
@@ -486,6 +486,10 @@ const FeedingStatusBar = () => {
               width: "100%",
               padding: "0 0 8px 0",
               borderBottom: "2px solid #E0E0E0",
+              position: 'sticky', // Make it sticky
+              top: 0, // Stick to the top
+              zIndex: 1, // Ensure it stays above scrolling content
+              backgroundColor: "#FFFFFF", // Match parent background for seamless sticky effect
             }}
           >
             <Typography sx={headerStyle}>زمان</Typography>
@@ -500,7 +504,7 @@ const FeedingStatusBar = () => {
         </Box>
         <Box
           sx={{
-            width: "105%",
+            width: "100%",
             marginTop: "15px",
             justifyContent: "right",
             display: "flex",
@@ -514,6 +518,7 @@ const FeedingStatusBar = () => {
             textColor="#333"
             borderColor="#F7C98C"
             onClick={handleModalPlansOpen}
+            width="230px"
           />
         </Box>
       </Paper>
