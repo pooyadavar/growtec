@@ -47,3 +47,23 @@ export const getFoodstuffScheduleById = async (id) => {
 export const getMixTankStatus = async () => {
   return apiClient.get('/soluble/mix-tank-status/');
 };
+
+export const getFoodstuffPreparationProgram = async (programNumber) => {
+  return apiClient.get('/soluble/foodstuff-preparation-program/', {
+    params: { program_number: programNumber },
+  });
+};
+
+export const updateFoodstuffPreparationProgram = async (data) => {
+  return apiClient.post('/soluble/foodstuff-preparation-program/', data);
+};
+
+export const getFoodstuffPreparationProgramPh = async (programNumber) => {
+  return apiClient.get('/soluble/foodstuff-preparation-program-ph/', {
+    params: { program_number: programNumber },
+  });
+};
+
+export const updateFoodstuffPreparationProgramPh = async (data) => {
+  return apiClient.post('/soluble/foodstuff-preparation-program-ph/', data);
+};

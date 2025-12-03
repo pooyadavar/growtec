@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Paper,
@@ -13,210 +13,318 @@ import {
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { useNavigate } from "react-router-dom";
+import {
+  getFoodstuffPreparationProgram,
+  updateFoodstuffPreparationProgram,
+  getFoodstuffPreparationProgramPh,
+  updateFoodstuffPreparationProgramPh,
+} from "../api/solubleApi";
+import toast, { Toaster } from "react-hot-toast";
+
+// --- Helper for deep comparison handling string/number equality ---
+const deepEqual = (obj1, obj2) => {
+  if (obj1 === obj2) return true;
+  
+  if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
+      const n1 = Number(obj1);
+      const n2 = Number(obj2);
+      if (!isNaN(n1) && !isNaN(n2)) {
+          return n1 === n2;
+      }
+      return obj1 === obj2;
+  }
+
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+
+  if (keys1.length !== keys2.length) return false;
+
+  for (let key of keys1) {
+      if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) return false;
+  }
+
+  return true;
+};
+
+// --- Helper function to convert numbers to Persian numerals ---
+const toPersianNumber = (num) => {
+  if (num === null || num === undefined || num === "") return "";
+  return String(num).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+};
+
 
 // --- کامپوننت کمکی برای ستون‌های برنامه (عریض‌تر و فشرده‌تر) ---
-const PlanColumnEc = ({ number }) => (
-  <Paper
-    variant="outlined"
-    sx={{
-      p: 1.5, // پدینگ داخلی
-      display: "flex",
-      flexDirection: "column",
-      gap: 1.2, // فاصله عمودی بین ردیف‌ها
-      minWidth: 185, // --- عرض کارت‌ها بیشتر شد ---
-      borderRadius: "8px",
-    }}
-  >
-    <Typography
-      fontFamily="IRANSANS"
-      fontWeight="bold"
-      textAlign="center"
-      mb={1}
-      fontSize="1rem"
-    >
-      {number}
-    </Typography>
+const PlanColumnEc = ({ number, data, onChange }) => {
+  const handleChange = (field, value) => {
+     if (value !== "" && !/^\d*\.?\d*$/.test(value)) return;
 
-    {/* ردیف‌های داخل ستون */}
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        حجم A
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />{" "}
-      {/* عرض فیلد بیشتر شد */}
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        حجم B
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        حجم C
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        حجم D
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        حجم E
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        حجم F
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        EC مطلوب
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        خطای مجاز
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-  </Paper>
-);
+    if (field.startsWith("stock_percent.")) {
+        const key = field.split(".")[1];
+        const newStockPercent = { ...data.stock_percent, [key]: value };
+        onChange({ ...data, stock_percent: newStockPercent });
+    } else {
+        onChange({ ...data, [field]: value });
+    }
+  };
 
-const PlanColumnPh = ({ number }) => (
-  <Paper
-    variant="outlined"
-    sx={{
-      p: 1.5, // پدینگ داخلی
-      display: "flex",
-      flexDirection: "column",
-      gap: 1.2, // فاصله عمودی بین ردیف‌ها
-      minWidth: 185, // --- عرض کارت‌ها بیشتر شد ---
-      borderRadius: "8px",
-    }}
-  >
-    <Typography
-      fontFamily="IRANSANS"
-      fontWeight="bold"
-      textAlign="center"
-      mb={1}
-      fontSize="1rem"
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 1.5,
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.2,
+        minWidth: 185,
+        borderRadius: "8px",
+      }}
     >
-      {number}
-    </Typography>
+      <Typography
+        fontFamily="IRANSANS"
+        fontWeight="bold"
+        textAlign="center"
+        mb={1}
+        fontSize="1rem"
+      >
+        {toPersianNumber(number)}
+      </Typography>
 
-    {/* ردیف‌های داخل ستون */}
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        حجم
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ph مطلوب
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />{" "}
-      {/* عرض فیلد بیشتر شد */}
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        خطای مطلوب
-      </Typography>
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-    </Box>
-  </Paper>
-);
+      {/* ردیف‌های داخل ستون */}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>حجم A</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.stock_percent?.["1"] ?? "")}
+          onChange={(e) => handleChange("stock_percent.1", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }} 
+        />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>حجم B</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.stock_percent?.["2"] ?? "")}
+          onChange={(e) => handleChange("stock_percent.2", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }}
+        />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>حجم C</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.stock_percent?.["3"] ?? "")}
+          onChange={(e) => handleChange("stock_percent.3", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }}
+        />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>حجم D</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.stock_percent?.["4"] ?? "")}
+          onChange={(e) => handleChange("stock_percent.4", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }}
+        />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>حجم E</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.stock_percent?.["5"] ?? "")}
+          onChange={(e) => handleChange("stock_percent.5", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }}
+        />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>حجم F</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.stock_percent?.["6"] ?? "")}
+          onChange={(e) => handleChange("stock_percent.6", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }}
+        />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>EC مطلوب</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.target_ec ?? "")}
+          onChange={(e) => handleChange("target_ec", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }}
+        />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>خطای مجاز</Typography>
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+          value={toPersianNumber(data?.ec_acceptable_error ?? "")}
+          onChange={(e) => handleChange("ec_acceptable_error", e.target.value)}
+          inputProps={{ inputMode: 'decimal' }}
+        />
+      </Box>
+    </Paper>
+  );
+};
+
+// --- کامپوننت کمکی برای ستون‌های برنامه pH ---
+const PlanColumnPh = ({ number, data, onChange }) => {
+    const handleChange = (field, value) => {
+        if (value !== "" && !/^\d*\.?\d*$/.test(value)) return;
+        onChange({ ...data, [field]: value });
+    };
+
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 1.5,
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.2,
+                minWidth: 185,
+                borderRadius: "8px",
+            }}
+        >
+            <Typography
+                fontFamily="IRANSANS"
+                fontWeight="bold"
+                textAlign="center"
+                mb={1}
+                fontSize="1rem"
+            >
+                {toPersianNumber(number)}
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>حجم</Typography>
+                <TextField
+                    size="small"
+                    variant="outlined"
+                    sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+                    value={""} // Empty as requested
+                    inputProps={{ readOnly: true }} // Make it read-only
+                />
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>ph مطلوب</Typography>
+                <TextField
+                    size="small"
+                    variant="outlined"
+                    sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+                    value={toPersianNumber(data?.target_ph ?? "")}
+                    onChange={(e) => handleChange("target_ph", e.target.value)}
+                    inputProps={{ inputMode: 'decimal' }}
+                />
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>خطای مطلوب</Typography>
+                <TextField
+                    size="small"
+                    variant="outlined"
+                    sx={{ width: "100px", "& .MuiInputBase-input": { textAlign: 'center' } }}
+                    value={toPersianNumber(data?.ph_acceptable_error ?? "")}
+                    onChange={(e) => handleChange("ph_acceptable_error", e.target.value)}
+                    inputProps={{ inputMode: 'decimal' }}
+                />
+            </Box>
+        </Paper>
+    );
+};
+
 
 // --- کامپوننت اصلی صفحه ---
 const FeedingSettingsPage = () => {
   const [tabValue, setTabValue] = useState(2);
   const navigate = useNavigate();
+
+  const [ecPrograms, setEcPrograms] = useState({});
+  const [initialEcPrograms, setInitialEcPrograms] = useState({}); 
+  const [isEcSaveDisabled, setIsEcSaveDisabled] = useState(true);
+
+  const [phPrograms, setPhPrograms] = useState({});
+  const [initialPhPrograms, setInitialPhPrograms] = useState({});
+  const [isPhSaveDisabled, setIsPhSaveDisabled] = useState(true);
+  
+  // Slider state
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+
+  // Fetch EC Programs
+  useEffect(() => {
+    if (tabValue === 2) {
+      const fetchPrograms = async () => {
+        const newPrograms = {};
+        for (let i = 1; i <= 5; i++) {
+          try {
+            const response = await getFoodstuffPreparationProgram(i);
+            newPrograms[i] = response;
+          } catch (error) {
+            console.error(`Error fetching EC program ${i}:`, error);
+          }
+        }
+        setEcPrograms(newPrograms);
+        setInitialEcPrograms(JSON.parse(JSON.stringify(newPrograms))); 
+      };
+      fetchPrograms();
+    }
+  }, [tabValue]);
+
+  // Fetch pH Programs
+  useEffect(() => {
+    if (tabValue === 1) {
+      const fetchPrograms = async () => {
+        const newPrograms = {};
+        for (let i = 1; i <= 5; i++) {
+          try {
+            const response = await getFoodstuffPreparationProgramPh(i);
+            newPrograms[i] = response;
+          } catch (error) {
+            console.error(`Error fetching pH program ${i}:`, error);
+          }
+        }
+        setPhPrograms(newPrograms);
+        setInitialPhPrograms(JSON.parse(JSON.stringify(newPrograms)));
+      };
+      fetchPrograms();
+    }
+  }, [tabValue]);
+
+
+    // Check for EC changes
+    useEffect(() => {
+        if (Object.keys(ecPrograms).length === 0 || Object.keys(initialEcPrograms).length === 0) return;
+        const hasChanges = !deepEqual(ecPrograms, initialEcPrograms);
+        setIsEcSaveDisabled(!hasChanges);
+    }, [ecPrograms, initialEcPrograms]);
+
+    // Check for pH changes
+    useEffect(() => {
+        if (Object.keys(phPrograms).length === 0 || Object.keys(initialPhPrograms).length === 0) return;
+        const hasChanges = !deepEqual(phPrograms, initialPhPrograms);
+        setIsPhSaveDisabled(!hasChanges);
+    }, [phPrograms, initialPhPrograms]);
+
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -226,33 +334,147 @@ const FeedingSettingsPage = () => {
     navigate(-1);
   };
 
-  const handleSave = () => {
-    console.log("Saving settings...");
+  const handleSave = async () => {
+    if (tabValue === 2) { // EC Tab Save
+        if (isEcSaveDisabled) return;
+
+        for (let i = 1; i <= 5; i++) {
+            const initial = initialEcPrograms[i];
+            const current = ecPrograms[i];
+            
+            if (!deepEqual(initial, current)) {
+                const payload = {
+                    program_number: i,
+                    foodstuff_preparation_program: {
+                        target_ec: Number(current.target_ec),
+                        ec_acceptable_error: Number(current.ec_acceptable_error),
+                        stock_percent: {
+                            "1": Number(current.stock_percent?.["1"] || 0),
+                            "2": Number(current.stock_percent?.["2"] || 0),
+                            "3": Number(current.stock_percent?.["3"] || 0),
+                            "4": Number(current.stock_percent?.["4"] || 0),
+                            "5": Number(current.stock_percent?.["5"] || 0),
+                            "6": Number(current.stock_percent?.["6"] || 0),
+                            "7": Number(current.stock_percent?.["7"] || 0),
+                            "8": Number(current.stock_percent?.["8"] || 0),
+                            "9": Number(current.stock_percent?.["9"] || 0),
+                            "10": Number(current.stock_percent?.["10"] || 0),
+                        }
+                    }
+                };
+
+                try {
+                    await updateFoodstuffPreparationProgram(payload);
+                    toast.success(`برنامه EC ${i} با موفقیت ذخیره شد`);
+                } catch (error) {
+                    console.error(`Error saving EC program ${i}:`, error);
+                    toast.error(`خطا در ذخیره برنامه EC ${i}`);
+                }
+            }
+        }
+        setInitialEcPrograms(JSON.parse(JSON.stringify(ecPrograms)));
+        setIsEcSaveDisabled(true); // Disable after save
+    } else if (tabValue === 1) { // pH Tab Save
+        if (isPhSaveDisabled) return;
+
+        for (let i = 1; i <= 5; i++) {
+            const initial = initialPhPrograms[i];
+            const current = phPrograms[i];
+
+            if (!deepEqual(initial, current)) {
+                const payload = {
+                    program_number: i,
+                    foodstuff_preparation_program: { // Using the same key name as EC for consistency
+                        target_ph: Number(current.target_ph),
+                        ph_acceptable_error: Number(current.ph_acceptable_error),
+                    }
+                };
+
+                try {
+                    await updateFoodstuffPreparationProgramPh(payload);
+                    toast.success(`برنامه pH ${i} با موفقیت ذخیره شد`);
+                } catch (error) {
+                    console.error(`Error saving pH program ${i}:`, error);
+                    toast.error(`خطا در ذخیره برنامه pH ${i}`);
+                }
+            }
+        }
+        setInitialPhPrograms(JSON.parse(JSON.stringify(phPrograms)));
+        setIsPhSaveDisabled(true); // Disable after save
+    }
   };
 
+  const handleEcProgramChange = (programNumber, newData) => {
+      setEcPrograms(prev => ({
+          ...prev,
+          [programNumber]: newData
+      }));
+  };
+
+  const handlePhProgramChange = (programNumber, newData) => {
+      setPhPrograms(prev => ({
+          ...prev,
+          [programNumber]: newData
+      }));
+  };
+
+    // Slider Logic
+    const handleScrollEvents = React.useCallback(() => {
+        const el = scrollRef.current;
+        if (el) {
+          const isAtStart = el.scrollLeft <= 5;
+          const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 5;
+    
+          setCanScrollLeft(!isAtStart);
+          setCanScrollRight(!isAtEnd);
+        }
+    }, []);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (el) {
+            el.addEventListener("scroll", handleScrollEvents);
+            window.addEventListener("resize", handleScrollEvents);
+            handleScrollEvents();
+            setTimeout(handleScrollEvents, 100); 
+            return () => {
+                el.removeEventListener("scroll", handleScrollEvents);
+                window.removeEventListener("resize", handleScrollEvents);
+            };
+        }
+    }, [tabValue, ecPrograms, phPrograms, handleScrollEvents]); // Re-check on data load for both tabs
+
+    const slide = (direction) => {
+        const el = scrollRef.current;
+        if (el) {
+            const scrollAmount = 200; 
+            el.scrollBy({
+                left: direction === "left" ? -scrollAmount : scrollAmount,
+                behavior: "smooth",
+            });
+        }
+    };
+
+
   return (
-    // --- ۱. کاهش مارجین‌های عمودی کانتینر ---
     <Container maxWidth="lg" sx={{ mt: 1, mb: 0 }}>
-      {/* --- هدر (سربرگ) --- */}
+        <Toaster position="top-center" reverseOrder={false} />
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           direction: "ltr",
-          pb: 0, // --- ۳. کاهش پدینگ پایین هدر ---
+          pb: 0,
         }}
       >
-        {/* تب‌ها (فشرده‌تر) */}
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           sx={{
             direction: "rtl",
             minHeight: "40px",
-            "& .MuiTabs-indicator": {
-              display: "none", // حذف خط زیر تب
-            },
+            "& .MuiTabs-indicator": { display: "none" },
           }}
         >
           {["مخزن و دوزینگ پمپ", "pH", "EC"].map((label, index) => (
@@ -269,30 +491,22 @@ const FeedingSettingsPage = () => {
                 minHeight: "40px",
                 borderTopLeftRadius: "8px",
                 borderTopRightRadius: "8px",
-                border:
-                  tabValue === index
-                    ? "2px solid #d9a45f" 
-                    : "1px solid #ddd", 
+                border: tabValue === index ? "2px solid #d9a45f" : "1px solid #ddd",
                 backgroundColor: tabValue === index ? "#f5f5f5" : "#f5b982",
-
                 color: "#000",
                 transition: "all 0.3s ease",
-                "&:hover": {
-                  backgroundColor: "#f5d3a8",
-                },
+                "&:hover": { backgroundColor: "#f5d3a8" },
                 "&.Mui-selected": {
                   backgroundColor: "#f5f5f5",
                   color: "#000",
                   border: "0.5px solid gray",
                 },
                 textTransform: "none",
-                boxShadow:
-                  tabValue === index ? "0px 2px 4px rgba(0,0,0,0.1)" : "none",
+                boxShadow: tabValue === index ? "0px 2px 4px rgba(0,0,0,0.1)" : "none",
               }}
             />
           ))}
         </Tabs>
-        {/* دکمه بستن X (فشرده‌تر) */}
         <IconButton
           onClick={handleBackClick}
           title="بستن"
@@ -311,39 +525,35 @@ const FeedingSettingsPage = () => {
       <Paper
         elevation={3}
         sx={{
-          height: "auto", 
-          maxHeight: "calc(100vh - 32px)", 
+          height: "auto",
+          maxHeight: "calc(100vh - 32px)",
           display: "flex",
           flexDirection: "column",
           borderRadius: "10px",
-          overflow: "hidden", 
+          overflow: "hidden",
         }}
       >
-        {/* --- محتوای صفحه --- */}
         {tabValue === 2 && (
           <Box
             sx={{
               flexGrow: 1,
-              overflowY: "auto", 
+              overflowY: "auto",
               p: { xs: 1, md: 2 },
               direction: "rtl",
             }}
           >
             <Grid container spacing={2} sx={{ mb: 2, alignItems: "center" }}>
-              {/* بخش سمت راست: دکمه ذخیره */}
               <Grid item xs={12} md={3} sx={{ textAlign: "center" }}>
-                {" "}
-                {/* [تغییر] - دکمه به راست منتقل شد */}
                 <Button
                   variant="contained"
-                  // size="small" // [حذف شد] - سایز بزرگتر شبیه عکس
                   startIcon={<SaveIcon />}
+                  disabled={isEcSaveDisabled}
                   sx={{
                     fontFamily: "IRANSANS",
-                    backgroundColor: "#F7C98C",
-                    color: "#333",
+                    backgroundColor: isEcSaveDisabled ? "#e0e0e0" : "#F7C98C",
+                    color: isEcSaveDisabled ? "#9e9e9e" : "#333",
                     fontWeight: "bold",
-                    "&:hover": { backgroundColor: "#f5b982" },
+                    "&:hover": { backgroundColor: isEcSaveDisabled ? "#e0e0e0" : "#f5b982" },
                     width: "120px",
                     height: "60px",
                     fontSize: "1rem",
@@ -357,123 +567,56 @@ const FeedingSettingsPage = () => {
                   ذخیره
                 </Button>
               </Grid>
-              {/* بخش سمت چپ: فیلدهای متنی (۲ ردیف ۴ تایی) */}
               <Grid item xs={12} md={9}>
                 <Box>
-                  {/* ردیف اول فیلدها */}
                   <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
+                    {/* Static fields can be added here if needed */}
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
                         غلظت مخزن A
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
                     </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
                         غلظت مخزن B
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
                     </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
                         غلظت مخزن C
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
                     </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
-                        غلظت مخزن D
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
+                         غلظت مخزن D
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
                     </Grid>
                   </Grid>
-
-                  {/* ردیف دوم فیلدها */}
                   <Grid container spacing={2}>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
-                        غلظت مخزن E
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
+                         غلظت مخزن E
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
                     </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
-                        غلظت مخزن F
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
+                         غلظت مخزن F
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
                     </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
                         EC فعلی
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
                     </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography
-                        variant="body2"
-                        fontFamily="IRANSANS"
-                        sx={{
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                          textAlign: "right",
-                        }}
-                      >
+                     <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.5, fontSize: "0.85rem", textAlign: "right" }}>
                         ضریب تصحیح EC
                       </Typography>
                       <TextField fullWidth size="small" variant="outlined" />
@@ -482,35 +625,79 @@ const FeedingSettingsPage = () => {
                 </Box>
               </Grid>
             </Grid>
-            {/* بخش پایین: ستون‌های برنامه‌ها */}
-            <Box
-              sx={{
-                width: "100%",
-                overflowX: "auto",
-                display: "flex",
-                flexDirection: "row",
-                gap: 2, // --- ۱۱. کاهش فاصله بین کارت‌ها ---
-                p: 1.5, // --- ۱۲. کاهش پدینگ ---
-                pb: 2,
-                backgroundColor: "#f9f9f9",
-                borderRadius: "8px",
-                border: "1px solid #eee",
-              }}
-            >
-              {/* --- ۱۳. فقط ۴ کارت رندر می‌شود --- */}
-              <PlanColumnEc number="۱" />
-              <PlanColumnEc number="۲" />
-              <PlanColumnEc number="۳" />
-              <PlanColumnEc number="۴" />
+
+            {/* Slider Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                <IconButton
+                    onClick={() => slide("right")}
+                    disabled={!canScrollRight}
+                    sx={{
+                        width: "30px",
+                        height: "40px",
+                        borderRadius: "5px",
+                        backgroundColor: "#E3E3E3",
+                        border: "0.5px solid #9F9F9F",
+                        "&:hover": { backgroundColor: "#d0d0d0" },
+                        opacity: canScrollRight ? 1 : 0.5,
+                    }}
+                >
+                    <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
+                </IconButton>
+
+                <Box
+                    ref={scrollRef}
+                    sx={{
+                        width: "100%", 
+                        overflowX: "auto",
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: 2,
+                        p: 1.5,
+                        pb: 2,
+                        backgroundColor: "#f9f9f9",
+                        borderRadius: "8px",
+                        border: "1px solid #eee",
+                        scrollBehavior: "smooth",
+                        direction: "ltr", 
+                        "&::-webkit-scrollbar": { display: "none" },
+                        msOverflowStyle: "none",
+                        scrollbarWidth: "none",
+                    }}
+                >
+                    {["1", "2", "3", "4", "5"].map((numStr, index) => (
+                        <Box key={index} sx={{ flexShrink: 0 }}>
+                             <PlanColumnEc
+                                number={numStr}
+                                data={ecPrograms[index + 1]}
+                                onChange={(newData) => handleEcProgramChange(index + 1, newData)}
+                            />
+                        </Box>
+                    ))}
+                </Box>
+
+                 <IconButton
+                    onClick={() => slide("left")}
+                    disabled={!canScrollLeft}
+                    sx={{
+                        width: "30px",
+                        height: "40px",
+                        borderRadius: "5px",
+                        backgroundColor: "#E3E3E3",
+                        border: "0.5px solid #9F9F9F",
+                        "&:hover": { backgroundColor: "#d0d0d0" },
+                        opacity: canScrollLeft ? 1 : 0.5,
+                    }}
+                >
+                    <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
+                </IconButton>
             </Box>
           </Box>
         )}
 
-        {/* محتوای تب‌های دیگر */}
         {tabValue === 0 && (
           <Box sx={{ p: 2, direction: "rtl", overflowY: "auto" }}>
             <Typography fontFamily="IRANSANS">
-              محتوای تنظیمات EC در اینجا قرار می‌گیرد.
+              محتوای تنظیمات مخزن و دوزینگ پمپ در اینجا قرار می‌گیرد.
             </Typography>
           </Box>
         )}
@@ -518,40 +705,37 @@ const FeedingSettingsPage = () => {
           <Box
             sx={{
               flexGrow: 1,
-              overflowY: "auto", // --- ۷. اسکرول عمودی فقط برای این بخش ---
-              p: { xs: 1, md: 2 }, // --- ۸. کاهش پدینگ محتوا ---
+              overflowY: "auto",
+              p: { xs: 1, md: 2 },
               direction: "rtl",
             }}
           >
-            <Grid container spacing={2} sx={{ mb: 2, alignItems: "center" , justifyContent:"space-between"}}> 
-              {/* بخش سمت راست: دکمه ذخیره */}
+            <Grid container spacing={2} sx={{ mb: 2, alignItems: "center", justifyContent: "space-between" }}> 
               <Grid item xs={12} md={3} sx={{ textAlign: "center" }}>
                 <Button
                   variant="contained"
                   startIcon={<SaveIcon />}
+                  disabled={isPhSaveDisabled}
                   sx={{
                     fontFamily: "IRANSANS",
-                    backgroundColor: "#F7C98C", // رنگ زرد/نارنجی
-                    color: "#333",
+                    backgroundColor: isPhSaveDisabled ? "#e0e0e0" : "#F7C98C",
+                    color: isPhSaveDisabled ? "#9e9e9e" : "#333",
                     fontWeight: "bold",
-                    "&:hover": { backgroundColor: "#f5b982" },
-                    // استایل شبیه به دکمه‌ی قبلی
+                    "&:hover": { backgroundColor: isPhSaveDisabled ? "#e0e0e0" : "#f5b982" },
                     width: "120px",
                     height: "60px",
                     fontSize: "1rem",
                     display: "flex",
-                    flexDirection: "row", // آیکون بالای متن
+                    flexDirection: "row",
                     gap: "10px",
                     padding: "10px",
                   }}
-                  // onClick={handleSavePh} // تابع ذخیره مربوط به این بخش
+                  onClick={handleSave}
                 >
                   ذخیره
                 </Button>
               </Grid>
-              {/* بخش سمت چپ: فیلدهای متنی */}
               <Grid item xs={12} md={9}>
-
                 <Grid container spacing={2}>
                   <Grid item xs={6} sm={4} md={3}>
                     <Typography
@@ -566,26 +750,70 @@ const FeedingSettingsPage = () => {
                 </Grid>
               </Grid>
             </Grid>
-            {/* بخش پایین: ستون‌های برنامه‌ها */}
-            <Box
-              sx={{
-                width: "100%",
-                overflowX: "auto",
-                display: "flex",
-                flexDirection: "row",
-                gap: 2, // --- ۱۱. کاهش فاصله بین کارت‌ها ---
-                p: 1.5, // --- ۱۲. کاهش پدینگ ---
-                pb: 2,
-                backgroundColor: "#f9f9f9",
-                borderRadius: "8px",
-                border: "1px solid #eee",
-              }}
-            >
-              {/* --- ۱۳. فقط ۴ کارت رندر می‌شود --- */}
-              <PlanColumnPh number="۱" />
-              <PlanColumnPh number="۲" />
-              <PlanColumnPh number="۳" />
-              <PlanColumnPh number="۴" />
+            {/* Slider Section for pH */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                <IconButton
+                    onClick={() => slide("right")}
+                    disabled={!canScrollRight}
+                    sx={{
+                        width: "30px",
+                        height: "40px",
+                        borderRadius: "5px",
+                        backgroundColor: "#E3E3E3",
+                        border: "0.5px solid #9F9F9F",
+                        "&:hover": { backgroundColor: "#d0d0d0" },
+                        opacity: canScrollRight ? 1 : 0.5,
+                    }}
+                >
+                    <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
+                </IconButton>
+
+                <Box
+                    ref={scrollRef}
+                    sx={{
+                        width: "100%", 
+                        overflowX: "auto",
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: 2,
+                        p: 1.5,
+                        pb: 2,
+                        backgroundColor: "#f9f9f9",
+                        borderRadius: "8px",
+                        border: "1px solid #eee",
+                        scrollBehavior: "smooth",
+                        direction: "ltr", // Explicit LTR direction
+                        "&::-webkit-scrollbar": { display: "none" },
+                        msOverflowStyle: "none",
+                        scrollbarWidth: "none",
+                    }}
+                >
+                    {["1", "2", "3", "4", "5"].map((numStr, index) => (
+                        <Box key={index} sx={{ flexShrink: 0 }}>
+                             <PlanColumnPh
+                                number={numStr}
+                                data={phPrograms[index + 1]}
+                                onChange={(newData) => handlePhProgramChange(index + 1, newData)}
+                            />
+                        </Box>
+                    ))}
+                </Box>
+
+                 <IconButton
+                    onClick={() => slide("left")}
+                    disabled={!canScrollLeft}
+                    sx={{
+                        width: "30px",
+                        height: "40px",
+                        borderRadius: "5px",
+                        backgroundColor: "#E3E3E3",
+                        border: "0.5px solid #9F9F9F",
+                        "&:hover": { backgroundColor: "#d0d0d0" },
+                        opacity: canScrollLeft ? 1 : 0.5,
+                    }}
+                >
+                    <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
+                </IconButton>
             </Box>
           </Box>
         )}
