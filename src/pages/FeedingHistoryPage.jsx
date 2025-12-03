@@ -1,22 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
   Typography,
-  Tabs,
-  Tab,
   TextField,
-  Button,
   IconButton,
-  Grid,
   Container,
 } from "@mui/material";
-import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../api/apiClient";
 
 // --- کامپوننت کمکی برای ستون‌های برنامه (عریض‌تر و فشرده‌تر) ---
-const PlanColumn = ({ number }) => (
+const PlanColumn = ({ number, values = [] }) => (
   <Paper
     variant="outlined"
     sx={{
@@ -26,7 +22,7 @@ const PlanColumn = ({ number }) => (
       gap: 1.2, // فاصله عمودی بین ردیف‌ها
       minWidth: 152, // --- عرض کارت‌ها بیشتر شد ---
       borderRadius: "8px",
-      pl:5
+      pl: 5,
     }}
   >
     <Typography
@@ -40,156 +36,65 @@ const PlanColumn = ({ number }) => (
     </Typography>
 
     {/* ردیف‌های داخل ستون */}
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />{" "}
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۱
-      </Typography>
-      {/* عرض فیلد بیشتر شد */}
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۲
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۳
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۴
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۵
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۶
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۷
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۸
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۹
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 1,
-      }}
-    >
-      <TextField size="small" variant="outlined" sx={{ width: "100px" }} />
-      <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-        ۱۰
-      </Typography>
-    </Box>
+    {[...Array(10)].map((_, index) => (
+      <Box
+        key={index}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1,
+        }}
+      >
+        <TextField
+          size="small"
+          variant="outlined"
+          sx={{ width: "100px" }}
+          value={values[index] || ""}
+          InputProps={{
+            readOnly: true,
+          }}
+        />
+        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
+          {index + 1}
+        </Typography>
+      </Box>
+    ))}
   </Paper>
 );
 
 // --- کامپوننت اصلی صفحه ---
 const FeedingHistoryPage = () => {
   const [tabValue, setTabValue] = useState(2);
+  const [historyData, setHistoryData] = useState([]);
   const navigate = useNavigate();
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await apiClient.post(
+          "/log/soluble/foodstuff-preparation-program-schedule/",
+          { limit: 10 }
+        );
+        const data = Array.isArray(response) ? response : response.results || [];
+        // Take the last 10 items if more are returned, or just the data if less.
+        // Assuming the API returns them in chronological order, we might want the *latest* 10.
+        // Usually "limit: 10" on a log endpoint returns the *latest* 10.
+        // Let's assume the API returns the latest ones directly or we just take the first 10 of the response.
+        // If we need to map 1-10 as "most recent first" or "oldest first", it depends on user intent.
+        // Usually a history list is "latest at top" (1) or "oldest at top".
+        // Given the UI has 1..10, let's map index 0 to 1.
+        setHistoryData(data.slice(0, 10));
+      } catch (error) {
+        console.error("Error fetching history data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleBackClick = () => {
     navigate(-1);
-  };
-
-  const handleSave = () => {
-    console.log("Saving settings...");
   };
 
   return (
@@ -202,14 +107,14 @@ const FeedingHistoryPage = () => {
           alignItems: "center",
           borderColor: "divider",
           direction: "ltr",
-          pb: 0, 
+          pb: 0,
           mb: 2,
         }}
       >
         <IconButton
           onClick={handleBackClick}
           title="بستن"
-          size="small" 
+          size="small"
           sx={{
             color: "#FFF",
             backgroundColor: "red",
@@ -224,8 +129,8 @@ const FeedingHistoryPage = () => {
       <Paper
         elevation={3}
         sx={{
-          height: "auto", 
-          maxHeight: "calc(100vh - 32px)", 
+          height: "auto",
+          maxHeight: "calc(100vh - 32px)",
           display: "flex",
           flexDirection: "column",
           borderRadius: "10px",
@@ -237,8 +142,8 @@ const FeedingHistoryPage = () => {
           <Box
             sx={{
               flexGrow: 1,
-              overflowY: "auto", 
-              p: { xs: 1, md: 2 }, 
+              overflowY: "auto",
+              p: { xs: 1, md: 2 },
               direction: "rtl",
             }}
           >
@@ -248,8 +153,8 @@ const FeedingHistoryPage = () => {
                 overflowX: "auto",
                 display: "flex",
                 flexDirection: "row",
-                gap: "20px", 
-                p: 1.5, 
+                gap: "20px",
+                p: 1.5,
                 pb: 2,
                 backgroundColor: "#f9f9f9",
                 borderRadius: "8px",
@@ -257,10 +162,22 @@ const FeedingHistoryPage = () => {
               }}
             >
               {/* --- ۱۳. فقط ۴ کارت رندر می‌شود --- */}
-              <PlanColumn number="دفعات تزریق استوک" />
-              <PlanColumn number="حجن ساخت محلول" />
-              <PlanColumn number="ایندکس ph" />
-              <PlanColumn number="ایندکس ec" />
+              <PlanColumn
+                number="دفعات تزریق استوک"
+                values={historyData.map((item) => item.log_data?.reported_stock_injection_count)}
+              />
+              <PlanColumn
+                number="حجن ساخت محلول"
+                values={historyData.map((item) => item.log_data?.reported_volume)}
+              />
+              <PlanColumn
+                number="ایندکس ph"
+                values={historyData.map((item) => item.log_data?.reported_ph)}
+              />
+              <PlanColumn
+                number="ایندکس ec"
+                values={historyData.map((item) => item.log_data?.reported_ec)}
+              />
             </Box>
           </Box>
         )}
