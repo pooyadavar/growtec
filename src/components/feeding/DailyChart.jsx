@@ -237,6 +237,7 @@ const CalibrationModalContent = ({
 const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
   const [data, setData] = useState([]);
 
+  // تنظیمات استایل باکس نمودار
   const chartBoxStyle = {
     width: "98%",
     height: "100px",
@@ -250,7 +251,6 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
     px: 1.5,
     overflow: "hidden",
     pt: 1,
-    
   };
 
   const fetchLatest = useCallback(async () => {
@@ -293,11 +293,11 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
 
         if (newPoints.length === 0) return prev;
         const combinedData = [...prev, ...newPoints];
-        
+
         if (isActive && combinedData.length > 0) {
-            onTimeUpdate(combinedData[combinedData.length - 1].time);
+          onTimeUpdate(combinedData[combinedData.length - 1].time);
         }
-        
+
         return combinedData;
       });
     } catch (err) {
@@ -309,72 +309,200 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
     fetchLatest();
     let interval = null;
     if (isActive) {
-        interval = setInterval(fetchLatest, 5000);
+      interval = setInterval(fetchLatest, 5000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isActive, fetchLatest]);
 
-  const getChartOptions = (key, title, color, shape) => {
-    const validData = data.filter((d) => typeof d[key] === "number");
-    let min = 0, max = 10;
-    if (validData.length > 0) {
-      const values = validData.map((d) => d[key]);
-      const dataMin = Math.min(...values);
-      const dataMax = Math.max(...values);
+  const getChartOptions = (key, title, color, shape, showXAxis) => {
+    // 1. محاسبه مقادیر معتبر فقط برای پیدا کردن Min/Max محور Y
+    const validValues = data
+      .map((d) => d[key])
+      .filter((v) => typeof v === "number");
+
+    let min = 0,
+      max = 10;
+    if (validValues.length > 0) {
+      const dataMin = Math.min(...validValues);
+      const dataMax = Math.max(...validValues);
       const buffer = (dataMax - dataMin) * 0.2 || 1;
       min = dataMin - buffer;
       max = dataMax + buffer;
     }
+
+    // 2. تنظیمات چارت
     return {
-      data: validData,
+      // نکته: کل دیتا را پاس می‌دهیم تا محور زمان در تمام چارت‌ها یکسان باشد
+      data: data,
       padding: { top: 5, right: 15, bottom: 5, left: 5 },
-      series: [{
-        type: "line", xKey: "dateObj", yKey: key, yName: title, stroke: color, strokeWidth: 2,
-        marker: { enabled: false },
-        tooltip: {
+      series: [
+        {
+          type: "line",
+          xKey: "dateObj",
+          yKey: key,
+          yName: title,
+          stroke: color,
+          strokeWidth: 2,
+          marker: { enabled: false },
+          connectMissingValues: false,
+          tooltip: {
             renderer: ({ datum, xKey, yKey }) => {
-                const date = datum[xKey];
-                const timeString = date.toLocaleTimeString("en-GB", { hour12: false });
-                return { title: timeString, content: `${title}: ${datum[yKey]}` };
-            }
-        }
-      }],
-      axes: [
-        {
-          type: "time", position: "bottom", nice: true,
-          label: { fontSize: 10, color: "#666", format: "%H:%M", autoRotate: false, rotation: 0 },
-          line: { width: 1, color: "#ccc" }, gridStyle: [{ stroke: undefined }],
-        },
-        {
-          type: "number", position: "left", min, max,
-          label: { fontSize: 9, color: "#333" }, tick: { count: 3 }, gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
+              if (datum[yKey] === undefined || datum[yKey] === null)
+                return { content: "No Data" };
+              const date = datum[xKey];
+              const timeString = date
+                ? date.toLocaleTimeString("en-GB", { hour12: false })
+                : "";
+              return {
+                title: timeString,
+                content: `${title}: ${datum[yKey]}`,
+              };
+            },
+          },
         },
       ],
-      legend: { enabled: false }, background: { visible: false },
+      axes: [
+        {
+          type: "time",
+          position: "bottom",
+          nice: true,
+          // فقط اگر showXAxis true باشد، اعداد را نشان بده
+          label: {
+            enabled: showXAxis,
+            fontSize: 10,
+            color: "#666",
+            format: "%H:%M",
+            autoRotate: false,
+            rotation: 0,
+          },
+          // خط افقی پایین نمودار
+          line: { enabled: showXAxis, width: 1, color: "#ccc" },
+
+          // *** تنظیمات مهم برای خطوط عمودی ***
+          // 1. Tick باید همیشه enabled باشد تا گرید رسم شود
+          // 2. اگر showXAxis=false باشد، رنگ Tick را transparent می‌کنیم تا دیده نشود
+          tick: {
+            enabled: true,
+            color: showXAxis ? "#666" : "transparent",
+            width: 1,
+            size: 6, // اندازه تیک‌ها
+          },
+
+          // *** استایل خطوط عمودی (شبیه به عکس) ***
+          gridStyle: [
+            {
+              stroke: "#000000", // رنگ مشکی (یا خاکستری خیلی تیره)
+              lineDash: [0],     // [0] یعنی خط ممتد (بدون خط‌چین)
+              opacity: 0.3,      // کمی شفافیت تا خیلی توی ذوق نزند
+              width: 1,          // ضخامت خط
+            },
+          ],
+          
+          crosshair: {
+            enabled: true,
+            stroke: "#999999",
+            strokeWidth: 1,
+          },
+        },
+        {
+          type: "number",
+          position: "left",
+          min,
+          max,
+          label: { fontSize: 9, color: "#333" },
+          tick: { count: 3 },
+          gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
+        },
+      ],
+      legend: { enabled: false },
+      background: { visible: false },
     };
   };
 
   return (
-    <Box sx={{ width: "96%", display: "flex", flexDirection: "column", gap: "4px", px: "2px" }}>
+    <Box
+      sx={{
+        width: "96%",
+        display: "flex",
+        flexDirection: "column",
+        gap: "4px",
+        px: "2px",
+      }}
+    >
       <Box sx={chartBoxStyle}>
-        <Box sx={{ display: "flex", justifyContent: "right", px: 1, mb: -1, zIndex: 2 }}>
-          <Typography variant="caption" sx={{ fontWeight: "bold", color: "#0077FF" }}>EC</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "right",
+            px: 1,
+            mb: -1,
+            zIndex: 2,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: "bold", color: "#0077FF" }}
+          >
+            EC
+          </Typography>
         </Box>
-        <Box sx={{ height: "100%", width: "100%" }}><AgCharts options={getChartOptions("ec", "EC", "#0077FF", "circle")} style={{ height: "80%" }} /></Box>
+        <Box sx={{ height: "100%", width: "100%" }}>
+          <AgCharts
+            options={getChartOptions("ec", "EC", "#0077FF", "circle", false)}
+            style={{ height: "80%" }}
+          />
+        </Box>
       </Box>
       <Box sx={chartBoxStyle}>
-        <Box sx={{ display: "flex", justifyContent: "right", px: 1, mb: -1, zIndex: 2 }}>
-          <Typography variant="caption" sx={{ fontWeight: "bold", color: "#FF5E57" }}>PC (pH)</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "right",
+            px: 1,
+            mb: -1,
+            zIndex: 2,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: "bold", color: "#FF5E57" }}
+          >
+            PC (pH)
+          </Typography>
         </Box>
-        <Box sx={{ height: "100%", width: "100%" }}><AgCharts options={getChartOptions("pc", "PC", "#FF5E57", "square")} style={{ height: "80%" }} /></Box>
+        <Box sx={{ height: "100%", width: "100%" }}>
+          <AgCharts
+            options={getChartOptions("pc", "PC", "#FF5E57", "square", false)}
+            style={{ height: "80%" }}
+          />
+        </Box>
       </Box>
       <Box sx={chartBoxStyle}>
-        <Box sx={{ display: "flex", justifyContent: "right", px: 1, mb: -1, zIndex: 2 }}>
-          <Typography variant="caption" sx={{ fontWeight: "bold", color: "#2ECC71" }}>Temp</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "right",
+            px: 1,
+            mb: -1,
+            zIndex: 2,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: "bold", color: "#2ECC71" }}
+          >
+            Temp
+          </Typography>
         </Box>
-        <Box sx={{ height: "100%", width: "100%" }}><AgCharts options={getChartOptions("temp", "Temp", "#2ECC71", "triangle")} style={{ height: "80%" }} /></Box>
+        <Box sx={{ height: "100%", width: "100%" }}>
+          {/* فقط اینجا showXAxis = true است */}
+          <AgCharts
+            options={getChartOptions("temp", "Temp", "#2ECC71", "triangle", true)}
+            style={{ height: "80%" }}
+          />
+        </Box>
       </Box>
     </Box>
   );
@@ -383,33 +511,31 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
 // --- کامپوننت اصلی با اسلایدر Native ---
 const SlidingWindowChart = () => {
   const scrollRef = useRef(null);
-  
+
   const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
   const [calibrateTab, setCalibrateTab] = useState("ec");
-  const [calibrateValues, setCalibrateValues] = useState({ ecLow: "54", ecHigh: "1500", phLow: "", phHigh: "" });
+  const [calibrateValues, setCalibrateValues] = useState({
+    ecLow: "54",
+    ecHigh: "1500",
+    phLow: "",
+    phHigh: "",
+  });
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastUpdateTime, setLastUpdateTime] = useState("---");
 
-  // وضعیت دکمه‌های اسکرول
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // بررسی وضعیت دکمه‌ها و آپدیت ایندکس فعال
   const handleScrollEvents = useCallback(() => {
     const el = scrollRef.current;
     if (el) {
-      // 1. بررسی دکمه‌ها (با کمی تولرانس)
       const isAtStart = el.scrollLeft <= 5;
       const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 5;
-      
-      // نکته: در حالت direction: ltr:
-      // start یعنی سمت چپ (اول لیست) -> دکمه Back باید غیرفعال شود
-      // end یعنی سمت راست (آخر لیست) -> دکمه Forward باید غیرفعال شود
+
       setCanScrollLeft(!isAtStart);
       setCanScrollRight(!isAtEnd);
 
-      // 2. پیدا کردن ایندکس فعال
       const index = Math.round(el.scrollLeft / el.clientWidth);
       if (index !== activeIndex && index >= 0 && index < SENSORS.length) {
         setActiveIndex(index);
@@ -420,27 +546,25 @@ const SlidingWindowChart = () => {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) {
-      el.addEventListener('scroll', handleScrollEvents);
-      window.addEventListener('resize', handleScrollEvents);
-      
-      // تاخیر کوچک برای اطمینان از رندر شدن DOM و محاسبه عرض‌ها
+      el.addEventListener("scroll", handleScrollEvents);
+      window.addEventListener("resize", handleScrollEvents);
+
       setTimeout(handleScrollEvents, 100);
-      
+
       return () => {
-        el.removeEventListener('scroll', handleScrollEvents);
-        window.removeEventListener('resize', handleScrollEvents);
+        el.removeEventListener("scroll", handleScrollEvents);
+        window.removeEventListener("resize", handleScrollEvents);
       };
     }
   }, [handleScrollEvents]);
 
-  // تابع اسکرول با دکمه
   const slide = (direction) => {
     const el = scrollRef.current;
     if (el) {
       const width = el.clientWidth;
       el.scrollBy({
-        left: direction === 'left' ? -width : width,
-        behavior: 'smooth',
+        left: direction === "left" ? -width : width,
+        behavior: "smooth",
       });
     }
   };
@@ -454,97 +578,132 @@ const SlidingWindowChart = () => {
   return (
     <Container
       sx={{
-        width: "950px", height: "370px", bgcolor: "#FFFFFF", borderRadius: "10px",
+        width: "950px",
+        height: "370px",
+        bgcolor: "#FFFFFF",
+        borderRadius: "10px",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
-        display: "flex", flexDirection: "column", gap: 2, alignItems: "center", py: 2,
-        position: "relative"
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        alignItems: "center",
+        py: 2,
+        position: "relative",
       }}
     >
-      <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "88%", mb: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          width: "88%",
+          mb: 1,
+        }}
+      >
         <Box>
           <Typography fontFamily={"IRANSANS"} fontWeight="bold">
             نمودار وضعیت مخزن - {currentSensor.name}
           </Typography>
-          <Typography fontFamily={"IRANSANS"} fontSize={12} color="#666" mt={0.5}>
-            آخرین داده: <span style={{ direction: "ltr", display: "inline-block" }}>{lastUpdateTime}</span>
+          <Typography
+            fontFamily={"IRANSANS"}
+            fontSize={12}
+            color="#666"
+            mt={0.5}
+          >
+            آخرین داده:{" "}
+            <span style={{ direction: "ltr", display: "inline-block" }}>
+              {lastUpdateTime}
+            </span>
           </Typography>
         </Box>
         <Box>
           <IconTextButton
             icon={assets.svg.calibrationsvg}
             text={`کالیبراسیون ${currentSensor.name}`}
-            bgColor="#6CCDB0" textColor="black" height="15px" iconPosition="left"
+            bgColor="#6CCDB0"
+            textColor="black"
+            height="15px"
+            iconPosition="left"
             sx={{ marginLeft: "auto", fontSize: "14px", mt: "-20px" }}
             onClick={() => setIsCalibrateOpen(true)}
           />
         </Box>
       </Box>
 
-      {/* بخش اسلایدر */}
-      <Box sx={{ width: "100%", display: "flex", flexDirection: "row", alignItems: "center", gap: 2, justifyContent: "center"  , position:"relative" , bottom:9}}>
-        
-        {/* دکمه چپ: با زدن این، اسکرول مثبت (به راست) می‌رود = سنسور بعدی */}
-        {/* این منطق ممکن است برعکس به نظر بیاید ولی چون دکمه چپ در UI برای "بعدی" استفاده شده اینطور تنظیم شد */}
-        {/* اگر می‌خواهید دکمه سمت چپ به سنسور "قبلی" برگردد، slide('left') را صدا بزنید */}
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 2,
+          justifyContent: "center",
+          position: "relative",
+          bottom: 9,
+        }}
+      >
         <IconButton
-          onClick={() => slide('right')} 
+          onClick={() => slide("right")}
           disabled={!canScrollRight}
           sx={{
-            width: "30px", height: "40px", borderRadius: "5px",
-            backgroundColor: "#E3E3E3", border: "0.5px solid #9F9F9F",
+            width: "30px",
+            height: "40px",
+            borderRadius: "5px",
+            backgroundColor: "#E3E3E3",
+            border: "0.5px solid #9F9F9F",
             "&:hover": { backgroundColor: "#d0d0d0" },
-            opacity: canScrollRight ? 1 : 0.5
+            opacity: canScrollRight ? 1 : 0.5,
           }}
         >
           <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
         </IconButton>
 
-        {/* ناحیه اسکرول */}
         <Box
           ref={scrollRef}
           sx={{
-            width: "860px", 
+            width: "860px",
             height: "280px",
-            display: 'flex',
+            display: "flex",
             overflowX: "auto",
             scrollBehavior: "smooth",
-            scrollSnapType: 'x mandatory', // قفل شدن اسکرول
-            direction: 'ltr', // *** مهم: اجبار به LTR برای محاسبات صحیح اسکرول ***
+            scrollSnapType: "x mandatory",
+            direction: "ltr",
             "&::-webkit-scrollbar": { display: "none" },
             msOverflowStyle: "none",
             scrollbarWidth: "none",
           }}
         >
-            {SENSORS.map((sensor, index) => (
-              <Box
-                key={sensor.id}
-                sx={{
-                    minWidth: "100%", // اطمینان از پر کردن کل عرض
-                    flexShrink: 0,    // *** مهم: جلوگیری از جمع شدن آیتم‌ها ***
-                    scrollSnapAlign: 'center',
-                    display: "flex",
-                    justifyContent: "center",
-
-                }}
-              >
-                <SensorChartItem 
-                    sensor={sensor} 
-                    isActive={index === activeIndex}
-                    onTimeUpdate={handleTimeUpdate}
-                />
-              </Box>
-            ))}
+          {SENSORS.map((sensor, index) => (
+            <Box
+              key={sensor.id}
+              sx={{
+                minWidth: "100%",
+                flexShrink: 0,
+                scrollSnapAlign: "center",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <SensorChartItem
+                sensor={sensor}
+                isActive={index === activeIndex}
+                onTimeUpdate={handleTimeUpdate}
+              />
+            </Box>
+          ))}
         </Box>
 
-        {/* دکمه راست: با زدن این، اسکرول منفی (به چپ) می‌رود = سنسور قبلی */}
         <IconButton
-          onClick={() => slide('left')}
+          onClick={() => slide("left")}
           disabled={!canScrollLeft}
           sx={{
-            width: "30px", height: "40px", borderRadius: "5px",
-            backgroundColor: "#E3E3E3", border: "0.5px solid #9F9F9F",
+            width: "30px",
+            height: "40px",
+            borderRadius: "5px",
+            backgroundColor: "#E3E3E3",
+            border: "0.5px solid #9F9F9F",
             "&:hover": { backgroundColor: "#d0d0d0" },
-            opacity: canScrollLeft ? 1 : 0.5
+            opacity: canScrollLeft ? 1 : 0.5,
           }}
         >
           <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
