@@ -67,3 +67,11 @@ export const getFoodstuffPreparationProgramPh = async (programNumber) => {
 export const updateFoodstuffPreparationProgramPh = async (data) => {
   return apiClient.post('/soluble/foodstuff-preparation-program-ph/', data);
 };
+
+export const calibrationEc = async (data) => {
+  return apiClient.post('/calibration/calibration-ec/', data);
+};
+
+export const calibrationPh = async (data) => {
+  return apiClient.post('/calibration/calibration-ph/', data);
+};
