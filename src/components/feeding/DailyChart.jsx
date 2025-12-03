@@ -15,7 +15,7 @@ import { AgCharts } from "ag-charts-react";
 import assets from "../../assets";
 import IconTextButton from "../../card/IconTextButton";
 import apiClient from "../../api/apiClient";
-import { calibrationEc, calibrationPh } from "../../api/solubleApi";
+import { calibrationEc, calibrationPh, getSolubleEcPhTemperature } from "../../api/solubleApi";
 import toast from "react-hot-toast";
 
 const SENSORS = [
@@ -39,14 +39,86 @@ const CalibrationModalContent = ({
 }) => {
   const [ecStep, setEcStep] = useState(1);
   const [phStep, setPhStep] = useState(1);
+  const [realTimeData, setRealTimeData] = useState([]);
 
-  // Reset step when modal opens or tab changes
+  // Reset step and data when modal opens or tab changes
   useEffect(() => {
     if (open) {
       setEcStep(1);
       setPhStep(1);
+      setRealTimeData([]);
     }
   }, [open, calibrateTab]);
+
+  // Fetch real-time data
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchData = async () => {
+      try {
+        const response = await getSolubleEcPhTemperature();
+        // response structure: { "1": { ec, ph, temperature }, ... }
+        const sensorData = response[String(sensorId)];
+
+        if (sensorData) {
+          const now = new Date();
+          const value = calibrateTab === "ec" ? sensorData.ec : sensorData.ph;
+
+          setRealTimeData((prev) => {
+            const newData = [...prev, { time: now, value: value }];
+            if (newData.length > 50) newData.shift(); // Keep last 50 points
+            return newData;
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching real-time calibration data:", error);
+      }
+    };
+
+    const interval = setInterval(fetchData, 1000);
+    return () => clearInterval(interval);
+  }, [open, sensorId, calibrateTab]);
+
+  const chartOptions = {
+    data: realTimeData,
+    padding: { top: 10, right: 20, bottom: 10, left: 10 },
+    series: [
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "value",
+        stroke: calibrateTab === "ec" ? "#0077FF" : "#FF5E57",
+        strokeWidth: 2,
+        marker: { enabled: true, size: 4 },
+        tooltip: {
+          renderer: ({ datum, xKey, yKey }) => {
+            return {
+              title: datum[xKey].toLocaleTimeString(),
+              content: `${datum[yKey]}`,
+            };
+          },
+        },
+      },
+    ],
+    axes: [
+      {
+        type: "time",
+        position: "bottom",
+        label: {
+          format: "%H:%M:%S",
+          fontSize: 10,
+        },
+        tick: { count: 5 },
+      },
+      {
+        type: "number",
+        position: "left",
+        label: { fontSize: 10 },
+      },
+    ],
+    legend: { enabled: false },
+    background: { visible: false },
+  };
 
   const handleEcCalibrationStep1 = async () => {
     if (!calibrateValues.ecLow || !calibrateValues.ecHigh) {
@@ -264,13 +336,36 @@ const handlePhHighConfirm = async () => {
           <Box
             sx={{
               width: "100%",
-              height: "120px",
+              height: "150px",
               border: "3px solid #66bb6a",
               borderRadius: "10px",
               mb: 4,
               bgcolor: "#fff",
+              overflow: "hidden",
+              position: "relative", 
             }}
-          />
+          >
+             {realTimeData.length > 0 ? (
+                <AgCharts
+                  options={chartOptions}
+                  style={{ width: "100%", height: "100%" }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography fontFamily="IRANSANS" fontSize={12} color="#999">
+                    در حال دریافت داده...
+                  </Typography>
+                </Box>
+              )}
+          </Box>
           <Box
             sx={{
               display: "flex",
@@ -437,7 +532,7 @@ const handlePhHighConfirm = async () => {
 };
 
 // --- آیتم تکی نمودار ---
-const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
+const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
   const [data, setData] = useState([]);
 
   // تنظیمات استایل باکس نمودار
@@ -510,13 +605,13 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate }) => {
   useEffect(() => {
     fetchLatest();
     let interval = null;
-    if (isActive) {
+    if (isActive && !isModalOpen) {
       interval = setInterval(fetchLatest, 5000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, fetchLatest]);
+  }, [isActive, fetchLatest, isModalOpen]);
 
   const getChartOptions = (key, title, color, shape, showXAxis) => {
     // 1. محاسبه مقادیر معتبر فقط برای پیدا کردن Min/Max محور Y
@@ -890,6 +985,7 @@ const SlidingWindowChart = () => {
                 sensor={sensor}
                 isActive={index === activeIndex}
                 onTimeUpdate={handleTimeUpdate}
+                isModalOpen={isCalibrateOpen}
               />
             </Box>
           ))}

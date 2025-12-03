@@ -75,3 +75,7 @@ export const calibrationEc = async (data) => {
 export const calibrationPh = async (data) => {
   return apiClient.post('/calibration/calibration-ph/', data);
 };
+
+export const getSolubleEcPhTemperature = async () => {
+  return apiClient.get('/soluble/ec-ph-temperature/');
+};
