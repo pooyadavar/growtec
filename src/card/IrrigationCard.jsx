@@ -18,6 +18,7 @@ const IrrigationCard = ({
   float1,
   float2,
   float3,
+  onClick,
 }) => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
@@ -36,6 +37,7 @@ const IrrigationCard = ({
 
   return (
     <Container
+      onClick={onClick}
       sx={{
         width: "293px",
         height: "640px",
@@ -45,6 +47,9 @@ const IrrigationCard = ({
         flexDirection: "column",
         justifyContent: "space-around",
         alignItems: "center",
+        cursor: onClick ? "pointer" : "default",
+        transition: "transform 0.2s",
+        "&:hover": onClick ? { transform: "scale(1.02)" } : {},
       }}
     >
       <Box

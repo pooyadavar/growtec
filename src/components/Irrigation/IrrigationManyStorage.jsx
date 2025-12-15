@@ -13,7 +13,7 @@ import {
 import assets from "../../assets";
 import IrrigationCard from "../../card/IrrigationCard";
 
-const IrrigationManyStorage = () => {
+const IrrigationManyStorage = ({ onStorageClick }) => {
   return (
     <Container
       sx={{
@@ -38,9 +38,9 @@ const IrrigationManyStorage = () => {
           alignItems: "center",
         }}
       >
-        <IrrigationCard IrrigationCard={1} storageCapacity float1={true} float2={true} float3={false} />
-        <IrrigationCard IrrigationCard={2} storageCapacity float1={true} float2={false} float3={false} />
-        <IrrigationCard IrrigationCard={3} storageCapacity float1={false} float2={false} float3={false} />
+        <IrrigationCard storageNumber={1} storageCapacity float1={true} float2={true} float3={false} onClick={() => onStorageClick && onStorageClick(1)} />
+        <IrrigationCard storageNumber={2} storageCapacity float1={true} float2={false} float3={false} onClick={() => onStorageClick && onStorageClick(2)} />
+        <IrrigationCard storageNumber={3} storageCapacity float1={false} float2={false} float3={false} onClick={() => onStorageClick && onStorageClick(3)} />
       </Box>
       <Box>
         <img src={assets.svg.prevBtn} alt="" className="button" />

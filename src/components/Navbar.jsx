@@ -92,6 +92,8 @@ const Navbar = () => {
               تغذیه
             </Button>
             <Button
+              component={Link}
+              to={"/irrigation"}
               variant="text"
               className={classes.navItem}
             >
