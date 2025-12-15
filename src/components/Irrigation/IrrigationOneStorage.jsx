@@ -6,6 +6,7 @@ import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکم
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import assets from "../../assets";
+import { Scale } from "@mui/icons-material";
 
 const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
@@ -38,6 +39,7 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
     display: "flex",
     justifyContent: "space-between",
     fontFamily: "IRANSANS",
+
   };
 
   // [جدید] - State برای مدیریت باز و بسته بودن مودال
@@ -83,7 +85,8 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
         justifyContent: "flex-start",
         alignItems: "center",
         gap: "20px",
-        py:6
+        py:6,
+        transform:"scale(0.85)"
       }}
     >
       {/* بخش بالای کارت: حجم مخزن */}
@@ -533,16 +536,17 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
                 flexDirection: "column",
                 width: "calc(100% - 40px)", // عرض جدول (منهای اسکرول)
                 alignItems: "center",
+                display:"flex"
               }}
             >
               <Typography
                 fontFamily={"IRANSANS"}
-                fontSize={18}
+                fontSize={12}
                 fontWeight="bold"
               >
-                ۱
+                
               </Typography>
-              <Typography fontFamily={"IRANSANS"} fontSize={16} mb={1}>
+              <Typography fontFamily={"IRANSANS"} fontSize={12} mb={1}>
                 جدول آبیاری
               </Typography>
 
