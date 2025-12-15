@@ -8,10 +8,6 @@ import {
 import assets from "../assets/index"; // مسیر `src/card` به `src/assets`
 import IconTextButton from "./IconTextButton"; // ایمپورت دکمه از فایل هم‌جوار
 
-// کامپوننت تمیز شده:
-// - ایمپورت‌های استفاده‌نشده (Button, MenuItem, FormControl, ...) حذف شدند.
-// - منطق استفاده‌نشده (tableArray, zone, handleZoneChange) حذف شد.
-// - پراپ‌های ثابت با پراپ‌های داینامیک (storageNumber, storageCapacity) جایگزین شدند.
 const IrrigationCard = ({
   storageNumber,
   storageCapacity,
@@ -50,6 +46,7 @@ const IrrigationCard = ({
         cursor: onClick ? "pointer" : "default",
         transition: "transform 0.2s",
         p:2,
+        transform:"scale(0.9)",
         "&:hover": onClick ? { transform: "scale(1.02)" } : {},
       }}
     >

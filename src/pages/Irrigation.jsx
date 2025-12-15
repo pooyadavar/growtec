@@ -16,7 +16,7 @@ const Irrigation = () => {
   };
 
   return (
-    <Container sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Container disableGutters sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       {selectedStorage ? (
         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-start', maxWidth: '825px' }}>
