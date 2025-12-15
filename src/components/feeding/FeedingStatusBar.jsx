@@ -9,9 +9,11 @@ import {
   FormControl,
   Select,
   Button,
-  Collapse, // اضافه شده برای انیمیشن
+  Collapse,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import { TransitionGroup } from "react-transition-group"; // اضافه شده برای مدیریت انیمیشن لیست
+import { TransitionGroup } from "react-transition-group";
 import IconTextButton from "../../card/IconTextButton";
 import assets from "../../assets";
 import { getFoodstuffSchedule, saveFoodstuffSchedule, updateFoodstuffSchedule, deleteFoodstuffSchedule } from "../../api/solubleApi";
@@ -217,8 +219,9 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew })
 
 const FeedingStatusBar = () => {
   const [modalPlans, setModalPlans] = useState(false);
+  const [isLoadingSchedule, setIsLoadingSchedule] = useState(true);
+  const [isErrorSchedule, setIsErrorSchedule] = useState(false);
 
-  // استیت کلی: حالا شامل آبجکت‌های کامل است، نه فقط ID
   const [planRows, setPlanRows] = useState([
     {
       id: crypto.randomUUID(),
@@ -244,6 +247,8 @@ const FeedingStatusBar = () => {
   };
 
   const fetchSchedule = async () => {
+    setIsLoadingSchedule(true);
+    setIsErrorSchedule(false);
     try {
       const response = await getFoodstuffSchedule();
       const data = response.data || response;
@@ -260,6 +265,9 @@ const FeedingStatusBar = () => {
       }
     } catch (error) {
       console.error("Failed to fetch schedule", error);
+      setIsErrorSchedule(true);
+    } finally {
+      setIsLoadingSchedule(false);
     }
   };
 
@@ -267,7 +275,6 @@ const FeedingStatusBar = () => {
     fetchSchedule();
   }, []);
 
-  // Define handlers before usage
   const handleModalPlansClose = () => setModalPlans(false);
 
   const handleModalPlansOpen = () => {
@@ -307,11 +314,6 @@ const FeedingStatusBar = () => {
         await deleteFoodstuffSchedule(idToDelete);
         toast.success("ردیف با موفقیت حذف شد");
         fetchSchedule();
-        // Also update planRows locally to reflect change immediately or wait for fetch?
-        // fetchSchedule updates rawSchedule. But planRows is local state.
-        // I should probably update planRows too or re-init planRows from fetch?
-        // Since modal is open, re-init might lose unsaved changes in OTHER rows?
-        // Safe to just remove from planRows locally too.
         setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
       } catch (error) {
         console.error("Error deleting row:", error);
@@ -347,7 +349,6 @@ const FeedingStatusBar = () => {
     });
   }, [planRows, rawSchedule]);
 
-  // تابع دکمه ثبت نهایی
   const handleSave = async () => {
     if (newRows.length === 0 && updatedRows.length === 0) {
       handleModalPlansClose();
@@ -356,7 +357,6 @@ const FeedingStatusBar = () => {
 
     const promises = [];
 
-    // POST new rows
     newRows.forEach((row) => {
       const payload = {
         is_active: row.isActive,
@@ -369,7 +369,6 @@ const FeedingStatusBar = () => {
       promises.push(saveFoodstuffSchedule(payload));
     });
 
-    // PUT updated rows
     updatedRows.forEach((row) => {
       const payload = {
         is_active: row.isActive,
@@ -393,7 +392,6 @@ const FeedingStatusBar = () => {
     }
   };
 
-  // رندرهای نمایشی جدول اصلی
   const renderScheduleRow = (row, index) => (
     <Box
       key={index}
@@ -454,6 +452,48 @@ const FeedingStatusBar = () => {
     textAlign: "center",
   };
 
+  if (isLoadingSchedule) {
+    return (
+      <Paper
+        elevation={3}
+        sx={{
+          width: 300,
+          height: "250px", // Fixed height for loading state
+          backgroundColor: "#FFFFFF",
+          borderRadius: "10px",
+          padding: "16px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress />
+      </Paper>
+    );
+  }
+
+  if (isErrorSchedule) {
+    return (
+      <Paper
+        elevation={3}
+        sx={{
+          width: 300,
+          height: "250px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "10px",
+          padding: "16px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Alert severity="error">
+          خطا در بارگذاری برنامه
+        </Alert>
+      </Paper>
+    );
+  }
+
   return (
     <>
       <Paper
@@ -473,7 +513,7 @@ const FeedingStatusBar = () => {
         <Box
           sx={{
             width: "100%",
-            maxHeight: "200px", // Adjusted for 3 rows
+            maxHeight: "200px",
             overflowY: "auto",
             paddingRight: "8px",
           }}
@@ -486,10 +526,10 @@ const FeedingStatusBar = () => {
               width: "100%",
               padding: "0 0 8px 0",
               borderBottom: "2px solid #E0E0E0",
-              position: 'sticky', // Make it sticky
-              top: 0, // Stick to the top
-              zIndex: 1, // Ensure it stays above scrolling content
-              backgroundColor: "#FFFFFF", // Match parent background for seamless sticky effect
+              position: 'sticky',
+              top: 0,
+              zIndex: 1,
+              backgroundColor: "#FFFFFF",
             }}
           >
             <Typography sx={headerStyle}>زمان</Typography>
@@ -542,7 +582,7 @@ const FeedingStatusBar = () => {
             borderRadius: "10px",
             backgroundColor: "#FFFFFF",
             width: "964px",
-            height: "460px", // ارتفاع کمی بیشتر شد تا دکمه ثبت جا شود
+            height: "460px",
             boxShadow: 24,
             padding: "8px 8px 16px 8px",
             display: "flex",
@@ -552,7 +592,6 @@ const FeedingStatusBar = () => {
           }}
           className="modalBox"
         >
-          {/* هدر مودال */}
           <div
             style={{
               display: "flex",
@@ -578,7 +617,6 @@ const FeedingStatusBar = () => {
             />
           </div>
 
-          {/* محتوای لیست سطرها */}
           <div
             style={{
               display: "flex",
@@ -599,7 +637,6 @@ const FeedingStatusBar = () => {
                 padding: "10px",
               }}
             >
-              {/* استفاده از TransitionGroup برای انیمیشن لیست */}
               <TransitionGroup>
                 {planRows.map((row) => {
                    const isNew = !rawSchedule.some((raw) => raw.id === row.id);
@@ -607,8 +644,8 @@ const FeedingStatusBar = () => {
                   <Collapse key={row.id}>
                     <PlanRow
                       id={row.id}
-                      data={row} // ارسال کل داده‌های سطر
-                      onChange={handleRowChange} // ارسال تابع تغییر
+                      data={row}
+                      onChange={handleRowChange}
                       onDelete={() => handleDeleteRow(row.id)}
                       canBeDeleted={planRows.length > 1}
                       convert={convert}
@@ -620,25 +657,23 @@ const FeedingStatusBar = () => {
             </Box>
           </div>
 
-          {/* فوتر مودال: دکمه افزودن و دکمه ثبت */}
           <div
             style={{
               width: "90%",
               maxWidth: "850px",
               display: "flex",
-              justifyContent: "space-between", // فاصله بین دکمه افزودن و ثبت
+              justifyContent: "space-between",
               alignItems: "center",
               marginTop: "20px",
               marginBottom: "10px",
             }}
           >
-            {/* دکمه ثبت */}
             <Button
               variant="contained"
               onClick={handleSave}
               disabled={newRows.length === 0 && updatedRows.length === 0}
               sx={{
-                backgroundColor: "#4CAF50", // رنگ سبز برای ثبت
+                backgroundColor: "#4CAF50",
                 "&:hover": { backgroundColor: "#45a049" },
                 borderRadius: "10px",
                 padding: "8px 24px",
@@ -649,7 +684,6 @@ const FeedingStatusBar = () => {
               ثبت تغییرات
             </Button>
 
-            {/* دکمه افزودن سطر */}
             <div
               className="add-field-btn"
               onClick={handleAddRow}

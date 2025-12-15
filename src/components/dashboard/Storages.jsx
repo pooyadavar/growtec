@@ -1,68 +1,30 @@
 import * as React from "react";
-import { Container, Typography, Box, Grid } from "@mui/material";
+import { Container, Box, Grid, Typography } from "@mui/material";
 import StorageCard from "../../card/StorageCard";
 import styled from "styled-components";
-import { useQuery } from "@tanstack/react-query";
-import { getIrrigationTanksStatus } from "../../api/dashboardApi"; // (مسیر را چک کنید)
 
 const StyledGridItem = styled(Grid)({
   transition: "transform 0.3s ease",
 });
 
-const Storages = () => {
-  const {
-    data: storagesList = [],
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["irrigationTanks"],
-    queryFn: getIrrigationTanksStatus,
-    refetchInterval: 5000,
-    select: (data) => {
-      if (!data || typeof data !== "object") return [];
-      return Object.entries(data).map(([key, value]) => ({
-        id: key,
-        ...value.contents, 
-      }));
-    },
-  });
-
-  // مدیریت وضعیت Loading
-  if (isLoading) {
+const Storages = ({ storagesList = [] }) => {
+  if (!storagesList || storagesList.length === 0) {
     return (
       <Container
         className="storage"
         sx={{
           width: "340px",
           height: "184px",
+          backgroundColor: "#ffffff",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+          borderRadius: "10px",
         }}
       >
-        <Typography fontFamily={"IRANSANS"}>
-          در حال بارگذاری مخازن...
-        </Typography>
-      </Container>
-    );
-  }
-
-  // مدیریت وضعیت Error
-  if (isError) {
-    return (
-      <Container
-        className="storage"
-        sx={{
-          width: "340px",
-          height: "184px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Typography fontFamily={"IRANSANS"} color="error">
-          خطا: {error.message}
+        <Typography fontFamily={"IRANSANS"} fontSize={12} color="textSecondary">
+          مخزنی یافت نشد
         </Typography>
       </Container>
     );
@@ -91,7 +53,6 @@ const Storages = () => {
         mx={"auto"}
       >
         <Grid container width={"60vw"} gap={2}>
-          {/* --- رندر کردن لیست با props کامل --- */}
           {storagesList.map((card) => (
             <StyledGridItem key={card.id} item>
               <StorageCard

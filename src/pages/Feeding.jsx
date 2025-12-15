@@ -45,31 +45,6 @@ const Feeding = () => {
     return statusNumber === 0 ? "در حال اصلاح pH" : "وضعیت دیگر";
   };
 
-  if (isLoading) {
-    return (
-      <Container
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "80vh",
-        }}
-      >
-        <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container sx={{ marginTop: "2rem" }}>
-        <Alert severity="error">
-          خطا در دریافت اطلاعات مخزن ساخت محلول: {error.message}
-        </Alert>
-      </Container>
-    );
-  }
-
   return (
     <Container>
       <div
@@ -119,7 +94,7 @@ const Feeding = () => {
             top: "-18px",
             left: "55px",
             transform: "scaleX(1.05)",
-            paddingTop:"5px",
+            paddingTop: "5px",
           }}
         >
           <Typography
@@ -133,8 +108,7 @@ const Feeding = () => {
           <div
             style={{
               width: "100%",
-              // height: "310px",
-              height: "10px",
+               height: "310px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -167,17 +141,41 @@ const Feeding = () => {
             مخزن ساخت محلول
           </Typography>
           {/* <FeedingMixer /> */}
-          <PhEcControlCardMixer
-            contents={mixTankData.contents}
-            statusText={getStatusText(mixTankData.status_number)}
-            ecTargetValue={ecTarget}
-            onEcTargetChange={handleEcChange}
-            reportData={mixTankData.acid_stock_report}
-            ecValue={mixTankData.ec_ph?.ec}
-            phValue={mixTankData.ec_ph?.ph}
-            ecRange={mixTankData.ec_ph?.range?.ec}
-            phRange={mixTankData.ec_ph?.range?.ph}
-          />
+          {isLoading ? (
+            <Paper
+              elevation={3}
+              sx={{
+                padding: 2,
+                width: "560px",
+                height: "320px",
+                minHeight:"300px",
+                backgroundColor: "#ffff",
+                display: "flex",
+                justifyContent: "center",
+                flexDirection: "column",
+                alignItems: "center",
+                borderRadius: "10px",
+              }}
+            >
+              <CircularProgress />
+            </Paper>
+          ) : isError ? (
+            <Alert severity="error">
+              خطا: {error.message}
+            </Alert>
+          ) : (
+            <PhEcControlCardMixer
+              contents={mixTankData?.contents}
+              statusText={getStatusText(mixTankData?.status_number)}
+              ecTargetValue={ecTarget}
+              onEcTargetChange={handleEcChange}
+              reportData={mixTankData?.acid_stock_report}
+              ecValue={mixTankData?.ec_ph?.ec}
+              phValue={mixTankData?.ec_ph?.ph}
+              ecRange={mixTankData?.ec_ph?.range?.ec}
+              phRange={mixTankData?.ec_ph?.range?.ph}
+            />
+          )}
           <Paper
             sx={{
               // boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
@@ -235,7 +233,14 @@ const Feeding = () => {
           </Paper>
         </div>
       </div>
-      <div style={{ marginTop: "125px", position: "relative", top: "-180px"  , transform: "scaleY(0.90)",}}>
+      <div
+        style={{
+          marginTop: "125px",
+          position: "relative",
+          top: "-180px",
+          transform: "scaleY(0.90)",
+        }}
+      >
         <DailyChart />
       </div>
     </Container>
