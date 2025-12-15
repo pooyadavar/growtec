@@ -2,7 +2,7 @@ import * as React from "react";
 import {
   Typography,
   Box,
-  Container,
+  Paper, // Changed from Container to Paper
   Divider,
 } from "@mui/material";
 import assets from "../assets/index"; // مسیر `src/card` به `src/assets`
@@ -36,7 +36,7 @@ const IrrigationCard = ({
   };
 
   return (
-    <Container
+    <Paper // Changed from Container to Paper
       onClick={onClick}
       sx={{
         width: "293px",
@@ -49,6 +49,7 @@ const IrrigationCard = ({
         alignItems: "center",
         cursor: onClick ? "pointer" : "default",
         transition: "transform 0.2s",
+        p:2,
         "&:hover": onClick ? { transform: "scale(1.02)" } : {},
       }}
     >
@@ -529,7 +530,7 @@ const IrrigationCard = ({
         </Box>
         
         {/* --- دکمه تعویض شده --- */}
-        <Box sx={{ width: "246px", marginX: "auto" , display: "flex", justifyContent: "center" }}>
+        <Box sx={{ width: "246px", marginLeft:"17px" , display: "flex", justifyContent: "center" , mb:1 }}>
           <IconTextButton
             text="تغییر تنظیمات"
             icon={assets.svg.setting2} // استفاده از asset
@@ -537,7 +538,7 @@ const IrrigationCard = ({
             bgColor="#FFCB82"
             textColor="#000000"
             width="246px"
-            height="56px"
+            height="30px"
             borderColor="#FFCB82" // کادر همرنگ پس‌زمینه
             sx={{
               justifyContent: "center", // بازنویسی برای وسط‌چین کردن
@@ -551,7 +552,7 @@ const IrrigationCard = ({
           />
         </Box>
       </Box>
-    </Container>
+    </Paper>
   );
 };
 

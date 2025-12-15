@@ -17,8 +17,8 @@ const IrrigationManyStorage = ({ onStorageClick }) => {
   return (
     <Container
       sx={{
-        width: "1004px",
-        height: "564px",
+        width: "100%",
+        height: "100%",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -31,11 +31,13 @@ const IrrigationManyStorage = ({ onStorageClick }) => {
       <Box
         sx={{
           width: "901px",
-          height: "564px",
+          height: "530px",
           display: "flex",
           flexDirection: "row-reverse",
           justifyContent: "space-between",
           alignItems: "center",
+          scale:"0.9",
+          gap:"20px"
         }}
       >
         <IrrigationCard storageNumber={1} storageCapacity float1={true} float2={true} float3={false} onClick={() => onStorageClick && onStorageClick(1)} />
