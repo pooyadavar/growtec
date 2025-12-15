@@ -1,11 +1,8 @@
 import React from "react";
-import { AppBar, Toolbar, Typography } from "@mui/material";
+import { AppBar, Toolbar, Button, Container } from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import Button from "@mui/material/Button";
-import Container from "@mui/material/Container";
 import assets from "../assets";
 import { Link } from "react-router-dom";
-
 
 const useStyles = makeStyles(() => ({
   appBar: {
@@ -23,21 +20,24 @@ const useStyles = makeStyles(() => ({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    color: "#fff",
+    color: "#fff !important",
     textDecoration: "none",
+    minWidth: "100px",
+    fontFamily: "IRANSANS !important",
   },
-  icon: {
-    fontSize: 24,
-  },
-  title: {
-    flexGrow: 1,
-    textAlign: "right",
+  iconImage: {
+    marginBottom: "8px",
   },
   itemHandler: {
     display: "flex",
     flexDirection: "row-reverse",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     width: "75%",
+    alignItems: "center",
+  },
+  logoSection: {
+    display: "flex",
+    alignItems: "center",
   },
 }));
 
@@ -54,7 +54,7 @@ const Navbar = () => {
         sx={{ backgroundColor: "#379E79" }}
       >
         <Toolbar className={classes.toolbar}>
-          <div style={{ display: "flex", alignItems: "center" }}>
+          <div className={classes.logoSection}>
             <img
               src={assets.svg.logoType}
               alt="Growtec"
@@ -65,94 +65,58 @@ const Navbar = () => {
               className={classes.navItem}
               sx={{
                 marginRight: "2rem",
-                color: "#ffff",
                 borderRadius: "4px",
-                fontFamily: "IRANSANS",
               }}
             >
-              <img src={assets.svg.lock} alt="Sign" />
+              <img src={assets.svg.lock} alt="Sign" className={classes.iconImage} />
               ورود
             </Button>
           </div>
           <div className={classes.itemHandler}>
-            <Link
+            <Button
+              component={Link}
               to={"/Home"}
               variant="text"
               className={classes.navItem}
-              sx={{
-                marginRight: "2rem",
-                color: "#ffff",
-                borderRadius: "4px",
-                fontFamily: "IRANSANS",
-              }}
             >
-              <img src={assets.svg.homeIcon} alt="home" />
+              <img src={assets.svg.homeIcon} alt="home" className={classes.iconImage} />
               خانه
-            </Link>
-            <Link
+            </Button>
+            <Button
+              component={Link}
               to={"/Feeding"}
               variant="text"
               className={classes.navItem}
-              sx={{
-                marginRight: "2rem",
-                color: "#ffff",
-                borderRadius: "4px",
-                fontFamily: "IRANSANS",
-              }}
             >
-              <img src={assets.svg.feeding} alt="feeding" />
+              <img src={assets.svg.feeding} alt="feeding" className={classes.iconImage} />
               تغذیه
-            </Link>
+            </Button>
             <Button
               variant="text"
               className={classes.navItem}
-              sx={{
-                marginRight: "2rem",
-                color: "#ffff",
-                borderRadius: "4px",
-                fontFamily: "IRANSANS",
-              }}
             >
-              <img src={assets.svg.water} alt="water" />
+              <img src={assets.svg.water} alt="water" className={classes.iconImage} />
               آب‌رسانی
             </Button>
             <Button
               variant="text"
               className={classes.navItem}
-              sx={{
-                marginRight: "2rem",
-                color: "#ffff",
-                borderRadius: "4px",
-                fontFamily: "IRANSANS",
-              }}
             >
-              <img src={assets.svg.monitoring} alt="Growtec" />
+              <img src={assets.svg.monitoring} alt="Growtec" className={classes.iconImage} />
               پایش
             </Button>
             <Button
               variant="text"
               className={classes.navItem}
-              sx={{
-                marginRight: "2rem",
-                color: "#ffff",
-                borderRadius: "4px",
-                fontFamily: "IRANSANS",
-              }}
             >
-              <img src={assets.svg.setting} alt="setting" />
+              <img src={assets.svg.setting} alt="setting" className={classes.iconImage} />
               تنظیمات
             </Button>
             <Button
               variant="text"
               className={classes.navItem}
-              sx={{
-                marginRight: "2rem",
-                color: "#ffff",
-                borderRadius: "4px",
-                fontFamily: "IRANSANS",
-              }}
             >
-              <img src={assets.svg.history} alt="history" />
+              <img src={assets.svg.history} alt="history" className={classes.iconImage} />
               تاریخچه
             </Button>
           </div>

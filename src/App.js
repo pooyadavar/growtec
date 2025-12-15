@@ -42,6 +42,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Feeding />} />
+        <Route path="/Home" element={<Dashboard />} />
         <Route path="/feeding-history" element={<FeedingHistoryPage />} />
         <Route path="/feeding-settings" element={<FeedingSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

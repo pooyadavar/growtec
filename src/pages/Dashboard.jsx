@@ -72,11 +72,11 @@ const Dashboard = () => {
           alignItems: "center",
         }}
       >
-        <div className="errors" style={{ height: "351px" }}>
+        <div className="errors" style={{ height: "351px" , scale:"0.9"}}>
           <Typography
             color="initial"
             fontFamily={"IRANSANS"}
-            fontSize={14}
+            fontSize={12}
             textAlign={"center"}
             paddingBottom={"5px"}
           >
@@ -84,11 +84,11 @@ const Dashboard = () => {
           </Typography>
           <ErrorComponent />
         </div>
-        <div className="mixer" style={{ height: "351px" }}>
+        <div className="mixer" style={{ height: "351px" , scale:"0.9"}}>
           <Typography
             color="initial"
             fontFamily={"IRANSANS"}
-            fontSize={14}
+            fontSize={12}
             textAlign={"center"}
             paddingBottom={"5px"}
           >
@@ -110,14 +110,14 @@ const Dashboard = () => {
             justifyContent: "space-between",
             alignItems: "center",
             height: "351px",
-            paddingBottom: "4px",
+            paddingBottom: "4px", scale:"0.9"
           }}
         >
           <div style={{ marginBottom: "0" }}>
             <Typography
               color="initial"
               fontFamily={"IRANSANS"}
-              fontSize={14}
+            fontSize={12}
               textAlign={"center"}
               paddingBottom={"5px"}
             >
@@ -134,7 +134,7 @@ const Dashboard = () => {
             <Typography
               color="initial"
               fontFamily={"IRANSANS"}
-              fontSize={14}
+            fontSize={12}
               textAlign={"center"}
               paddingBottom={"5px"}
             >
@@ -150,26 +150,27 @@ const Dashboard = () => {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginTop: "2rem",
+          marginTop: "0.5rem",
         }}
       >
-        <div className="around" style={{ height: "240px" }}>
+        <div className="around" style={{ height: "240px", scale:"0.95" }}>
           <Typography
             color="initial"
             fontFamily={"IRANSANS"}
-            fontSize={14}
+            fontSize={12}
             textAlign={"center"}
             paddingBottom={"5px"}
+            
           >
             هواشناسی
           </Typography>
           <Around />
         </div>
-        <div className="eghlim" style={{ height: "240px" }}>
+        <div className="eghlim" style={{ height: "240px", scale:"0.95" }}>
           <Typography
             color="initial"
             fontFamily={"IRANSANS"}
-            fontSize={14}
+            fontSize={12}
             textAlign={"center"}
             paddingBottom={"5px"}
           >
