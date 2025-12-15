@@ -17,6 +17,7 @@ import IconTextButton from "../../card/IconTextButton";
 import apiClient from "../../api/apiClient";
 import { calibrationEc, calibrationPh, getSolubleEcPhTemperature } from "../../api/solubleApi";
 import toast from "react-hot-toast";
+import { Scale } from "@mui/icons-material";
 
 const SENSORS = [
   { id: 1, name: "سنسور شماره ۱" },
@@ -875,14 +876,14 @@ const SlidingWindowChart = () => {
   return (
     <Container
       sx={{
-        width: "950px",
-        height: "370px",
+        width: "925px",
+        height: "365px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
-        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 5px 5px",
         display: "flex",
         flexDirection: "column",
-        gap: 2,
+        gap: 3,
         alignItems: "center",
         py: 2,
         position: "relative",
@@ -893,35 +894,35 @@ const SlidingWindowChart = () => {
           display: "flex",
           flexDirection: "row",
           justifyContent: "space-between",
-          width: "88%",
+          width: "100%",
           mb: 1,
         }}
       >
-        <Box>
-          <Typography fontFamily={"IRANSANS"} fontWeight="bold">
+        <Box sx={{display:"flex" , gap:"2rem"}}>
+          <Typography fontFamily={"IRANSANS"} fontWeight="bold" fontSize={12}>
             نمودار وضعیت مخزن - {currentSensor.name}
           </Typography>
           <Typography
             fontFamily={"IRANSANS"}
             fontSize={12}
             color="#666"
-            mt={0.5}
+            mt={0}
           >
-            آخرین داده:{" "}
+           -- آخرین داده:{" "}
             <span style={{ direction: "ltr", display: "inline-block" }}>
               {lastUpdateTime}
             </span>
           </Typography>
         </Box>
-        <Box>
+        <Box sx={{scale:"0.85"}}>
           <IconTextButton
             icon={assets.svg.calibrationsvg}
             text={`کالیبراسیون ${currentSensor.name}`}
             bgColor="#6CCDB0"
             textColor="black"
-            height="15px"
+            height="12px"
             iconPosition="left"
-            sx={{ marginLeft: "auto", fontSize: "14px", mt: "-20px" }}
+            sx={{ marginLeft: "auto", fontSize: "12px", mt: "-20px" }}
             onClick={() => setIsCalibrateOpen(true)}
           />
         </Box>

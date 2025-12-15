@@ -117,7 +117,7 @@ const PhEcControlCardMixer = ({
       elevation={3}
       sx={{
         padding: 2,
-        width: "490px", // اصلاح تایپوگرافی (450x -> 450px)
+        width: "560px", // اصلاح تایپوگرافی (450x -> 450px)
         height: "320px",
         backgroundColor: "#ffff",
         display: "flex",
@@ -143,7 +143,7 @@ const PhEcControlCardMixer = ({
           sx={{
             height: "100%",
             borderRadius: "15px",
-            width: "120px",
+            width: "150px",
             position: "relative",
           }}
         >

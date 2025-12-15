@@ -19,7 +19,7 @@ import { getMixTankStatus } from "../api/dashboardApi";
 import { Navigate, useNavigate } from "react-router-dom";
 
 const Feeding = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     data: mixTankData,
     isLoading,
@@ -74,13 +74,13 @@ const Feeding = () => {
     <Container>
       <div
         style={{
-          paddingTop: "14px",
+          paddingTop: "10px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           width: "950px",
           height: "338px",
-          gap: "7px",
+          gap: "0px",
         }}
       >
         <div
@@ -90,16 +90,18 @@ const Feeding = () => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            scale: "0.8",
+            scale: "0.65",
             position: "relative",
-            top: "-45px",
-            left: "20px",
+            top: "-53px",
+            left: "30px",
+            transform: "scaleX(1.05)",
           }}
         >
           <Typography
             fontFamily={"IRANSANS"}
             textAlign={"center"}
             fontSize={14}
+            pb={1}
           >
             کنترل دستی
           </Typography>
@@ -112,13 +114,20 @@ const Feeding = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            scale: "1.10",
+            scale: "0.88",
             position: "relative",
-            top: "0px",
-            left: "0px",
+            top: "-18px",
+            left: "55px",
+            transform: "scaleX(1.05)",
+            paddingTop:"5px",
           }}
         >
-          <Typography fontFamily={"IRANSANS"} fontSize={14}>
+          <Typography
+            fontFamily={"IRANSANS"}
+            textAlign={"center"}
+            fontSize={10}
+            pb={1}
+          >
             وضعیت محلول
           </Typography>
           <div
@@ -137,21 +146,23 @@ const Feeding = () => {
         </div>
         <div
           style={{
-            width: "700px",
+            width: "750px",
             height: "338px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            scale: "0.75",
+            scale: "0.63",
             position: "relative",
-            top: "-55px",
-            left: "0px",
+            top: "-53px",
+            left: "80px",
+            transform: "scaleX(1.07)",
           }}
         >
           <Typography
             fontFamily={"IRANSANS"}
             textAlign={"center"}
             fontSize={14}
+            pb={1}
           >
             مخزن ساخت محلول
           </Typography>
@@ -173,22 +184,21 @@ const Feeding = () => {
               borderRadius: "10px",
               height: "320px",
               backgroundColor: "#ffff",
-              mt:"0.5rem"
+              mt: "0.5rem",
             }}
           >
             <Stack
               direction="row"
-              spacing={0} 
+              spacing={0}
               gap={5}
               justifyContent="center"
               alignItems="center"
               sx={{
                 width: "91%",
-                margin: "8px 0", 
-                px:"7px"
+                margin: "8px 0",
+                px: "7px",
               }}
             >
-
               <Box sx={{}}>
                 <IconTextButton
                   icon={assets.svg.clockicon}
@@ -196,7 +206,7 @@ const Feeding = () => {
                   bgColor="#FFD799"
                   textColor="#333"
                   onClick={handleHistoryClick}
-                  width="125px"
+                  width="150px"
                 />
               </Box>
 
@@ -207,7 +217,7 @@ const Feeding = () => {
                   bgColor="#FF9933"
                   textColor="#fff"
                   onClick={handleAiClick}
-                  width="125px"
+                  width="150px"
                 />
               </Box>
 
@@ -218,14 +228,16 @@ const Feeding = () => {
                   bgColor="#86CCB2"
                   textColor="#333"
                   onClick={handleSettingsClick}
-                  width="125px"
+                  width="155px"
                 />
               </Box>
             </Stack>
           </Paper>
         </div>
       </div>
-      <div style={{ marginTop: "140px" , position:"relative" , top:"-120px"}}><DailyChart /></div>
+      <div style={{ marginTop: "125px", position: "relative", top: "-180px"  , transform: "scaleY(0.90)",}}>
+        <DailyChart />
+      </div>
     </Container>
   );
 };

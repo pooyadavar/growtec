@@ -39,7 +39,7 @@ function App() {
       {/* <IrrigationManyStorage/> */}
       {/* <IrrigationOneStorage/> */}
       <Outlet />
-      {/* <Navbar /> */}
+      <Navbar />
       <Routes>
         <Route path="/" element={<Feeding />} />
         <Route path="/feeding-history" element={<FeedingHistoryPage />} />

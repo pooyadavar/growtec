@@ -459,7 +459,7 @@ const FeedingStatusBar = () => {
       <Paper
         elevation={3}
         sx={{
-          width: 260,
+          width: 300,
           height: "auto",
           backgroundColor: "#FFFFFF",
           borderRadius: "10px",
@@ -473,7 +473,7 @@ const FeedingStatusBar = () => {
         <Box
           sx={{
             width: "100%",
-            maxHeight: "180px", // Adjusted for 3 rows
+            maxHeight: "200px", // Adjusted for 3 rows
             overflowY: "auto",
             paddingRight: "8px",
           }}
@@ -498,7 +498,7 @@ const FeedingStatusBar = () => {
             <Typography sx={headerStyle}>حجم</Typography>
             <Typography sx={headerStyle}>وضعیت</Typography>
           </Box>
-          <Stack spacing={1} sx={{ width: "100%", marginTop: "8px" }}>
+          <Stack spacing={0} sx={{ width: "100%", marginTop: "8px" }}>
             {scheduleData.map(renderScheduleRow)}
           </Stack>
         </Box>
@@ -508,6 +508,7 @@ const FeedingStatusBar = () => {
             marginTop: "15px",
             justifyContent: "right",
             display: "flex",
+            height:"20px"
           }}
         >
           <IconTextButton
@@ -518,7 +519,7 @@ const FeedingStatusBar = () => {
             textColor="#333"
             borderColor="#F7C98C"
             onClick={handleModalPlansOpen}
-            width="230px"
+            width="87%"
           />
         </Box>
       </Paper>
