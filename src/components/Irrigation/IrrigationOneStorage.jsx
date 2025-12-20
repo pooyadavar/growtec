@@ -7,8 +7,54 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import assets from "../../assets";
 import { Scale } from "@mui/icons-material";
+import { AgCharts } from "ag-charts-react";
+import apiClient from "../../api/apiClient";
 
-const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
+const IrrigationOneStorage = ({ storageNumber }) => {
+  // storageCapacity is now internal
+  const [tankData, setTankData] = React.useState({
+    current: null,
+    history: [],
+  });
+
+  const fetchData = React.useCallback(async () => {
+    try {
+      const response = await apiClient.post(
+        "/log/irrigation/irrigation-tanks-status/"
+      );
+      const data = Array.isArray(response) ? response : [];
+
+      // Filter for this specific storage number
+      const tankLogs = data.filter(
+        (log) => log.log_data.number === storageNumber
+      );
+
+      // Sort by date
+      const sortedLogs = [...tankLogs].sort(
+        (a, b) => new Date(a.log_date_time) - new Date(b.log_date_time)
+      );
+
+      if (sortedLogs.length > 0) {
+        const history = sortedLogs.map((log) => ({
+          time: new Date(log.log_date_time),
+          filled_volume: log.log_data.contents.filled_volume,
+        }));
+        // Latest log
+        const current = sortedLogs[sortedLogs.length - 1].log_data.contents;
+
+        setTankData({ current, history });
+      }
+    } catch (error) {
+      console.error("Error fetching irrigation tank status:", error);
+    }
+  }, [storageNumber]);
+
+  React.useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
     let res = "";
@@ -22,6 +68,91 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
     }
     return res;
   };
+
+  const chartOptions = React.useMemo(() => {
+    const chartData = tankData.history;
+    // Calculate min for y-axis dynamically
+    const validValues = chartData
+      .map((d) => d.filled_volume)
+      .filter((v) => typeof v === "number");
+
+    let min = 0;
+    if (validValues.length > 0) {
+      const dataMin = Math.min(...validValues);
+      const buffer = dataMin * 0.2 || 1;
+      min = Math.max(0, dataMin - buffer);
+    }
+
+    return {
+      data: chartData,
+      padding: { top: 5, right: 15, bottom: 5, left: 5 },
+      series: [
+        {
+          type: "line",
+          xKey: "time",
+          yKey: "filled_volume",
+          stroke: "#0077FF",
+          strokeWidth: 2,
+          marker: { enabled: false },
+          connectMissingValues: false,
+          tooltip: {
+            renderer: ({ datum, xKey, yKey }) => {
+              if (datum[yKey] === undefined || datum[yKey] === null)
+                return { content: "No Data" };
+              const date = datum[xKey];
+              const timeString = date
+                ? date.toLocaleTimeString("en-GB", { hour12: false })
+                : "";
+              return {
+                title: timeString,
+                content: `Volume: ${datum[yKey]}`,
+              };
+            },
+          },
+        },
+      ],
+      axes: [
+        {
+          type: "time",
+          position: "bottom",
+          nice: true,
+          label: { enabled: false },
+          line: { enabled: false, width: 1, color: "#ccc" },
+          tick: {
+            enabled: true,
+            color: "transparent",
+            width: 1,
+            size: 6,
+          },
+          gridStyle: [
+            {
+              stroke: "#000000",
+              lineDash: [0],
+              opacity: 0.3,
+              width: 1,
+            },
+          ],
+          crosshair: {
+            enabled: true,
+            stroke: "#999999",
+            strokeWidth: 1,
+          },
+        },
+        {
+          type: "number",
+          position: "left",
+          min,
+          max: tankData.current?.max_volume || 100,
+          label: { enabled: true, fontSize: 9, color: "#333" },
+          tick: { count: 3, enabled: true },
+          gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
+          crosshair: { enabled: false },
+        },
+      ],
+      legend: { enabled: false },
+      background: { visible: false },
+    };
+  }, [tankData]);
 
   // استایل اصلی مودال
   const modalStyle = {
@@ -39,7 +170,6 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
     display: "flex",
     justifyContent: "space-between",
     fontFamily: "IRANSANS",
-
   };
 
   // [جدید] - State برای مدیریت باز و بسته بودن مودال
@@ -85,8 +215,8 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
         justifyContent: "flex-start",
         alignItems: "center",
         gap: "20px",
-        py:6,
-        transform:"scale(0.85)"
+        py: 6,
+        transform: "scale(0.85)",
       }}
     >
       {/* بخش بالای کارت: حجم مخزن */}
@@ -119,7 +249,7 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
             textAlign={"center"}
             flexGrow={1}
           >
-            {convert(storageCapacity || 321)}
+            {convert(tankData.current?.filled_volume || 0)}
           </Typography>
           <Box
             sx={{
@@ -159,6 +289,7 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
           justifyContent: "flex-end",
           alignItems: "center",
           gap: "10px",
+          overflow: "hidden",
         }}
       >
         <Box
@@ -169,6 +300,7 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
             height: "60px",
             position: "relative",
             left: "20px",
+            marginRight: "30px",
           }}
         >
           <Box
@@ -177,7 +309,9 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
               height: "14px",
               borderRadius: "50%",
               border: "1px solid #9F9F9F",
-              backgroundColor: "#FFFFFF",
+              backgroundColor: tankData.current?.top_float_switch
+                ? "#00FF85"
+                : "#FFFFFF",
             }}
           ></Box>
           <Box
@@ -186,7 +320,9 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
               height: "14px",
               borderRadius: "50%",
               border: "1px solid #9F9F9F",
-              backgroundColor: "#FFFFFF",
+              backgroundColor: tankData.current?.middle_float_switch
+                ? "#00FF85"
+                : "#FFFFFF",
             }}
           ></Box>
           <Box
@@ -195,11 +331,21 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
               height: "14px",
               borderRadius: "50%",
               border: "1px solid #9F9F9F",
-              backgroundColor: "#00FF85",
+              backgroundColor: tankData.current?.buttom_float_switch
+                ? "#00FF85"
+                : "#FFFFFF",
             }}
           ></Box>
         </Box>
-        <Box sx={{ width: "calc(100% - 40px)", height: "100%" }}></Box>
+        <Box sx={{ width: "calc(100% - 40px)", height: "80%" }}>
+          <AgCharts
+            options={chartOptions}
+            style={{ width: "90%", height: "100%" }}
+            display={"flex"}
+            justifyContent={"center"}
+            alignItems={"center"}
+          />
+        </Box>
       </Box>
 
       {/* [اصلاح شد] - بخش جدول آبیاری */}
@@ -444,7 +590,7 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
               gap: 2,
               width: "200px", // عرض ثابت برای ستون دکمه‌ها
               pt: 2,
-              justifyContent: "space-between"
+              justifyContent: "space-between",
             }}
           >
             {/* نام برنامه */}
@@ -491,7 +637,9 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
               </Box>
             </Box>
 
-            <Box sx={{display:"flex" , flexDirection:"column", mb:5, gap:5}}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", mb: 5, gap: 5 }}
+            >
               {/* دکمه ذخیره */}
               <IconTextButton
                 text="ذخیره"
@@ -536,16 +684,14 @@ const IrrigationOneStorage = ({ storageNumber, storageCapacity }) => {
                 flexDirection: "column",
                 width: "calc(100% - 40px)", // عرض جدول (منهای اسکرول)
                 alignItems: "center",
-                display:"flex"
+                display: "flex",
               }}
             >
               <Typography
                 fontFamily={"IRANSANS"}
                 fontSize={12}
                 fontWeight="bold"
-              >
-                
-              </Typography>
+              ></Typography>
               <Typography fontFamily={"IRANSANS"} fontSize={12} mb={1}>
                 جدول آبیاری
               </Typography>

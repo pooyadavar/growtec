@@ -28,7 +28,7 @@ const Irrigation = () => {
                بازگشت به لیست مخازن
              </Button>
           </Box>
-          <IrrigationOneStorage storageNumber={selectedStorage} storageCapacity={321} /> 
+          <IrrigationOneStorage storageNumber={selectedStorage} /> 
         </Box>
       ) : (
         <IrrigationManyStorage onStorageClick={handleStorageClick} />
