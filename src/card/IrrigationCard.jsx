@@ -5,15 +5,18 @@ import {
   Paper, // Changed from Container to Paper
   Divider,
 } from "@mui/material";
+import { AgCharts } from "ag-charts-react";
 import assets from "../assets/index"; // مسیر `src/card` به `src/assets`
 import IconTextButton from "./IconTextButton"; // ایمپورت دکمه از فایل هم‌جوار
 
 const IrrigationCard = ({
   storageNumber,
   storageCapacity,
+  maxStorageCapacity, // Accept new prop
   float1,
   float2,
   float3,
+  chartData = [], // Default to empty array
   onClick,
 }) => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
@@ -30,6 +33,90 @@ const IrrigationCard = ({
     }
     return res;
   };
+
+  const chartOptions = React.useMemo(() => {
+    // Calculate min for y-axis dynamically
+    const validValues = chartData
+      .map((d) => d.filled_volume)
+      .filter((v) => typeof v === "number");
+
+    let min = 0;
+    if (validValues.length > 0) {
+      const dataMin = Math.min(...validValues);
+      const buffer = (dataMin) * 0.2 || 1; // Buffer only for min to not clip data
+      min = Math.max(0, dataMin - buffer); // Ensure min doesn't go below 0 for volume
+    }
+
+    return {
+    data: chartData,
+    padding: { top: 5, right: 15, bottom: 5, left: 5 },
+    series: [
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "filled_volume",
+        stroke: "#0077FF",
+        strokeWidth: 2,
+        marker: { enabled: false },
+        connectMissingValues: false,
+        tooltip: {
+            renderer: ({ datum, xKey, yKey }) => {
+              if (datum[yKey] === undefined || datum[yKey] === null)
+                return { content: "No Data" };
+              const date = datum[xKey];
+              const timeString = date
+                ? date.toLocaleTimeString("en-GB", { hour12: false })
+                : "";
+              return {
+                title: timeString,
+                content: `Volume: ${datum[yKey]}`,
+              };
+            },
+        }
+      },
+    ],
+    axes: [
+      {
+        type: "time",
+        position: "bottom",
+        nice: true,
+        label: { enabled: false }, // Keep X-axis labels hidden due to small space
+        line: { enabled: false, width: 1, color: "#ccc" },
+        tick: {
+            enabled: true,
+            color: "transparent",
+            width: 1,
+            size: 6,
+          },
+        gridStyle: [
+            {
+              stroke: "#000000",
+              lineDash: [0],
+              opacity: 0.3,
+              width: 1,
+            },
+        ],
+        crosshair: {
+            enabled: true,
+            stroke: "#999999",
+            strokeWidth: 1,
+          },
+      },
+      {
+        type: "number",
+        position: "left",
+        min, // Apply dynamic min
+        max: maxStorageCapacity || 100, // Use maxStorageCapacity directly
+        label: { enabled: true, fontSize: 9, color: "#333" }, // Enable Y-axis labels
+        tick: { count: 3, enabled: true }, // Enable Y-axis ticks
+        gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
+        crosshair: { enabled: false },
+      },
+    ],
+    legend: { enabled: false },
+    background: { visible: false },
+    };
+  }, [chartData, maxStorageCapacity]);
 
   return (
     <Paper // Changed from Container to Paper
@@ -133,9 +220,16 @@ const IrrigationCard = ({
             height: "113px",
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
+            overflow: "hidden", // Ensure chart doesn't overflow
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
-          {/* Placeholder for Chart */}
+           <AgCharts
+             options={chartOptions}
+             style={{ width: "90%", height: "85%" }}
+           />
         </Box>
         <div
           style={{

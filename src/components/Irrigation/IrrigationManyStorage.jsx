@@ -7,20 +7,13 @@ import {
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import IrrigationCard from "../../card/IrrigationCard";
-
-const STORAGE_DATA = [
-  { id: 1, capacity: 1000, float1: true, float2: true, float3: false },
-  { id: 2, capacity: 2000, float1: true, float2: false, float3: false },
-  { id: 3, capacity: 3000, float1: false, float2: false, float3: false },
-  { id: 4, capacity: 4000, float1: true, float2: true, float3: true },
-  { id: 5, capacity: 5000, float1: false, float2: true, float3: false },
-  { id: 6, capacity: 6000, float1: true, float2: false, float3: true },
-];
+import apiClient from "../../api/apiClient";
 
 const IrrigationManyStorage = ({ onStorageClick }) => {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [tanksData, setTanksData] = useState({});
 
   const handleScrollEvents = useCallback(() => {
     const el = scrollRef.current;
@@ -46,6 +39,44 @@ const IrrigationManyStorage = ({ onStorageClick }) => {
     }
   }, [handleScrollEvents]);
 
+  const fetchData = async () => {
+    try {
+      const response = await apiClient.post("/log/irrigation/irrigation-tanks-status/");
+      // The API response is expected to be an array of logs
+      const data = Array.isArray(response) ? response : [];
+
+      // Sort by date to process history correctly
+      const sortedData = [...data].sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time));
+
+      const grouped = {};
+      sortedData.forEach((log) => {
+        const num = log.log_data.number;
+        if (!grouped[num]) {
+          grouped[num] = {
+            current: null,
+            history: [],
+          };
+        }
+        grouped[num].history.push({
+          time: new Date(log.log_date_time),
+          filled_volume: log.log_data.contents.filled_volume,
+        });
+        // The last one processed will be the latest due to sorting
+        grouped[num].current = log.log_data.contents;
+      });
+
+      setTanksData(grouped);
+    } catch (error) {
+      console.error("Error fetching irrigation tanks status:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const slide = (direction) => {
     const el = scrollRef.current;
     if (el) {
@@ -56,6 +87,9 @@ const IrrigationManyStorage = ({ onStorageClick }) => {
       });
     }
   };
+
+  // We want to display exactly 4 tanks as per requirement
+  const tankIds = [1, 2, 3, 4];
 
   return (
     <Container
@@ -106,24 +140,32 @@ const IrrigationManyStorage = ({ onStorageClick }) => {
           marginBottom: "-50px", // Adjusted margin compensation
         }}
       >
-        {STORAGE_DATA.map((item) => (
-          <Box 
-            key={item.id} 
-            sx={{ 
-              flexShrink: 0, 
-              scrollSnapAlign: "start",
-            }}
-          >
-            <IrrigationCard
-              storageNumber={item.id}
-              storageCapacity={item.capacity}
-              float1={item.float1}
-              float2={item.float2}
-              float3={item.float3}
-              onClick={() => onStorageClick && onStorageClick(item.id)}
-            />
-          </Box>
-        ))}
+        {tankIds.map((id) => {
+          const tank = tanksData[id];
+          const current = tank ? tank.current : {};
+          const history = tank ? tank.history : [];
+          
+          return (
+            <Box 
+              key={id} 
+              sx={{ 
+                flexShrink: 0, 
+                scrollSnapAlign: "start",
+              }}
+            >
+              <IrrigationCard
+                storageNumber={id}
+                storageCapacity={current?.filled_volume || 0}
+                maxStorageCapacity={current?.max_volume || 0} // New prop
+                float1={current?.buttom_float_switch || false}
+                float2={current?.middle_float_switch || false}
+                float3={current?.top_float_switch || false}
+                chartData={history}
+                onClick={() => onStorageClick && onStorageClick(id)}
+              />
+            </Box>
+          );
+        })}
       </Box>
 
       <IconButton
