@@ -101,6 +101,8 @@ const Navbar = () => {
               آب‌رسانی
             </Button>
             <Button
+              component={Link}
+              to={"/payesh"}
               variant="text"
               className={classes.navItem}
             >

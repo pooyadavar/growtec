@@ -6,6 +6,7 @@ import FeedingHistoryPage from "./pages/FeedingHistoryPage";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Irrigation from "./pages/Irrigation"; // Import Irrigation page
+import Payesh from "./components/payesh/Payesh"; // Import Payesh component
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<Feeding />} />
         <Route path="/Home" element={<Dashboard />} />
         <Route path="/irrigation" element={<Irrigation />} /> 
+        <Route path="/payesh" element={<Payesh />} />
         <Route path="/feeding-history" element={<FeedingHistoryPage />} />
         <Route path="/feeding-settings" element={<FeedingSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

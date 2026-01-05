@@ -1,8 +1,6 @@
 import * as React from "react";
 import { Typography, Box, Container, Divider, Modal } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکمه
-
-// [جدید] - ایمپورت آیکون‌های تیک و ضربدر
 import assets from "../../assets";
 import { Scale } from "@mui/icons-material";
 import CalculateIcon from "@mui/icons-material/Calculate";
@@ -100,7 +98,6 @@ const IrrigationOneStorage = ({ storageNumber }) => {
 
   const chartOptions = React.useMemo(() => {
     const chartData = tankData.history;
-    // Calculate min for y-axis dynamically
     const validValues = chartData
       .map((d) => d.filled_volume)
       .filter((v) => typeof v === "number");
@@ -183,30 +180,29 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     };
   }, [tankData]);
 
-  // استایل اصلی مودال
+
   const modalStyle = {
     position: "absolute",
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: 700, // عرض تقریبی مودال بر اساس تصویر
-    height: 430, // ارتفاع تقریبی مودال
-    bgcolor: "#F0F0F0", // رنگ پس‌زمینه آبی/خاکستری
+    width: 700,
+    height: 430, 
+    bgcolor: "#F0F0F0", 
     border: "0.5px solid #000",
     boxShadow: 24,
-    p: 2, // پدینگ داخلی
+    p: 2, 
     borderRadius: "15px",
     display: "flex",
     justifyContent: "space-between",
     fontFamily: "IRANSANS",
   };
 
-  // [جدید] - State برای مدیریت باز و بسته بودن مودال
+
   const [modalOpen, setModalOpen] = React.useState(false);
   const handleModalOpen = () => setModalOpen(true);
   const handleModalClose = () => setModalOpen(false);
 
-  // داده‌های ساختگی برای جدول (مثال)
   const tableData = [
     {
       startTime: "۰۰:۰۰:۰۰",
