@@ -735,7 +735,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 <Typography
                   fontFamily={"IRANSANS"}
                   fontSize={12}
-                  width="25%"
+                  width="19%"
                   textAlign={"center"}
                 >
                   زمان شروع
@@ -743,15 +743,15 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 <Typography
                   fontFamily={"IRANSANS"}
                   fontSize={12}
-                  width="25%"
-                  textAlign={"center"}
+                  width="12%"
+                  textAlign={"right"}
                 >
                   زمان پایان
                 </Typography>
                 <Typography
                   fontFamily={"IRANSANS"}
                   fontSize={12}
-                  width="15%"
+                  width="10%"
                   textAlign="center"
                 >
                   زون
@@ -768,7 +768,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                   fontFamily={"IRANSANS"}
                   fontSize={12}
                   width="15%"
-                  textAlign="center"
+                  textAlign="right"
                 >
                   وضعیت
                 </Typography>
@@ -784,17 +784,16 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                     <React.Fragment key={index}>
                       <Box
                         sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+                          gap: 1,
                           width: "100%",
                           height: "50px",
-                          px: "10px",
+                          alignItems: "center",
                         }}
                       >
                         <Box
                           sx={{
-                            width: "25%",
                             height: "35px",
                             border: "0.5px solid #9F9F9F",
                             borderRadius: "10px",
@@ -809,7 +808,6 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                         </Box>
                         <Box
                           sx={{
-                            width: "25%",
                             height: "35px",
                             border: "0.5px solid #9F9F9F",
                             borderRadius: "10px",
@@ -824,7 +822,6 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                         </Box>
                         <Box
                           sx={{
-                            width: "15%",
                             height: "35px",
                             border: "0.5px solid #9F9F9F",
                             borderRadius: "10px",
@@ -839,7 +836,6 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                         </Box>
                         <Box
                           sx={{
-                            width: "15%",
                             height: "35px",
                             border: "0.5px solid #9F9F9F",
                             borderRadius: "10px",
@@ -854,7 +850,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                         </Box>
 
 
-                        <DataCell sx={{ width: "15%" }} isStatus={true}>
+                        <DataCell isStatus={true}>
                           <StatusBox status={row.status === "green" ? 3 : 0}>
                             {row.status === "green" ? (
                               <img
