@@ -5,6 +5,10 @@ import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکم
 // [جدید] - ایمپورت آیکون‌های تیک و ضربدر
 import assets from "../../assets";
 import { Scale } from "@mui/icons-material";
+import CalculateIcon from "@mui/icons-material/Calculate";
+import SettingsIcon from "@mui/icons-material/Settings";
+import SaveIcon from "@mui/icons-material/Save";
+import HistoryIcon from "@mui/icons-material/History";
 import { AgCharts } from "ag-charts-react";
 import apiClient from "../../api/apiClient";
 import { styled } from "@mui/system";
@@ -186,7 +190,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     left: "50%",
     transform: "translate(-50%, -50%)",
     width: 700, // عرض تقریبی مودال بر اساس تصویر
-    height: 500, // ارتفاع تقریبی مودال
+    height: 430, // ارتفاع تقریبی مودال
     bgcolor: "#F0F0F0", // رنگ پس‌زمینه آبی/خاکستری
     border: "0.5px solid #000",
     boxShadow: 24,
@@ -567,12 +571,13 @@ const IrrigationOneStorage = ({ storageNumber }) => {
       >
         <IconTextButton
           text="ماشین حساب آبیاری"
-          icon="https://placehold.co/24x24/FFFFFF/000000?text=Calc"
-          bgColor="#00FF85"
+          icon={<CalculateIcon />}
+          iconPosition="left"
+          bgColor="#86CCB2"
           textColor="#000000"
           width="30%"
           height="30px"
-          borderColor="#00FF85"
+          borderColor="#77b39dff"
           sx={{
             justifyContent: "space-evenly",
             "& .MuiTypography-root": {
@@ -583,12 +588,13 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         />
         <IconTextButton
           text="تغییر تنظیمات"
-          icon={assets.svg.setting}
+          icon={<SettingsIcon />}
+          iconPosition="left"
           bgColor="#FFCB82"
           textColor="#000000"
           width="30%"
           height="30px"
-          borderColor="#FFCB82"
+          borderColor="#c59b61ff"
           onClick={handleModalOpen} // باز کردن مودال
           sx={{
             justifyContent: "space-evenly",
@@ -669,26 +675,26 @@ const IrrigationOneStorage = ({ storageNumber }) => {
               {/* دکمه ذخیره */}
               <IconTextButton
                 text="ذخیره"
-                icon="https://placehold.co/24x24/FFFFFF/000000?text=Save" // Placeholder
-                iconPosition="right"
-                bgColor="#86CCB2" // سبز
+                icon={<SaveIcon />} // Changed icon
+                iconPosition="left"
+                bgColor="#86CCB2" 
                 textColor="#FFFFFF"
                 width="160px"
                 height="40px"
-                borderColor="#86CCB2"
+                borderColor="#7dbfa7ff"
                 sx={{ "& .MuiTypography-root": { fontSize: "18px" } }}
               />
 
               {/* دکمه بارگذاری */}
               <IconTextButton
                 text="بارگذاری"
-                icon="https://placehold.co/24x24/FFFFFF/000000?text=Load" // Placeholder
-                iconPosition="right"
+                icon={<HistoryIcon />} // Changed icon
+                iconPosition="left"
                 bgColor="#FFCB82" // زرد
                 textColor="#000000"
                 width="160px"
                 height="40px"
-                borderColor="#FFCB82"
+                borderColor="#c59b61ff"
                 sx={{ "& .MuiTypography-root": { fontSize: "18px" } }}
               />
             </Box>
