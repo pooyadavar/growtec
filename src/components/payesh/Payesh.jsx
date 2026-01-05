@@ -53,7 +53,7 @@ const Payesh = () => {
 
   const [tempOptions, setTempOptions] = useState({
     title: { text: "دما", fontFamily: "IRANSANS" },
-    data: temp, 
+    data: temp,
     series: [
       { type: "line", xKey: "time", yKey: "zone1", yName: "1" },
       { type: "line", xKey: "time", yKey: "zone2", yName: "2" },
@@ -225,6 +225,8 @@ const Payesh = () => {
         justifyContent: "space-between",
         alignItems: "center",
         marginTop: "30px",
+        transform: "scale(0.93)",
+        transformOrigin: "top center",
       }}
     >
       <Box
@@ -517,7 +519,9 @@ const Payesh = () => {
               marginTop: "10px",
               flexGrow: 1,
               gap: 8,
-              mt:3
+              mt: 3,
+              right: "20px",
+              position: "relative",
             }}
           >
             <IconTextButton
@@ -526,7 +530,8 @@ const Payesh = () => {
               onClick={handleOpen}
               bgColor="#6CCDB0"
               textColor="#000000"
-              width="170px"
+              borderColor="#77b39dff"
+              width="220px"
             />
             {/* <Button
               sx={{
@@ -553,7 +558,8 @@ const Payesh = () => {
               bgColor="#FFCB82"
               textColor="#000000"
               onClick={() => {}}
-              width="170px"
+              borderColor="#dcaf70ff"
+              width="220px"
             />
 
             {/* <Button
@@ -580,7 +586,8 @@ const Payesh = () => {
               bgColor="#FFCB82"
               textColor="#000000"
               onClick={() => {}}
-              width="170px"
+              borderColor="#dcaf70ff"
+              width="220px"
             />
             {/* <Button
               sx={{
@@ -612,9 +619,10 @@ const Payesh = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "48%",
-            left: "50%",
+            top: "46%",
+            left: "48%",
             transform: "translate(-50%, -50%)",
+            scale: "0.95"
           }}
         >
           <img
@@ -622,7 +630,7 @@ const Payesh = () => {
             alt=""
             className="button"
             style={{
-              scale: "2",
+              scale: "1",
               position: "relative",
               top: "50px",
               right: "25px",

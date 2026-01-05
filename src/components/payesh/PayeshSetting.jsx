@@ -427,52 +427,6 @@ const PayeshSetting = ({ zone }) => {
     fetchData();
   }, [fetchData]);
 
-  // تابع یکپارچه برای fetch
-  // const fetchData = useCallback(async () => {
-  //   setLoading(true);
-  //   setError(null);
-  //   try {
-  //     // استفاده از Promise.all برای فراخوانی همزمان APIها
-  //     const [resp1, resp2, resp3, resp4, resp5] = await axios.all([
-  //       axios.get(`${apiDomain}/api/v1/climate/range-start-time/?zone=${zone}`),
-  //       axios.get(`${apiDomain}/api/v1/climate/temperature-range/?zone=${zone}&part=${part}`),
-  //       axios.get(`${apiDomain}/api/v1/climate/humidity-range/?zone=${zone}&part=${part}`),
-  //       axios.get(`${apiDomain}/api/v1/climate/temperature-range-operator/?zone=${zone}&part=${part}`),
-  //       axios.get(`${apiDomain}/api/v1/climate/humidity-range-operator/?zone=${zone}&part=${part}`),
-  //     ]);
-
-  //     // بروزرسانی Stateهای بازه زمانی
-  //     setRange1(resp1.data[0]);
-  //     setRange2(resp1.data[1]);
-  //     setRange3(resp1.data[2]);
-
-  //     // بروزرسانی Stateهای دما
-  //     setTempMax1(resp2.data["1"]["maximum"]); setTempMin1(resp2.data["1"]["minimum"]);
-  //     setTempMax2(resp2.data["2"]["maximum"]); setTempMin2(resp2.data["2"]["minimum"]);
-  //     setTempMax3(resp2.data["3"]["maximum"]); setTempMin3(resp2.data["3"]["minimum"]);
-
-  //     // بروزرسانی Stateهای رطوبت
-  //     sethumMax1(resp3.data["1"]["maximum"]); setHumMin1(resp3.data["1"]["minimum"]);
-  //     sethumMax2(resp3.data["2"]["maximum"]); setHumMin2(resp3.data["2"]["minimum"]);
-  //     sethumMax3(resp3.data["3"]["maximum"]); setHumMin3(resp3.data["3"]["minimum"]);
-
-  //     // بروزرسانی Stateهای کنترلرها
-  //     setTempControllers(resp4.data);
-  //     setHumControllers(resp5.data);
-
-  //   } catch (err) {
-  //     console.error("Error fetching data:", err);
-  //     setError(err.message || "خطا در دریافت اطلاعات.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, [zone, part]);
-
-  // useEffect(() => {
-  //   fetchData();
-  //   // وابستگی به `fetchData` اضافه شد چون از `useCallback` استفاده کردیم.
-  // }, [fetchData]);
-
   // تابع یکپارچه برای Save (کاهش تکرار در POSTها)
   const handleSave = async () => {
     const formatValue = (value) => parseFloat(value || 0).toFixed(1);
@@ -603,127 +557,131 @@ const PayeshSetting = ({ zone }) => {
         flexDirection: "column",
         justifyContent: "space-around",
         alignItems: "center",
+        transform: "scale(0.95)",
+        transformOrigin: "center",
+        paddingY: "2px",
       }}
     >
-      {loading || error ? (
+      {/* ۱. بخش تنظیم بازه‌های زمانی (بالای صفحه) */}
+      <Stack spacing={1.5} sx={{ width: "450px" }}>
+        <TimeRangeInput
+          label="بازه ۱"
+          rangeValue={range1}
+          setRangeValue={setRange1}
+          displayRange={`${convert(range2)} - ${convert(range1)}`}
+        />
+        <TimeRangeInput
+          label="بازه ۲"
+          rangeValue={range2}
+          setRangeValue={setRange2}
+          displayRange={`${convert(range3)} - ${convert(range2)}`}
+        />
+        <TimeRangeInput
+          label="بازه ۳"
+          rangeValue={range3}
+          setRangeValue={setRange3}
+          displayRange={`${convert(range1)} - ${convert(range3)}`}
+        />
+      </Stack>
+
+      {/* ۲. بخش تنظیمات دما و رطوبت (تب‌ها) */}
+      <Box
+        sx={{
+          width: "765px",
+          height: "560px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "end",
+        }}
+      >
+        {/* سربرگ تب‌ها (A, B, C, D) */}
         <Box
           sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(237, 236, 236, 0.8)", 
-            borderRadius: "15px",
-            zIndex: 10, 
+            flexDirection: "row-reverse",
+            justifyContent: "flex-start",
+            width: "450px",
           }}
         >
-          {loading && (
-            <Stack spacing={2} alignItems="center">
-              <CircularProgress color="primary" />
-              <Typography fontFamily={"IRANSANS"}>
-                در حال بارگذاری...
-              </Typography>
-            </Stack>
-          )}
-          {error && (
-            <Typography fontFamily={"IRANSANS"} color="error">
-              خطا: {error}
-            </Typography>
-          )}
-        </Box>
-      ) : (
-        <>
-          {/* ۱. بخش تنظیم بازه‌های زمانی (بالای صفحه) */}
-          <Stack spacing={1.5} sx={{ width: "450px" }}>
-            <TimeRangeInput
-              label="بازه ۱"
-              rangeValue={range1}
-              setRangeValue={setRange1}
-              displayRange={`${convert(range2)} - ${convert(range1)}`}
-            />
-            <TimeRangeInput
-              label="بازه ۲"
-              rangeValue={range2}
-              setRangeValue={setRange2}
-              displayRange={`${convert(range3)} - ${convert(range2)}`}
-            />
-            <TimeRangeInput
-              label="بازه ۳"
-              rangeValue={range3}
-              setRangeValue={setRange3}
-              displayRange={`${convert(range1)} - ${convert(range3)}`}
-            />
-          </Stack>
-
-          {/* ۲. بخش تنظیمات دما و رطوبت (تب‌ها) */}
-          <Box
-            sx={{
-              width: "765px",
-              height: "560px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "end",
-            }}
-          >
-            {/* سربرگ تب‌ها (A, B, C, D) */}
+          {buttons.map((label, index) => (
             <Box
+              key={label}
+              onClick={() => {
+                setSelected(label);
+                setPart(index + 1);
+              }}
               sx={{
+                paddingX: "14px",
+                marginRight: index !== buttons.length - 1 ? "14px" : 0,
+                height: "46px",
+                borderRadius: "10px 10px 0 0",
+                backgroundColor: selected === label ? "#ffffff" : "#FFCB82",
+                cursor: "pointer",
+                transition: "background-color 0.3s",
                 display: "flex",
-                flexDirection: "row-reverse",
-                justifyContent: "flex-start",
-                width: "450px",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: index === buttons.length - 1 ? "100px" : "55px",
               }}
             >
-              {buttons.map((label, index) => (
-                <Box
-                  key={label}
-                  onClick={() => {
-                    setSelected(label);
-                    setPart(index + 1);
-                  }}
-                  sx={{
-                    paddingX: "14px",
-                    marginRight: index !== buttons.length - 1 ? "14px" : 0,
-                    height: "46px",
-                    borderRadius: "10px 10px 0 0",
-                    backgroundColor: selected === label ? "#ffffff" : "#FFCB82",
-                    cursor: "pointer",
-                    transition: "background-color 0.3s",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minWidth: index === buttons.length - 1 ? "100px" : "55px",
-                  }}
-                >
-                  <Typography
-                    fontSize={16}
-                    fontFamily={"IRANSANS"}
-                    color={"#111111"}
-                  >
-                    {label}
-                  </Typography>
-                </Box>
-              ))}
+              <Typography
+                fontSize={16}
+                fontFamily={"IRANSANS"}
+                color={"#111111"}
+              >
+                {label}
+              </Typography>
             </Box>
+          ))}
+        </Box>
 
-            {/* محتوای تب */}
+        {/* محتوای تب */}
+        <Box
+          sx={{
+            width: "765px",
+            height: "470px",
+            backgroundColor: "#ffffff",
+            borderRadius: "0 10px 10px 10px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            paddingY: "20px",
+            position: "relative", // For absolute positioning of loader
+          }}
+        >
+          {loading || error ? (
             <Box
               sx={{
-                width: "765px",
-                height: "470px",
-                backgroundColor: "#ffffff",
-                borderRadius: "0 10px 10px 10px",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
                 display: "flex",
                 flexDirection: "column",
+                justifyContent: "center",
                 alignItems: "center",
-                paddingY: "20px",
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                borderRadius: "0 10px 10px 10px",
+                zIndex: 10,
               }}
             >
+              {loading && (
+                <Stack spacing={2} alignItems="center">
+                  <CircularProgress color="primary" />
+                  <Typography fontFamily={"IRANSANS"}>
+                    در حال بارگذاری...
+                  </Typography>
+                </Stack>
+              )}
+              {error && (
+                <Typography fontFamily={"IRANSANS"} color="error">
+                  خطا: {error}
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <>
               {/* محتوای تنظیمات (دما / رطوبت) */}
               <Box
                 sx={{
@@ -797,7 +755,11 @@ const PayeshSetting = ({ zone }) => {
                           item
                           key={ctrl.key}
                           xs={2}
-                          sx={{ padding: "4px !important"  ,display: 'flex', justifyContent: 'center' }}
+                          sx={{
+                            padding: "4px !important",
+                            display: "flex",
+                            justifyContent: "center",
+                          }}
                         >
                           <ControllerStatus
                             label={ctrl.label}
@@ -874,7 +836,11 @@ const PayeshSetting = ({ zone }) => {
                           item
                           key={ctrl.key}
                           xs={2}
-                          sx={{ padding: "4px !important" , display: 'flex', justifyContent: 'center' }}
+                          sx={{
+                            padding: "4px !important",
+                            display: "flex",
+                            justifyContent: "center",
+                          }}
                         >
                           <ControllerStatus
                             label={ctrl.label}
@@ -913,7 +879,7 @@ const PayeshSetting = ({ zone }) => {
                   alignItems: "center",
                   marginTop: "auto",
                   paddingX: 1,
-                  "&:hover": { backgroundColor: "#E0B571" }, 
+                  "&:hover": { backgroundColor: "#E0B571" },
                 }}
               >
                 <img
@@ -923,10 +889,10 @@ const PayeshSetting = ({ zone }) => {
                 />
                 ذخیره
               </Button>
-            </Box>
-          </Box>
-        </>
-      )}
+            </>
+          )}
+        </Box>
+      </Box>
     </Container>
   );
 };
