@@ -3,12 +3,37 @@ import { Typography, Box, Container, Divider, Modal } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکمه
 
 // [جدید] - ایمپورت آیکون‌های تیک و ضربدر
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
 import assets from "../../assets";
 import { Scale } from "@mui/icons-material";
 import { AgCharts } from "ag-charts-react";
 import apiClient from "../../api/apiClient";
+import { styled } from "@mui/system";
+
+const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
+  height: "40px",
+  border: "1px solid #ddd",
+  borderRadius: "8px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#f9f9f9",
+  padding: "0 4px",
+  ...(isStatus && {
+    backgroundColor: "transparent",
+    border: "none",
+  }),
+}));
+
+const StatusBox = styled(Box)(({ theme, status }) => ({
+  height: "40px",
+  width: "100%",
+  border: status === 3 ? "1px solid #4CAF50" : "1px solid #F44336",
+  borderRadius: "8px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: status === 3 ? "#E8F5E9" : "#FFEBEE",
+}));
 
 const IrrigationOneStorage = ({ storageNumber }) => {
   // storageCapacity is now internal
@@ -433,7 +458,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 display: "flex",
                 justifyContent: "space-between", // استفاده از space-between
                 alignItems: "center",
-                width: "100%", // عرض کامل
+                width: "97%", // عرض کامل
                 height: "50px",
                 px: "15px", // پدینگ داخلی
               }}
@@ -503,22 +528,23 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 </Typography>
               </Box>
               {/* [جدید] - ستون وضعیت (آیکون‌ها) */}
-              <Box
-                sx={{
-                  width: "15%", // عرض ستون با سربرگ یکسان است
-                  height: "35px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {row.status === "green" && (
-                  <CheckCircleIcon sx={{ color: "#00FF85" }} />
-                )}
-                {row.status === "red" && (
-                  <CancelIcon sx={{ color: "#F44336" }} />
-                )}
-              </Box>
+              <DataCell sx={{ width: "10%" }} isStatus={true}>
+                <StatusBox status={row.status === "green" ? 3 : 0}>
+                  {row.status === "green" ? (
+                    <img
+                      src={assets.svg.tike}
+                      alt="success"
+                      style={{ width: 16, height: 16 }}
+                    />
+                  ) : (
+                    <img
+                      src={assets.svg.cross}
+                      alt="failed"
+                      style={{ width: 16, height: 16 }}
+                    />
+                  )}
+                </StatusBox>
+              </DataCell>
             </Box>
             {index < tableData.length - 1 && (
               <Divider
@@ -826,22 +852,25 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                             {convert(row.volume)}
                           </Typography>
                         </Box>
-                        <Box
-                          sx={{
-                            width: "15%",
-                            height: "35px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {row.status === "green" && (
-                            <CheckCircleIcon sx={{ color: "#00FF85" }} />
-                          )}
-                          {row.status === "red" && (
-                            <CancelIcon sx={{ color: "#F44336" }} />
-                          )}
-                        </Box>
+
+
+                        <DataCell sx={{ width: "15%" }} isStatus={true}>
+                          <StatusBox status={row.status === "green" ? 3 : 0}>
+                            {row.status === "green" ? (
+                              <img
+                                src={assets.svg.tike}
+                                alt="success"
+                                style={{ width: 16, height: 16 }}
+                              />
+                            ) : (
+                              <img
+                                src={assets.svg.cross}
+                                alt="failed"
+                                style={{ width: 16, height: 16 }}
+                              />
+                            )}
+                          </StatusBox>
+                        </DataCell>
                       </Box>
                       <Divider
                         sx={{
