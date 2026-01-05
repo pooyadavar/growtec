@@ -15,8 +15,10 @@ import axios from "axios";
 import { AgCharts } from "ag-charts-react";
 import PayeshSetting from "./PayeshSetting";
 import IconTextButton from "../../card/IconTextButton";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const Payesh = () => {
+  const navigate = useNavigate(); // Initialize useNavigate
   const [isChanging, setIsChanging] = React.useState(false);
   const [activity, setActivity] = React.useState(false);
 
@@ -585,7 +587,7 @@ const Payesh = () => {
               text="برنامه زمانی عملگرها"
               bgColor="#FFCB82"
               textColor="#000000"
-              onClick={() => {}}
+              onClick={() => navigate("/payesh-time-plans")} // Update onClick
               borderColor="#dcaf70ff"
               width="220px"
             />

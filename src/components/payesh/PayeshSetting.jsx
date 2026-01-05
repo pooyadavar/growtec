@@ -7,10 +7,13 @@ import {
   Stack,
   Grid,
   TextField,
-  CircularProgress
+  CircularProgress,
 } from "@mui/material";
 import axios from "axios";
 import assets from "../../assets";
+
+// --- Sub-components ---
+
 const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
   return (
     <Box
@@ -21,7 +24,6 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
         height: "37px",
       }}
     >
-      {/* Box سمت چپ: نمایش بازه */}
       <Box
         sx={{
           width: "284px",
@@ -35,7 +37,6 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
           alignItems: "center",
         }}
       >
-        {/* برچسب بازه (بازه ۱، ۲، ۳) */}
         <Box
           sx={{
             width: "84px",
@@ -63,7 +64,6 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
         </Typography>
       </Box>
 
-      {/* ورودی عددی سمت راست */}
       <TextField
         type="number"
         variant="outlined"
@@ -94,7 +94,7 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
               appearance: "textfield",
             },
           },
-          "& fieldset": { border: "none" }, 
+          "& fieldset": { border: "none" },
         }}
       />
     </Box>
@@ -107,7 +107,6 @@ const MinMaxInput = ({
   setMaxState,
   minState,
   setMinState,
-  rangeNum,
 }) => {
   const handleInputChange = (setter) => (e) => {
     const value = e.target.value;
@@ -140,7 +139,6 @@ const MinMaxInput = ({
         alignItems: "end",
       }}
     >
-      {/* برچسب‌های حداکثر/حداقل */}
       <Box
         sx={{ display: "flex", justifyContent: "space-around", width: "199px" }}
       >
@@ -152,7 +150,6 @@ const MinMaxInput = ({
         </Typography>
       </Box>
 
-      {/* باکس ورودی‌ها و برچسب بازه زمانی */}
       <Box
         sx={{
           width: "324px",
@@ -203,7 +200,6 @@ const MinMaxInput = ({
   );
 };
 
-// 3. کامپوننت وضعیت کنترلر (فن، بخاری، پمپ)
 const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
   return (
     <Box
@@ -215,7 +211,7 @@ const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
         flexDirection: "column",
         justifyContent: "space-around",
         alignItems: "center",
-        cursor: "pointer", 
+        cursor: "pointer",
       }}
     >
       <Box
@@ -242,7 +238,7 @@ const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
       <Typography
         fontFamily={"IRANSANS"}
         color="#9F9F9F"
-        fontSize={label.length > 5 ? 10 : 12} 
+        fontSize={label.length > 5 ? 10 : 12}
       >
         {label}
       </Typography>
@@ -250,8 +246,42 @@ const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
   );
 };
 
+// --- Constants ---
+
+const DUMMY_DATA = {
+  rangeStartTimes: [8, 16, 0],
+  tempRanges: {
+    1: { minimum: 20, maximum: 30 },
+    2: { minimum: 18, maximum: 25 },
+    3: { minimum: 15, maximum: 22 },
+  },
+  humRanges: {
+    1: { minimum: 60.5, maximum: 85.0 },
+    2: { minimum: 55.0, maximum: 75.5 },
+    3: { minimum: 50.0, maximum: 70.0 },
+  },
+  tempOperators: {
+    exhaust_fan_1: true,
+    exhaust_fan_2: false,
+    exhaust_fan_3: true,
+    shid: false,
+    mehpash: true,
+    pump_pad: true,
+    heater_1: false,
+    heater_2: true,
+    roof_hatch: false,
+  },
+  humOperators: {
+    exhaust_fan_1: true,
+    exhaust_fan_2: false,
+    exhaust_fan_2: true, // Note: duplicate key in original data, keeping for now
+    exhaust_fan_4: false,
+    sirkoole_fan_1: true,
+    sirkoole_fan_2: false,
+  },
+};
+
 const PayeshSetting = ({ zone }) => {
-  // === Helper Functions ===
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
     let res = "";
@@ -262,7 +292,6 @@ const PayeshSetting = ({ zone }) => {
     return res;
   };
 
-  // === State Management ===
   const [selected, setSelected] = useState("A");
   const [part, setPart] = useState(1);
   const buttons = ["A", "B", "C", "D", "تنظیمات ویژه"];
@@ -270,12 +299,10 @@ const PayeshSetting = ({ zone }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Stateهای بازه زمانی
   const [range1, setRange1] = useState(0);
   const [range2, setRange2] = useState(0);
   const [range3, setRange3] = useState(0);
 
-  // Stateهای دمای حداقل و حداکثر
   const [tempMax1, setTempMax1] = useState(0);
   const [tempMax2, setTempMax2] = useState(0);
   const [tempMax3, setTempMax3] = useState(0);
@@ -283,7 +310,6 @@ const PayeshSetting = ({ zone }) => {
   const [tempMin2, setTempMin2] = useState(0);
   const [tempMin3, setTempMin3] = useState(0);
 
-  // Stateهای رطوبت حداقل و حداکثر (به صورت string نگهداری می‌شوند تا ورودی خالی را مدیریت کنند)
   const [humMax1, sethumMax1] = useState("0.0");
   const [humMax2, sethumMax2] = useState("0.0");
   const [humMax3, sethumMax3] = useState("0.0");
@@ -291,7 +317,6 @@ const PayeshSetting = ({ zone }) => {
   const [humMin2, setHumMin2] = useState("0.0");
   const [humMin3, setHumMin3] = useState("0.0");
 
-  // Stateهای کنترلرها
   const [humControllers, setHumControllers] = useState({
     exhaust_fan_1: false,
     exhaust_fan_2: false,
@@ -311,7 +336,6 @@ const PayeshSetting = ({ zone }) => {
     roof_hatch: false,
   });
 
-  // این آبجکت‌ها برای Payloadهای API و همچنین استفاده در UI به کار می‌روند.
   const humidityObject = useMemo(
     () => ({
       1: { minimum: humMin1, maximum: humMax1 },
@@ -330,72 +354,25 @@ const PayeshSetting = ({ zone }) => {
     [tempMax1, tempMax2, tempMax3, tempMin1, tempMin2, tempMin3]
   );
 
-  // === API Logic ===
   const apiDomain = "http://192.168.100.51:8000";
-
-  const DUMMY_DATA = {
-    // شبیه سازی خروجی range-start-time (زمان شروع بازه‌ها بر حسب ساعت)
-    rangeStartTimes: [8, 16, 0], // مثال: 8 صبح, 4 عصر, 12 شب (0)
-
-    // شبیه سازی خروجی temperature-range (حداقل/حداکثر دما برای هر بازه)
-    tempRanges: {
-      1: { minimum: 20, maximum: 30 },
-      2: { minimum: 18, maximum: 25 },
-      3: { minimum: 15, maximum: 22 },
-    },
-
-    // شبیه سازی خروجی humidity-range (حداقل/حداکثر رطوبت برای هر بازه)
-    humRanges: {
-      1: { minimum: 60.5, maximum: 85.0 },
-      2: { minimum: 55.0, maximum: 75.5 },
-      3: { minimum: 50.0, maximum: 70.0 },
-    },
-
-    // شبیه سازی خروجی temperature-range-operator (وضعیت کنترلرهای دما)
-    tempOperators: {
-      exhaust_fan_1: true,
-      exhaust_fan_2: false,
-      exhaust_fan_3: true,
-      shid: false,
-      mehpash: true,
-      pump_pad: true,
-      heater_1: false,
-      heater_2: true,
-      roof_hatch: false,
-    },
-
-    // شبیه سازی خروجی humidity-range-operator (وضعیت کنترلرهای رطوبت)
-    humOperators: {
-      exhaust_fan_1: true,
-      exhaust_fan_2: false,
-      exhaust_fan_2: true,
-      exhaust_fan_4: false,
-      sirkoole_fan_1: true,
-      sirkoole_fan_2:false,
-    },
-  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    // شبیه سازی تأخیر شبکه
-    await new Promise((resolve) => setTimeout(resolve, 500)); // 0.5 ثانیه تأخیر
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     try {
-      // داده‌های Hardcode را مستقیماً به متغیرها اختصاص می‌دهیم.
       const resp1_data = DUMMY_DATA.rangeStartTimes;
       const resp2_data = DUMMY_DATA.tempRanges;
       const resp3_data = DUMMY_DATA.humRanges;
       const resp4_data = DUMMY_DATA.tempOperators;
       const resp5_data = DUMMY_DATA.humOperators;
 
-      // بروزرسانی Stateهای بازه زمانی
       setRange1(resp1_data[0]);
       setRange2(resp1_data[1]);
       setRange3(resp1_data[2]);
 
-      // بروزرسانی Stateهای دما (توجه: مقادیر minimum و maximum از API به صورت عدد/رشته می‌آیند)
       setTempMax1(resp2_data["1"]["maximum"]);
       setTempMin1(resp2_data["1"]["minimum"]);
       setTempMax2(resp2_data["2"]["maximum"]);
@@ -403,7 +380,6 @@ const PayeshSetting = ({ zone }) => {
       setTempMax3(resp2_data["3"]["maximum"]);
       setTempMin3(resp2_data["3"]["minimum"]);
 
-      // بروزرسانی Stateهای رطوبت
       sethumMax1(resp3_data["1"]["maximum"]);
       setHumMin1(resp3_data["1"]["minimum"]);
       sethumMax2(resp3_data["2"]["maximum"]);
@@ -411,23 +387,20 @@ const PayeshSetting = ({ zone }) => {
       sethumMax3(resp3_data["3"]["maximum"]);
       setHumMin3(resp3_data["3"]["minimum"]);
 
-      // بروزرسانی Stateهای کنترلرها
       setTempControllers(resp4_data);
       setHumControllers(resp5_data);
     } catch (err) {
-      // این بخش در حالت Hardcode نباید اجرا شود، مگر اینکه خطایی در تخصیص داده باشد.
       console.error("Error fetching hardcoded data:", err);
       setError("خطا در تخصیص داده‌های ساختگی.");
     } finally {
       setLoading(false);
     }
-  }, [zone, part]); 
+  }, [zone, part]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // تابع یکپارچه برای Save (کاهش تکرار در POSTها)
   const handleSave = async () => {
     const formatValue = (value) => parseFloat(value || 0).toFixed(1);
 
@@ -539,7 +512,7 @@ const PayeshSetting = ({ zone }) => {
       key: "sirkoole_fan_1",
       onClick: () => toggleHumController("sirkoole_fan_1"),
     },
-        {
+    {
       label: "فن سیرکوله۲",
       key: "sirkoole_fan_2",
       onClick: () => toggleHumController("sirkoole_fan_2"),
@@ -646,7 +619,7 @@ const PayeshSetting = ({ zone }) => {
             flexDirection: "column",
             alignItems: "center",
             paddingY: "20px",
-            position: "relative", // For absolute positioning of loader
+            position: "relative",
           }}
         >
           {loading || error ? (
@@ -682,7 +655,6 @@ const PayeshSetting = ({ zone }) => {
             </Box>
           ) : (
             <>
-              {/* محتوای تنظیمات (دما / رطوبت) */}
               <Box
                 sx={{
                   width: "733px",
@@ -699,7 +671,6 @@ const PayeshSetting = ({ zone }) => {
                     display: selected !== "تنظیمات ویژه" ? "flex" : "none",
                   }}
                 >
-                  {/* فرض می‌کنیم 'دما' محتوای اصلی تب‌های A,B,C,D باشد */}
                   <Typography
                     fontFamily={"IRANSANS"}
                     fontSize={20}
@@ -720,7 +691,6 @@ const PayeshSetting = ({ zone }) => {
                       height: "100%",
                     }}
                   >
-                    {/* ورودی‌های حداقل/حداکثر دما */}
                     <MinMaxInput
                       label="بازه زمانی ۱"
                       maxState={tempMax1}
@@ -743,7 +713,6 @@ const PayeshSetting = ({ zone }) => {
                       setMinState={setTempMin3}
                     />
 
-                    {/* وضعیت کنترلرهای دما */}
                     <Grid
                       container
                       spacing={1}
@@ -801,7 +770,6 @@ const PayeshSetting = ({ zone }) => {
                       height: "100%",
                     }}
                   >
-                    {/* ورودی‌های حداقل/حداکثر رطوبت */}
                     <MinMaxInput
                       label="بازه زمانی ۱"
                       maxState={humMax1}
@@ -824,7 +792,6 @@ const PayeshSetting = ({ zone }) => {
                       setMinState={setHumMin3}
                     />
 
-                    {/* وضعیت کنترلرهای رطوبت */}
                     <Grid
                       container
                       spacing={1}
@@ -855,7 +822,6 @@ const PayeshSetting = ({ zone }) => {
                 </Stack>
               </Box>
 
-              {/* دکمه ذخیره */}
               <Button
                 variant="contained"
                 onClick={handleSave}

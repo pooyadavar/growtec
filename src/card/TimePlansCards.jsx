@@ -1,27 +1,23 @@
 import React from "react";
-import {
-  Typography,
-  Box,
-  Container,
-  Divider,
-} from "@mui/material";
+import { Typography, Box, Container, Divider } from "@mui/material";
 import assets from "../assets"; // مسیردهی از src/card/ به src/assets/
 import IconTextButton from "./IconTextButton"; // ایمپورت دکمه جدید
 const TimePlansCards = ({ fan, float1, float2, float3 }) => {
-
   return (
     <Container
       sx={{
-        margin: "0",
-        padding: "0",
         width: "293px",
-        height: "564px",
+        height: "640px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-around",
         alignItems: "center",
+
+        transition: "transform 0.2s",
+        p:2,
+        transform:"scale(1)",
       }}
     >
       {/* ... (بخش عنوان و نمودار بدون تغییر) ... */}
@@ -418,19 +414,32 @@ const TimePlansCards = ({ fan, float1, float2, float3 }) => {
         </Box>
 
         {/* --- دکمه تعویض شده --- */}
-        <Box sx={{ width: "246px", marginX: "auto" , display: "flex", justifyContent: "center" }}>
+        <Box
+          sx={{
+            width: "246px",
+            marginLeft: "17px",
+            display: "flex",
+            justifyContent: "center",
+            mb: 1,
+          }}
+        >
           <IconTextButton
             text="تغییر تنظیمات"
-            icon={assets.svg.setting2}
-            iconPosition="left" // آیکون در سمت چپ است (بر اساس کد اصلی شما)
+            icon={assets.svg.setting2} // استفاده از asset
+            iconPosition="left" // آیکون در سمت چپ بود
             bgColor="#FFCB82"
             textColor="#000000"
             width="246px"
-            height="56px"
+            height="30px"
             borderColor="#FFCB82" // کادر همرنگ پس‌زمینه
             sx={{
-              justifyContent: "center", // بازنویسی برای وسط‌چین کردن (چون UI اصلی اینطور بود)
+              justifyContent: "center", // بازنویسی برای وسط‌چین کردن
               gap: 2, // ایجاد فاصله بین آیکون و متن
+              // بازنویسی فونت برای مطابقت با دکمه اصلی
+              "& .MuiTypography-root": {
+                fontSize: "18px",
+                marginLeft: "20px", // شبیه‌سازی marginLeft={5} اصلی
+              },
             }}
           />
         </Box>
