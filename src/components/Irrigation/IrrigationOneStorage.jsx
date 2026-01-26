@@ -10,6 +10,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import { AgCharts } from "ag-charts-react";
 import apiClient from "../../api/apiClient";
 import { styled } from "@mui/system";
+import Calculator from "../tools/Calculator";
 
 const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
   height: "40px",
@@ -181,6 +182,23 @@ const IrrigationOneStorage = ({ storageNumber }) => {
   }, [tankData]);
 
 
+  const calculatorModalStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "90%",
+    height: "90%",
+    bgcolor: "#F0F0F0",
+    border: "0.5px solid #000",
+    boxShadow: 24,
+    p: 2,
+    borderRadius: "15px",
+    display: "block",
+    overflow: "auto",
+    fontFamily: "IRANSANS",
+  };
+
   const modalStyle = {
     position: "absolute",
     top: "50%",
@@ -202,6 +220,10 @@ const IrrigationOneStorage = ({ storageNumber }) => {
   const [modalOpen, setModalOpen] = React.useState(false);
   const handleModalOpen = () => setModalOpen(true);
   const handleModalClose = () => setModalOpen(false);
+
+  const [calculatorModalOpen, setCalculatorModalOpen] = React.useState(false);
+  const handleCalculatorModalOpen = () => setCalculatorModalOpen(true);
+  const handleCalculatorModalClose = () => setCalculatorModalOpen(false);
 
   const tableData = [
     {
@@ -574,6 +596,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
           width="30%"
           height="30px"
           borderColor="#77b39dff"
+          onClick={handleCalculatorModalOpen}
           sx={{
             justifyContent: "space-evenly",
             "& .MuiTypography-root": {
@@ -886,6 +909,17 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         </Box>
       </Modal>
       {/* ========= پایان مودال ========= */}
+
+      {/* ========= Calculator Modal ========= */}
+      <Modal
+        open={calculatorModalOpen}
+        onClose={handleCalculatorModalClose}
+        aria-labelledby="calculator-modal-title"
+      >
+        <Box sx={calculatorModalStyle}>
+          <Calculator onClose={handleCalculatorModalClose} />
+        </Box>
+      </Modal>
     </Container>
   );
 };
