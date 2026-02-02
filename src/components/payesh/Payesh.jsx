@@ -18,6 +18,40 @@ import IconTextButton from "../../card/IconTextButton";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import apiClient from "../../api/apiClient";
 
+const StatusIndicators = ({ states }) => (
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      gap: "1px",
+      marginRight: "10px", // Changed to marginRight
+      ml:1
+    }}
+  >
+    {states.map((isOn, idx) => (
+      <Box
+        key={idx}
+        sx={{
+          width: "14px",
+          height: "14px",
+          borderRadius: "50%",
+          backgroundColor: isOn ? "#379E79" : "#FF6B6B",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          fontSize: "10px",
+          color: "#FFFFFF",
+          fontFamily: "IRANSANS",
+          border: "1px solid #FFFFFF",
+          cursor: "default",
+        }}
+      >
+        {idx + 1}
+      </Box>
+    ))}
+  </Box>
+);
+
 const Payesh = () => {
   const navigate = useNavigate(); // Initialize useNavigate
   const [isChanging, setIsChanging] = React.useState(false);
@@ -26,7 +60,7 @@ const Payesh = () => {
   const changOnAndOff = () => {
     setIsChanging(true);
     setTimeout(() => {
-      setActivity(!activity);
+      setActivity((prev) => !prev);
       setIsChanging(false);
     }, 200); // Match this to the CSS transition duration
   };
@@ -43,6 +77,216 @@ const Payesh = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [xAxisInterval, setXAxisInterval] = useState(180); // پیش‌فرض: هر 3 ساعت
+
+  // Exhaust Fan Modal States
+  const [exhaustFanModalOpen, setExhaustFanModalOpen] = useState(false);
+  const [exhaustFanStates, setExhaustFanStates] = useState({
+    fan1: false,
+    fan2: false,
+    fan3: false,
+    fan4: false,
+  });
+
+  const handleExhaustFanClick = () => {
+    if (activity) {
+      setExhaustFanModalOpen(true);
+    }
+  };
+
+  const toggleExhaustFan = (fanKey) => {
+    setExhaustFanStates((prev) => ({
+      ...prev,
+      [fanKey]: !prev[fanKey],
+    }));
+  };
+
+  // Circulation Fan Modal States
+  const [circulationFanModalOpen, setCirculationFanModalOpen] = useState(false);
+  const [circulationFanStates, setCirculationFanStates] = useState({
+    fan1: false,
+    fan2: false,
+  });
+
+  const handleCirculationFanClick = () => {
+    if (activity) {
+      setCirculationFanModalOpen(true);
+    }
+  };
+
+  const toggleCirculationFan = (fanKey) => {
+    setCirculationFanStates((prev) => ({
+      ...prev,
+      [fanKey]: !prev[fanKey],
+    }));
+  };
+
+  // Pad Pump Modal States
+  const [padPumpModalOpen, setPadPumpModalOpen] = useState(false);
+  const [padPumpState, setPadPumpState] = useState(false); // Single toggle for pad_pump
+
+  const handlePadPumpClick = () => {
+    if (activity) {
+      setPadPumpModalOpen(true);
+    }
+  };
+
+  const togglePadPump = () => {
+    setPadPumpState((prev) => !prev);
+  };
+
+  // Fogger Modal States
+  const [foggerModalOpen, setFoggerModalOpen] = useState(false);
+  const [foggerState, setFoggerState] = useState(false); // Single toggle for fogger
+
+  const handleFoggerClick = () => {
+    if (activity) {
+      setFoggerModalOpen(true);
+    }
+  };
+
+  const toggleFogger = () => {
+    setFoggerState((prev) => !prev);
+  };
+
+  // Hatch Modal States (Draiche)
+  const [hatchModalOpen, setHatchModalOpen] = useState(false);
+  const [hatchStates, setHatchStates] = useState({
+    opening: false,
+    closing: false,
+  });
+
+  const handleHatchClick = () => {
+    if (activity) {
+      setHatchModalOpen(true);
+    }
+  };
+
+  const toggleHatch = (action) => {
+    setHatchStates((prev) => ({
+      ...prev,
+      [action]: !prev[action],
+    }));
+  };
+
+  // Shade Modal States (Pardeh)
+  const [shadeModalOpen, setShadeModalOpen] = useState(false);
+  const [shadeStates, setShadeStates] = useState({
+    opening: false,
+    closing: false,
+  });
+
+  const handleShadeClick = () => {
+    if (activity) {
+      setShadeModalOpen(true);
+    }
+  };
+
+  const toggleShade = (action) => {
+    setShadeStates((prev) => ({
+      ...prev,
+      [action]: !prev[action],
+    }));
+  };
+
+  // Heater Modal States (Hiter)
+  const [heaterModalOpen, setHeaterModalOpen] = useState(false);
+  const [heaterStates, setHeaterStates] = useState({
+    hiter1: false,
+    hiter2: false,
+    hiter3: false,
+    hiter4: false,
+  });
+
+  const handleHeaterClick = () => {
+    if (activity) {
+      setHeaterModalOpen(true);
+    }
+  };
+
+  const toggleHeater = (hiterKey) => {
+    setHeaterStates((prev) => ({
+      ...prev,
+      [hiterKey]: !prev[hiterKey],
+    }));
+  };
+
+  const getExhaustFanIcon = () => {
+    const isAnyOn = Object.values(exhaustFanStates).some((s) => s);
+    if (!activity) {
+      // Auto Mode
+      return isAnyOn ? assets.img.fan1GreenAn : assets.img.fan1RedAn;
+    } else {
+      // Manual Mode
+      return isAnyOn ? assets.img.fan1An : assets.img.fan1;
+    }
+  };
+
+  const getCirculationFanIcon = () => {
+    const isAnyOn = Object.values(circulationFanStates).some((s) => s);
+    if (!activity) {
+      // Auto Mode
+      return isAnyOn ? assets.img.fan2GreenAn : assets.img.fan2RedAn;
+    } else {
+      // Manual Mode
+      return isAnyOn ? assets.img.fan2An : assets.img.fan2;
+    }
+  };
+
+  const getHeaterIcon = () => {
+    const isAnyOn = Object.values(heaterStates).some((s) => s);
+    if (!activity) {
+      // Auto Mode
+      return isAnyOn ? assets.img.bokhariGreenAn : assets.img.bokhariRedAn;
+    } else {
+      // Manual Mode
+      return isAnyOn ? assets.img.bokhariAn : assets.img.bokhari;
+    }
+  };
+
+  const getPadIcon = () => {
+    const isAnyOn = padPumpState; // padPumpState is already a boolean
+    if (!activity) {
+      // Auto Mode
+      return isAnyOn ? assets.img.padGreenAn : assets.img.padRedAn;
+    } else {
+      // Manual Mode
+      return isAnyOn ? assets.img.padAN : assets.img.pad;
+    }
+  };
+
+  const getShadeIcon = () => {
+    const isAnyOn = shadeStates.opening || shadeStates.closing;
+    if (!activity) {
+      // Auto Mode
+      return isAnyOn ? assets.img.pardeGreenAn : assets.img.pardeRedAn;
+    } else {
+      // Manual Mode
+      return isAnyOn ? assets.img.pardeAn : assets.img.parde;
+    }
+  };
+
+  const getHatchIcon = () => {
+    const isAnyOn = hatchStates.opening || hatchStates.closing;
+    if (!activity) {
+      // Auto Mode
+      return isAnyOn ? assets.img.daricheGreenAn : assets.img.daricheRedAn;
+    } else {
+      // Manual Mode
+      return isAnyOn ? assets.img.daricheAn : assets.img.dariche;
+    }
+  };
+
+  const getFoggerIcon = () => {
+    const isAnyOn = foggerState; // foggerState is already a boolean
+    if (!activity) {
+      // Auto Mode
+      return isAnyOn ? assets.img.mehPashGreenAn : assets.img.mehPashRedAn;
+    } else {
+      // Manual Mode
+      return isAnyOn ? assets.img.mehPashAn : assets.img.mehPash;
+    }
+  };
+
   function getTempData() {
     return temp.map((entry) => ({
       time: entry.time,
@@ -554,7 +798,7 @@ const Payesh = () => {
           >
             <Box
               sx={{
-                width: "62px",
+                width: "90px",
                 height: "483px",
                 display: "flex",
                 flexDirection: "column",
@@ -562,41 +806,92 @@ const Payesh = () => {
                 position: "relative",
               }}
             >
-              <img
-                src={assets.img.fan1An}
-                alt=""
-                className="payesh-svg payesh-svg-fan1 button"
-              />
-              <img
-                src={assets.img.fan2An}
-                alt=""
-                className="payesh-svg button"
-              />
-              <img
-                src={assets.img.bokhariAn}
-                alt=""
-                className="payesh-svg button"
-              />
-              <img
-                src={assets.img.padAN}
-                alt=""
-                className="payesh-svg button"
-              />
-              <img
-                src={assets.img.pardeAn}
-                alt=""
-                className="payesh-svg button"
-              />
-              <img
-                src={assets.img.daricheAn}
-                alt=""
-                className="payesh-svg button"
-              />
-              <img
-                src={assets.img.mehPashAn}
-                alt=""
-                className="payesh-svg button"
-              />
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StatusIndicators
+                  states={[
+                    exhaustFanStates.fan1,
+                    exhaustFanStates.fan2,
+                    exhaustFanStates.fan3,
+                    exhaustFanStates.fan4,
+                  ]}
+                />
+                <img
+                  src={getExhaustFanIcon()}
+                  alt=""
+                  className="payesh-svg payesh-svg-fan1 button"
+                  onClick={handleExhaustFanClick}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StatusIndicators
+                  states={[
+                    circulationFanStates.fan1,
+                    circulationFanStates.fan2,
+                  ]}
+                />
+                <img
+                  src={getCirculationFanIcon()}
+                  alt=""
+                  className="payesh-svg button"
+                  onClick={handleCirculationFanClick}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StatusIndicators
+                  states={[
+                    heaterStates.hiter1,
+                    heaterStates.hiter2,
+                    heaterStates.hiter3,
+                    heaterStates.hiter4,
+                  ]}
+                />
+                <img
+                  src={getHeaterIcon()}
+                  alt=""
+                  className="payesh-svg button"
+                  onClick={handleHeaterClick}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StatusIndicators states={[padPumpState]} />
+                <img
+                  src={getPadIcon()}
+                  alt=""
+                  className="payesh-svg button"
+                  onClick={handlePadPumpClick}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StatusIndicators
+                  states={[shadeStates.opening, shadeStates.closing]}
+                />
+                <img
+                  src={getShadeIcon()}
+                  alt=""
+                  className="payesh-svg button"
+                  onClick={handleShadeClick}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StatusIndicators
+                  states={[hatchStates.opening, hatchStates.closing]}
+                />
+                <img
+                  src={getHatchIcon()}
+                  alt=""
+                  className="payesh-svg button"
+                  onClick={handleHatchClick}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StatusIndicators states={[foggerState]} />
+                <img
+                  src={getFoggerIcon()}
+                  alt=""
+                  className="payesh-svg button"
+                  onClick={handleFoggerClick}
+                />
+              </Box>
             </Box>
             <Box
               sx={{
@@ -607,7 +902,7 @@ const Payesh = () => {
             >
               <Box
                 sx={{
-                  width: "826px",
+                  width: "790px",
                   height: "232px",
                   borderRadius: "10px",
                   border: "0.5px solid #9F9F9F",
@@ -618,7 +913,7 @@ const Payesh = () => {
                 <AgCharts
                   options={tempOptions}
                   style={{
-                    width: "826px",
+                    width: "790px",
                     height: "232px",
                     overflow: "hidden",
                     borderRadius: "10px",
@@ -628,7 +923,7 @@ const Payesh = () => {
               </Box>
               <Box
                 sx={{
-                  width: "826px",
+                  width: "790px",
                   height: "232px",
                   borderRadius: "10px",
                   border: "0.5px solid #9F9F9F",
@@ -639,7 +934,7 @@ const Payesh = () => {
                 <AgCharts
                   options={humOptions}
                   style={{
-                    width: "826px",
+                    width: "790px",
                     height: "232px",
                     overflow: "hidden",
                     borderRadius: "10px",
@@ -778,6 +1073,472 @@ const Payesh = () => {
             onClick={handleClose}
           />
           <PayeshSetting zone={zone} />
+        </Box>
+      </Modal>
+
+      {/* Exhaust Fan Control Modal */}
+      <Modal
+        open={exhaustFanModalOpen}
+        onClose={() => setExhaustFanModalOpen(false)}
+        aria-labelledby="exhaust-fan-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 300,
+            bgcolor: "#FFFFFF",
+            borderRadius: "15px",
+            boxShadow: 24,
+            p: 3,
+            outline: "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
+              کنترل فن‌های اگزاست
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="Close"
+              style={{ cursor: "pointer", width: "30px", height: "30px" }}
+              onClick={() => setExhaustFanModalOpen(false)}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {[1, 2, 3, 4].map((num) => (
+              <Box
+                key={num}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingX: 1,
+                }}
+              >
+                <Typography fontFamily="IRANSANS" fontSize={18}>
+                  فن اگزاست {num}
+                </Typography>
+                <img
+                  src={
+                    exhaustFanStates[`fan${num}`]
+                      ? assets.svg.buttonOn
+                      : assets.svg.buttonOff
+                  }
+                  alt="toggle"
+                  style={{ width: "50px", cursor: "pointer" }}
+                  onClick={() => toggleExhaustFan(`fan${num}`)}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Circulation Fan Control Modal */}
+      <Modal
+        open={circulationFanModalOpen}
+        onClose={() => setCirculationFanModalOpen(false)}
+        aria-labelledby="circulation-fan-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 300,
+            bgcolor: "#FFFFFF",
+            borderRadius: "15px",
+            boxShadow: 24,
+            p: 3,
+            outline: "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
+              کنترل فن‌های سیرکوله
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="Close"
+              style={{ cursor: "pointer", width: "30px", height: "30px" }}
+              onClick={() => setCirculationFanModalOpen(false)}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {[1, 2].map((num) => (
+              <Box
+                key={num}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingX: 1,
+                }}
+              >
+                <Typography fontFamily="IRANSANS" fontSize={18}>
+                  فن سیرکوله {num}
+                </Typography>
+                <img
+                  src={
+                    circulationFanStates[`fan${num}`]
+                      ? assets.svg.buttonOn
+                      : assets.svg.buttonOff
+                  }
+                  alt="toggle"
+                  style={{ width: "50px", cursor: "pointer" }}
+                  onClick={() => toggleCirculationFan(`fan${num}`)}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Pad Pump Control Modal */}
+      <Modal
+        open={padPumpModalOpen}
+        onClose={() => setPadPumpModalOpen(false)}
+        aria-labelledby="pad-pump-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 300,
+            bgcolor: "#FFFFFF",
+            borderRadius: "15px",
+            boxShadow: 24,
+            p: 3,
+            outline: "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
+              کنترل پمپ پد
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="Close"
+              style={{ cursor: "pointer", width: "30px", height: "30px" }}
+              onClick={() => setPadPumpModalOpen(false)}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingX: 1,
+              }}
+            >
+              <Typography fontFamily="IRANSANS" fontSize={18}>
+                پمپ پد
+              </Typography>
+              <img
+                src={
+                  padPumpState ? assets.svg.buttonOn : assets.svg.buttonOff
+                }
+                alt="toggle"
+                style={{ width: "50px", cursor: "pointer" }}
+                onClick={togglePadPump}
+              />
+            </Box>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Fogger Control Modal */}
+      <Modal
+        open={foggerModalOpen}
+        onClose={() => setFoggerModalOpen(false)}
+        aria-labelledby="fogger-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 300,
+            bgcolor: "#FFFFFF",
+            borderRadius: "15px",
+            boxShadow: 24,
+            p: 3,
+            outline: "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
+              کنترل مه پاش
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="Close"
+              style={{ cursor: "pointer", width: "30px", height: "30px" }}
+              onClick={() => setFoggerModalOpen(false)}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingX: 1,
+              }}
+            >
+              <Typography fontFamily="IRANSANS" fontSize={18}>
+                مه پاش
+              </Typography>
+              <img
+                src={
+                  foggerState ? assets.svg.buttonOn : assets.svg.buttonOff
+                }
+                alt="toggle"
+                style={{ width: "50px", cursor: "pointer" }}
+                onClick={toggleFogger}
+              />
+            </Box>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Hatch Control Modal */}
+      <Modal
+        open={hatchModalOpen}
+        onClose={() => setHatchModalOpen(false)}
+        aria-labelledby="hatch-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 300,
+            bgcolor: "#FFFFFF",
+            borderRadius: "15px",
+            boxShadow: 24,
+            p: 3,
+            outline: "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
+              کنترل دریچه
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="Close"
+              style={{ cursor: "pointer", width: "30px", height: "30px" }}
+              onClick={() => setHatchModalOpen(false)}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {["opening", "closing"].map((action) => (
+              <Box
+                key={action}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingX: 1,
+                }}
+              >
+                <Typography fontFamily="IRANSANS" fontSize={18}>
+                  {action === "opening" ? "باز شدن دریچه" : "بسته شدن دریچه"}
+                </Typography>
+                <img
+                  src={
+                    hatchStates[action]
+                      ? assets.svg.buttonOn
+                      : assets.svg.buttonOff
+                  }
+                  alt="toggle"
+                  style={{ width: "50px", cursor: "pointer" }}
+                  onClick={() => toggleHatch(action)}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Shade Control Modal */}
+      <Modal
+        open={shadeModalOpen}
+        onClose={() => setShadeModalOpen(false)}
+        aria-labelledby="shade-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 300,
+            bgcolor: "#FFFFFF",
+            borderRadius: "15px",
+            boxShadow: 24,
+            p: 3,
+            outline: "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
+              کنترل پرده
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="Close"
+              style={{ cursor: "pointer", width: "30px", height: "30px" }}
+              onClick={() => setShadeModalOpen(false)}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {["opening", "closing"].map((action) => (
+              <Box
+                key={action}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingX: 1,
+                }}
+              >
+                <Typography fontFamily="IRANSANS" fontSize={18}>
+                  {action === "opening" ? "باز شدن پرده" : "بسته شدن پرده"}
+                </Typography>
+                <img
+                  src={
+                    shadeStates[action]
+                      ? assets.svg.buttonOn
+                      : assets.svg.buttonOff
+                  }
+                  alt="toggle"
+                  style={{ width: "50px", cursor: "pointer" }}
+                  onClick={() => toggleShade(action)}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Heater Control Modal */}
+      <Modal
+        open={heaterModalOpen}
+        onClose={() => setHeaterModalOpen(false)}
+        aria-labelledby="heater-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 300,
+            bgcolor: "#FFFFFF",
+            borderRadius: "15px",
+            boxShadow: 24,
+            p: 3,
+            outline: "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
+              کنترل هیترها
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="Close"
+              style={{ cursor: "pointer", width: "30px", height: "30px" }}
+              onClick={() => setHeaterModalOpen(false)}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {[1, 2, 3, 4].map((num) => (
+              <Box
+                key={num}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingX: 1,
+                }}
+              >
+                <Typography fontFamily="IRANSANS" fontSize={18}>
+                  هیتر {num}
+                </Typography>
+                <img
+                  src={
+                    heaterStates[`hiter${num}`]
+                      ? assets.svg.buttonOn
+                      : assets.svg.buttonOff
+                  }
+                  alt="toggle"
+                  style={{ width: "50px", cursor: "pointer" }}
+                  onClick={() => toggleHeater(`hiter${num}`)}
+                />
+              </Box>
+            ))}
+          </Box>
         </Box>
       </Modal>
     </Container>
