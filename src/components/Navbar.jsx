@@ -61,8 +61,8 @@ const Navbar = () => {
               style={{ scale: "1.3" }}
             />
             <Button
-              // component={Link}
-              // to={"/login"}
+              component={Link}
+              to={"/login"}
               variant="text"
               className={classes.navItem}
               sx={{
@@ -112,8 +112,8 @@ const Navbar = () => {
               پایش
             </Button>
             <Button
-              // component={Link}
-              // to={"/admin-settings"}
+              component={Link}
+              to={"/admin-settings"}
               variant="text"
               className={classes.navItem}
             >
