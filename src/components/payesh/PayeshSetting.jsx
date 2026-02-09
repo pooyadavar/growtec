@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import assets from "../../assets";
+import apiClient from "../../api/apiClient";
 
 // --- Sub-components ---
 
@@ -354,16 +355,15 @@ const PayeshSetting = ({ zone }) => {
     [tempMax1, tempMax2, tempMax3, tempMin1, tempMin2, tempMin3]
   );
 
-  const apiDomain = "http://192.168.100.51:8000";
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     try {
-      const resp1_data = DUMMY_DATA.rangeStartTimes;
+      const rangeRes = await apiClient.get(`/climate/range-start-time/`);
+      const resp1_data = rangeRes;
+
       const resp2_data = DUMMY_DATA.tempRanges;
       const resp3_data = DUMMY_DATA.humRanges;
       const resp4_data = DUMMY_DATA.tempOperators;
@@ -421,15 +421,15 @@ const PayeshSetting = ({ zone }) => {
 
     const payloads = [
       {
-        api: `${apiDomain}/api/v1/climate/temperature-range/`,
+        api: `/api/v1/climate/temperature-range/`,
         data: { temperature_range: formatRangeObject(tempObject), zone, part },
       },
       {
-        api: `${apiDomain}/api/v1/climate/humidity-range/`,
+        api: `/api/v1/climate/humidity-range/`,
         data: { humidity_range: formatRangeObject(humidityObject), zone, part },
       },
       {
-        api: `${apiDomain}/api/v1/climate/range-start-time/`,
+        api: `/api/v1/climate/range-start-time/`,
         data: {
           range_start_time: [
             parseInt(range1 || 0),
