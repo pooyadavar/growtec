@@ -97,6 +97,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
     setActivity(!targetMode);
 
     sendOperatorModeUpdate(targetMode);
+    fetchOperatorStatus(zone);
     setTimeout(() => {
       setIsChanging(false);
     }, 200); // Match this to the CSS transition duration
