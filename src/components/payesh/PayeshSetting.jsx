@@ -361,37 +361,46 @@ const PayeshSetting = ({ zone }) => {
     setError(null);
 
     try {
-      const rangeRes = await apiClient.get(`/climate/range-start-time/`);
-      const resp1_data = rangeRes;
+      const [rangeRes, tempRes, humRes] = await Promise.all([
+        apiClient.get(`/climate/range-start-time/`),
+        apiClient.get(`/climate/temperature-range/`, {
+          params: { zone, part },
+        }),
+        apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
+      ]);
 
-      const resp2_data = DUMMY_DATA.tempRanges;
-      const resp3_data = DUMMY_DATA.humRanges;
       const resp4_data = DUMMY_DATA.tempOperators;
       const resp5_data = DUMMY_DATA.humOperators;
 
-      setRange1(resp1_data[0]);
-      setRange2(resp1_data[1]);
-      setRange3(resp1_data[2]);
+      if (rangeRes) {
+        setRange1(rangeRes[0]);
+        setRange2(rangeRes[1]);
+        setRange3(rangeRes[2]);
+      }
 
-      setTempMax1(resp2_data["1"]["maximum"]);
-      setTempMin1(resp2_data["1"]["minimum"]);
-      setTempMax2(resp2_data["2"]["maximum"]);
-      setTempMin2(resp2_data["2"]["minimum"]);
-      setTempMax3(resp2_data["3"]["maximum"]);
-      setTempMin3(resp2_data["3"]["minimum"]);
+      if (tempRes) {
+        setTempMax1(tempRes["1"]?.maximum || 0);
+        setTempMin1(tempRes["1"]?.minimum || 0);
+        setTempMax2(tempRes["2"]?.maximum || 0);
+        setTempMin2(tempRes["2"]?.minimum || 0);
+        setTempMax3(tempRes["3"]?.maximum || 0);
+        setTempMin3(tempRes["3"]?.minimum || 0);
+      }
 
-      sethumMax1(resp3_data["1"]["maximum"]);
-      setHumMin1(resp3_data["1"]["minimum"]);
-      sethumMax2(resp3_data["2"]["maximum"]);
-      setHumMin2(resp3_data["2"]["minimum"]);
-      sethumMax3(resp3_data["3"]["maximum"]);
-      setHumMin3(resp3_data["3"]["minimum"]);
+      if (humRes) {
+        sethumMax1(humRes["1"]?.maximum || 0);
+        setHumMin1(humRes["1"]?.minimum || 0);
+        sethumMax2(humRes["2"]?.maximum || 0);
+        setHumMin2(humRes["2"]?.minimum || 0);
+        sethumMax3(humRes["3"]?.maximum || 0);
+        setHumMin3(humRes["3"]?.minimum || 0);
+      }
 
       setTempControllers(resp4_data);
       setHumControllers(resp5_data);
     } catch (err) {
-      console.error("Error fetching hardcoded data:", err);
-      setError("خطا در تخصیص داده‌های ساختگی.");
+      console.error("Error fetching data:", err);
+      setError("خطا در دریافت داده‌ها.");
     } finally {
       setLoading(false);
     }
@@ -419,29 +428,26 @@ const PayeshSetting = ({ zone }) => {
       },
     });
 
-    const payloads = [
-      {
-        api: `/api/v1/climate/temperature-range/`,
-        data: { temperature_range: formatRangeObject(tempObject), zone, part },
-      },
-      {
-        api: `/api/v1/climate/humidity-range/`,
-        data: { humidity_range: formatRangeObject(humidityObject), zone, part },
-      },
-      {
-        api: `/api/v1/climate/range-start-time/`,
-        data: {
+    try {
+      await Promise.all([
+        apiClient.post(`/climate/temperature-range/`, {
+          temperature_range: formatRangeObject(tempObject),
+          zone,
+          part,
+        }),
+        apiClient.post(`/climate/humidity-range/`, {
+          humidity_range: formatRangeObject(humidityObject),
+          zone,
+          part,
+        }),
+        apiClient.post(`/climate/range-start-time/`, {
           range_start_time: [
             parseInt(range1 || 0),
             parseInt(range2 || 0),
             parseInt(range3 || 0),
           ],
-        },
-      },
-    ];
-
-    try {
-      await axios.all(payloads.map((p) => axios.post(p.api, p.data)));
+        }),
+      ]);
       console.log("Data successfully saved!");
     } catch (error) {
       console.error("Error saving data:", error);
