@@ -25,7 +25,7 @@ const StatusIndicators = ({ states }) => (
       flexDirection: "column",
       gap: "1px",
       marginRight: "10px", // Changed to marginRight
-      ml:1
+      ml: 1,
     }}
   >
     {states.map((isOn, idx) => (
@@ -55,22 +55,125 @@ const StatusIndicators = ({ states }) => (
 const Payesh = () => {
   const navigate = useNavigate(); // Initialize useNavigate
   const [isChanging, setIsChanging] = React.useState(false);
-  const [activity, setActivity] = React.useState(false);
+  const [operatorMode, setOperatorMode] = React.useState(false); // New state for operator mode
+const [activity, setActivity] = React.useState(!operatorMode); // New state for operator mode
+  const [zone, setZone] = useState(1);
+
+
+  const sendOperatorModeUpdate = async (newMode) => {
+    try {
+      // Use apiClient for POST request
+      const data = await apiClient.post(`/climate/operators-mode/`, { is_auto: newMode, zone: zone });
+      console.log(`sendOperatorModeUpdate: newMode sent=${newMode}, API response:`, data); // Debug log
+      // We rely on optimistic update in changOnAndOff, so we don't update state here
+      // to avoid race conditions or flickering if the API returns old data.
+    } catch (error) {
+      console.error("Error updating operator mode:", error);
+      // Optional: Revert state here if needed
+      setOperatorMode(!newMode);
+      setActivity(newMode);
+    }
+  };
+
+  const sendOperatorCommand = async (operatorName, isOn) => {
+    try {
+      await apiClient.post('/climate/operator/', {
+        operator: operatorName,
+        zone: zone,
+        on_off: isOn ? 'on' : 'off'
+      });
+    } catch (error) {
+      console.error(`Error updating ${operatorName} status:`, error);
+      // Handle error: perhaps revert UI change or show an error message
+    }
+  };
+
 
   const changOnAndOff = () => {
     setIsChanging(true);
+    // Optimistic Update
+    const targetMode = activity; // If currently Manual (activity=true), target is Auto (true)
+    setOperatorMode(targetMode);
+    setActivity(!targetMode);
+
+    sendOperatorModeUpdate(targetMode);
     setTimeout(() => {
-      setActivity((prev) => !prev);
       setIsChanging(false);
     }, 200); // Match this to the CSS transition duration
   };
+
+  const fetchOperatorMode = async (zoneNum) => {
+    try {
+      const data = await apiClient.get(`/climate/operators-mode/?zone=${zoneNum}`);
+      const mode = (typeof data === 'object' && data !== null && 'is_auto' in data) ? data.is_auto : data;
+      setOperatorMode(mode);
+      setActivity(!mode); // activity is inverse of is_auto
+      console.log(`fetchOperatorMode: API raw data:`, data, `Parsed mode (is_auto):`, mode); // Debug log
+    } catch (error) {
+      console.error("Error fetching operator mode:", error);
+      // Optionally handle error, e.g., set operatorMode to a default or show an error message
+    }
+  };
+
+  const fetchOperatorStatus = async (zoneNum) => {
+    try {
+      const data = await apiClient.get(`/climate/operator/?zone=${zoneNum}`);
+
+      setExhaustFanStates({
+        fan1: data.exhaust_fan_1 || false,
+        fan2: data.exhaust_fan_2 || false,
+        fan3: data.exhaust_fan_3 || false,
+        fan4: data.exhaust_fan_4 || false,
+        fan5: data.exhaust_fan_5 || false,
+      });
+
+      setCirculationFanStates({
+        fan1: data.circule_fan_1 || false,
+        fan2: data.circule_fan_2 || false,
+      });
+
+      setPadPumpState(data.pad_pump || false);
+      setFoggerState(data.fogger || false);
+
+      setHatchStates({
+        opening: data.hatch_opening || false,
+        closing: data.hatch_closing || false,
+      });
+
+      setShadeStates({
+        opening: data.shade_opening || false,
+        closing: data.shade_closing || false,
+      });
+
+      setHeaterStates({
+        hiter1: data.hiter_1 || false,
+        hiter2: data.hiter_2 || false,
+        hiter3: data.hiter_3 || false,
+        hiter4: data.hiter_4 || false,
+      });
+
+    } catch (error) {
+      console.error("Error fetching operator status:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOperatorMode(zone);
+    fetchOperatorStatus(zone);
+
+    const interval = setInterval(() => {
+      fetchOperatorMode(zone);
+      fetchOperatorStatus(zone);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [zone]);
   // Modal States --------
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   // Modal States --------
 
-  const [zone, setZone] = useState(1);
   const apiDomain = "http://192.168.100.51:8000";
   const [humidity, setHumidity] = useState([]);
   const [temp, setTemp] = useState([]);
@@ -94,10 +197,17 @@ const Payesh = () => {
   };
 
   const toggleExhaustFan = (fanKey) => {
-    setExhaustFanStates((prev) => ({
-      ...prev,
-      [fanKey]: !prev[fanKey],
-    }));
+    setExhaustFanStates((prev) => {
+      const newState = !prev[fanKey];
+      // fanKey is like 'fan1', we want 'exhaust_fan_1'
+      const number = fanKey.replace('fan', '');
+      const operatorName = `exhaust_fan_${number}`;
+      sendOperatorCommand(operatorName, newState);
+      return {
+        ...prev,
+        [fanKey]: newState,
+      };
+    });
   };
 
   // Circulation Fan Modal States
@@ -114,10 +224,17 @@ const Payesh = () => {
   };
 
   const toggleCirculationFan = (fanKey) => {
-    setCirculationFanStates((prev) => ({
-      ...prev,
-      [fanKey]: !prev[fanKey],
-    }));
+    setCirculationFanStates((prev) => {
+      const newState = !prev[fanKey];
+      // fanKey is like 'fan1', we want 'circule_fan_1'
+      const number = fanKey.replace('fan', '');
+      const operatorName = `circule_fan_${number}`;
+      sendOperatorCommand(operatorName, newState);
+      return {
+        ...prev,
+        [fanKey]: newState,
+      };
+    });
   };
 
   // Pad Pump Modal States
@@ -131,7 +248,11 @@ const Payesh = () => {
   };
 
   const togglePadPump = () => {
-    setPadPumpState((prev) => !prev);
+    setPadPumpState((prev) => {
+      const newState = !prev;
+      sendOperatorCommand('pad_pump', newState);
+      return newState;
+    });
   };
 
   // Fogger Modal States
@@ -145,7 +266,11 @@ const Payesh = () => {
   };
 
   const toggleFogger = () => {
-    setFoggerState((prev) => !prev);
+    setFoggerState((prev) => {
+      const newState = !prev;
+      sendOperatorCommand('fogger', newState);
+      return newState;
+    });
   };
 
   // Hatch Modal States (Draiche)
@@ -162,10 +287,15 @@ const Payesh = () => {
   };
 
   const toggleHatch = (action) => {
-    setHatchStates((prev) => ({
-      ...prev,
-      [action]: !prev[action],
-    }));
+    setHatchStates((prev) => {
+      const newState = !prev[action];
+      const operatorName = `hatch_${action}`;
+      sendOperatorCommand(operatorName, newState);
+      return {
+        ...prev,
+        [action]: newState,
+      };
+    });
   };
 
   // Shade Modal States (Pardeh)
@@ -182,10 +312,15 @@ const Payesh = () => {
   };
 
   const toggleShade = (action) => {
-    setShadeStates((prev) => ({
-      ...prev,
-      [action]: !prev[action],
-    }));
+    setShadeStates((prev) => {
+      const newState = !prev[action];
+      const operatorName = `shade_${action}`;
+      sendOperatorCommand(operatorName, newState);
+      return {
+        ...prev,
+        [action]: newState,
+      };
+    });
   };
 
   // Heater Modal States (Hiter)
@@ -204,10 +339,17 @@ const Payesh = () => {
   };
 
   const toggleHeater = (hiterKey) => {
-    setHeaterStates((prev) => ({
-      ...prev,
-      [hiterKey]: !prev[hiterKey],
-    }));
+    setHeaterStates((prev) => {
+      const newState = !prev[hiterKey];
+      // hiterKey is like 'hiter1', we want 'hiter_1'
+      const number = hiterKey.replace('hiter', '');
+      const operatorName = `hiter_${number}`;
+      sendOperatorCommand(operatorName, newState);
+      return {
+        ...prev,
+        [hiterKey]: newState,
+      };
+    });
   };
 
   const getExhaustFanIcon = () => {
@@ -302,10 +444,10 @@ const Payesh = () => {
   // تابع formatter برای محور X
   const getXAxisFormatter = useMemo(() => {
     return (params) => {
-      const timeParts = params.value.split(':');
+      const timeParts = params.value.split(":");
       if (timeParts.length >= 2) {
         const minute = parseInt(timeParts[1]);
-        
+
         // نمایش بر اساس interval تنظیم شده
         if (xAxisInterval === 60) {
           // هر 1 ساعت: نمایش ساعت‌های کامل
@@ -322,7 +464,7 @@ const Payesh = () => {
           return `${timeParts[0]}:${timeParts[1]}`;
         }
       }
-      return '';
+      return "";
     };
   }, [xAxisInterval]);
 
@@ -330,24 +472,60 @@ const Payesh = () => {
     title: { text: "دما", fontFamily: "IRANSANS" },
     data: temp,
     series: [
-      { type: "line", xKey: "time", yKey: "sensor1", yName: "سنسور 1", stroke: "#FF6B6B" },
-      { type: "line", xKey: "time", yKey: "sensor2", yName: "سنسور 2", stroke: "#4ECDC4" },
-      { type: "line", xKey: "time", yKey: "sensor3", yName: "سنسور 3", stroke: "#45B7D1" },
-      { type: "line", xKey: "time", yKey: "sensor4", yName: "سنسور 4", stroke: "#FFA07A" },
-      { type: "line", xKey: "time", yKey: "sensor5", yName: "سنسور 5", stroke: "#98D8C8" },
-      { type: "line", xKey: "time", yKey: "sensor6", yName: "سنسور 6", stroke: "#F7DC6F" },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor1",
+        yName: "سنسور 1",
+        stroke: "#FF6B6B",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor2",
+        yName: "سنسور 2",
+        stroke: "#4ECDC4",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor3",
+        yName: "سنسور 3",
+        stroke: "#45B7D1",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor4",
+        yName: "سنسور 4",
+        stroke: "#FFA07A",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor5",
+        yName: "سنسور 5",
+        stroke: "#98D8C8",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor6",
+        yName: "سنسور 6",
+        stroke: "#F7DC6F",
+      },
     ],
     axes: [
-      { 
-        type: "category", 
-        position: "bottom", 
+      {
+        type: "category",
+        position: "bottom",
         title: { text: "" },
         label: {
           formatter: getXAxisFormatter,
         },
         tick: {
           interval: xAxisInterval,
-        }
+        },
       },
       { type: "number", position: "left", title: { text: "دما (°C)" } },
     ],
@@ -358,34 +536,77 @@ const Payesh = () => {
     title: { text: "رطوبت", fontFamily: "IRANSANS" },
     data: humidity,
     series: [
-      { type: "line", xKey: "time", yKey: "sensor1", yName: "سنسور 1", stroke: "#FF6B6B" },
-      { type: "line", xKey: "time", yKey: "sensor2", yName: "سنسور 2", stroke: "#4ECDC4" },
-      { type: "line", xKey: "time", yKey: "sensor3", yName: "سنسور 3", stroke: "#45B7D1" },
-      { type: "line", xKey: "time", yKey: "sensor4", yName: "سنسور 4", stroke: "#FFA07A" },
-      { type: "line", xKey: "time", yKey: "sensor5", yName: "سنسور 5", stroke: "#98D8C8" },
-      { type: "line", xKey: "time", yKey: "sensor6", yName: "سنسور 6", stroke: "#F7DC6F" },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor1",
+        yName: "سنسور 1",
+        stroke: "#FF6B6B",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor2",
+        yName: "سنسور 2",
+        stroke: "#4ECDC4",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor3",
+        yName: "سنسور 3",
+        stroke: "#45B7D1",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor4",
+        yName: "سنسور 4",
+        stroke: "#FFA07A",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor5",
+        yName: "سنسور 5",
+        stroke: "#98D8C8",
+      },
+      {
+        type: "line",
+        xKey: "time",
+        yKey: "sensor6",
+        yName: "سنسور 6",
+        stroke: "#F7DC6F",
+      },
     ],
     axes: [
-      { 
-        type: "category", 
-        position: "bottom", 
+      {
+        type: "category",
+        position: "bottom",
         title: { text: "" },
         label: {
           formatter: getXAxisFormatter,
         },
         tick: {
           interval: xAxisInterval,
-        }
+        },
       },
-      { type: "number", position: "left", title: { text: "درصد" } },
+      { type: "number", position: "right", title: { text: "درصد" } },
     ],
     legend: {
       enabled: true,
       position: "bottom",
-      spacing: 20,
+      spacing: 10,
       item: {
-        marker: { shape: "circle" },
-        paddingX: 30,
+        spacing: 24,
+        marker: {
+          shape: "circle",
+          size: 12,
+        },
+        label: {
+          fontFamily: "IRANSANS",
+          direction: "rtl",
+        },
       },
     },
   });
@@ -403,34 +624,34 @@ const Payesh = () => {
     setTempOptions((prev) => ({
       ...prev,
       axes: [
-        { 
-          type: "category", 
-          position: "bottom", 
+        {
+          type: "category",
+          position: "bottom",
           title: { text: "" },
           label: {
             formatter: getXAxisFormatter,
           },
           tick: {
             interval: xAxisInterval,
-          }
+          },
         },
         { type: "number", position: "left", title: { text: "دما (°C)" } },
       ],
     }));
-    
+
     setHumOptions((prev) => ({
       ...prev,
       axes: [
-        { 
-          type: "category", 
-          position: "bottom", 
+        {
+          type: "category",
+          position: "bottom",
           title: { text: "" },
           label: {
             formatter: getXAxisFormatter,
           },
           tick: {
             interval: xAxisInterval,
-          }
+          },
         },
         { type: "number", position: "left", title: { text: "درصد" } },
       ],
@@ -440,8 +661,9 @@ const Payesh = () => {
   // تابع retry برای درخواست‌های با timeout
   const fetchWithRetry = async (zoneNum, retries = 3) => {
     // استفاده از baseURL از apiClient
-    const baseURL = apiClient.defaults?.baseURL || 'http://192.168.31.140:8000/api/v1';
-    
+    const baseURL =
+      apiClient.defaults?.baseURL || "http://192.168.31.140:8000/api/v1";
+
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         // استفاده از axios مستقیم برای تنظیم timeout بیشتر
@@ -451,18 +673,20 @@ const Payesh = () => {
           {
             timeout: 180000, // 180 ثانیه (3 دقیقه) timeout برای داده‌های حجیم
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
-          }
+          },
         );
         return response.data;
       } catch (error) {
-        console.log(`Attempt ${attempt} failed for zone ${zoneNum}, retrying...`);
+        console.log(
+          `Attempt ${attempt} failed for zone ${zoneNum}, retrying...`,
+        );
         if (attempt === retries) {
           throw error;
         }
         // صبر کردن قبل از retry بعدی (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 5000 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 5000 * attempt));
       }
     }
   };
@@ -476,7 +700,7 @@ const Payesh = () => {
       // دریافت داده‌ها فقط برای zone فعلی
       const response = await fetchWithRetry(zone);
       const data = Array.isArray(response) ? response : response.results || [];
-      
+
       // فیلتر کردن داده‌ها بر اساس zone در log_data
       const zoneData = data.filter((item) => item.log_data?.zone === zone);
       const sortedData = [...zoneData].reverse();
@@ -489,7 +713,7 @@ const Payesh = () => {
         const timeStr = item.log_date_time.split(" ")[1]; // Extract HH:MM:SS
         const t = item.log_data.temperature;
         const h = item.log_data.humidity;
-        
+
         // ایجاد رکورد برای دما
         const tempEntry = {
           time: timeStr,
@@ -500,7 +724,7 @@ const Payesh = () => {
           sensor5: t?.["5"] ?? 0,
           sensor6: t?.["6"] ?? 0,
         };
-        
+
         // ایجاد رکورد برای رطوبت
         const humEntry = {
           time: timeStr,
@@ -511,7 +735,7 @@ const Payesh = () => {
           sensor5: h?.["5"] ?? 0,
           sensor6: h?.["6"] ?? 0,
         };
-        
+
         tempData.push(tempEntry);
         humData.push(humEntry);
       });
@@ -519,22 +743,22 @@ const Payesh = () => {
       // مرتب‌سازی بر اساس زمان
       tempData.sort((a, b) => a.time.localeCompare(b.time));
       humData.sort((a, b) => a.time.localeCompare(b.time));
-      
+
       // محاسبه بازه زمانی و تنظیم interval محور X
       if (tempData.length > 0) {
         const firstTime = tempData[0].time;
         const lastTime = tempData[tempData.length - 1].time;
-        
+
         // تبدیل زمان به دقیقه برای محاسبه تفاوت
         const timeToMinutes = (timeStr) => {
-          const [hours, minutes] = timeStr.split(':').map(Number);
+          const [hours, minutes] = timeStr.split(":").map(Number);
           return hours * 60 + minutes;
         };
-        
+
         const firstMinutes = timeToMinutes(firstTime);
         const lastMinutes = timeToMinutes(lastTime);
         const timeRangeMinutes = lastMinutes - firstMinutes;
-        
+
         // اگر بازه زمانی بیشتر از 12 ساعت باشد، هر 1 ساعت نمایش بده
         // اگر بازه زمانی بین 2 تا 12 ساعت باشد، هر نیم ساعت نمایش بده
         // اگر بازه زمانی کمتر از 2 ساعت باشد، هر 15 دقیقه نمایش بده
@@ -546,14 +770,16 @@ const Payesh = () => {
         } else {
           intervalMinutes = 15; // هر 15 دقیقه
         }
-        
+
         setXAxisInterval(intervalMinutes);
-        console.log(`Time range: ${firstTime} to ${lastTime} (${timeRangeMinutes} minutes), interval: ${intervalMinutes} minutes`);
+        console.log(
+          `Time range: ${firstTime} to ${lastTime} (${timeRangeMinutes} minutes), interval: ${intervalMinutes} minutes`,
+        );
       }
-      
+
       setTemp(tempData);
       setHumidity(humData);
-      
+
       // لاگ برای دیباگ
       if (tempData.length > 0) {
         console.log(`Zone ${zone} data sample:`, tempData[0]);
@@ -661,7 +887,7 @@ const Payesh = () => {
                   //sendBoolean(); // second function
                 }}
                 className={`on-and-off-btn ${isChanging ? "changing" : ""}`}
-                src={activity ? assets.svg.buttonOff : assets.svg.buttonOn}
+                src={operatorMode ? assets.svg.buttonOn : assets.svg.buttonOff}
                 alt=""
               />
             </Box>
@@ -1057,7 +1283,7 @@ const Payesh = () => {
             top: "46%",
             left: "48%",
             transform: "translate(-50%, -50%)",
-            scale: "0.95"
+            scale: "0.95",
           }}
         >
           <img
@@ -1263,9 +1489,7 @@ const Payesh = () => {
                 پمپ پد
               </Typography>
               <img
-                src={
-                  padPumpState ? assets.svg.buttonOn : assets.svg.buttonOff
-                }
+                src={padPumpState ? assets.svg.buttonOn : assets.svg.buttonOff}
                 alt="toggle"
                 style={{ width: "50px", cursor: "pointer" }}
                 onClick={togglePadPump}
@@ -1326,9 +1550,7 @@ const Payesh = () => {
                 مه پاش
               </Typography>
               <img
-                src={
-                  foggerState ? assets.svg.buttonOn : assets.svg.buttonOff
-                }
+                src={foggerState ? assets.svg.buttonOn : assets.svg.buttonOff}
                 alt="toggle"
                 style={{ width: "50px", cursor: "pointer" }}
                 onClick={toggleFogger}
