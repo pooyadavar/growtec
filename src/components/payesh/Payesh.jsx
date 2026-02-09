@@ -58,6 +58,26 @@ const Payesh = () => {
   const [operatorMode, setOperatorMode] = React.useState(false); // New state for operator mode
 const [activity, setActivity] = React.useState(!operatorMode); // New state for operator mode
   const [zone, setZone] = useState(1);
+  const [temperaturePartStatus, setTemperaturePartStatus] = useState("");
+  const [humidityPartStatus, setHumidityPartStatus] = useState("");
+
+  const fetchTemperaturePartStatus = async (zoneNum) => {
+    try {
+      const data = await apiClient.get(`/climate/temperature-part/?zone=${zoneNum}`);
+      setTemperaturePartStatus(data);
+    } catch (error) {
+      console.error("Error fetching temperature part status:", error);
+    }
+  };
+
+  const fetchHumidityPartStatus = async (zoneNum) => {
+    try {
+      const data = await apiClient.get(`/climate/humidity-part/?zone=${zoneNum}`);
+      setHumidityPartStatus(data);
+    } catch (error) {
+      console.error("Error fetching humidity part status:", error);
+    }
+  };
 
 
   const sendOperatorModeUpdate = async (newMode) => {
@@ -161,10 +181,14 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
   useEffect(() => {
     fetchOperatorMode(zone);
     fetchOperatorStatus(zone);
+    fetchTemperaturePartStatus(zone);
+    fetchHumidityPartStatus(zone);
 
     const interval = setInterval(() => {
       fetchOperatorMode(zone);
       fetchOperatorStatus(zone);
+      fetchTemperaturePartStatus(zone);
+      fetchHumidityPartStatus(zone);
     }, 30000);
 
     return () => clearInterval(interval);
@@ -909,7 +933,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
                 وضعیت عملگر دما:
               </Typography>
               <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                A
+                {temperaturePartStatus}
               </Typography>
             </Box>
 
@@ -930,7 +954,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
                 وضعیت عملگرها رطوبت:
               </Typography>
               <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                B
+                {humidityPartStatus}
               </Typography>
             </Box>
             <Box
