@@ -321,14 +321,12 @@ const PayeshSetting = ({ zone }) => {
   const [humControllers, setHumControllers] = useState({
     exhaust_fan_1: false,
     exhaust_fan_2: false,
-    fogger: false,
-    pump_pad_off: false,
-    roof_hatch: false,
+    exhaust_fan_3: false,
+    exhaust_fan_4: false,
+    circulating_fan_1: false,
+    circulating_fan_2: false,
   });
   const [tempControllers, setTempControllers] = useState({
-    exhaust_fan_1: false,
-    exhaust_fan_2: false,
-    exhaust_fan_3: false,
     shid: false,
     meh_pash: false,
     pump_pad: false,
@@ -361,43 +359,60 @@ const PayeshSetting = ({ zone }) => {
     setError(null);
 
     try {
-      const [rangeRes, tempRes, humRes] = await Promise.all([
+      const [rangeRes, tempRes, humRes, tempOpRes, humOpRes] = await Promise.all([
         apiClient.get(`/climate/range-start-time/`),
         apiClient.get(`/climate/temperature-range/`, {
           params: { zone, part },
         }),
         apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
+        apiClient.get(`/climate/temperature-range-operator/`, {
+          params: { zone, part },
+        }),
+        apiClient.get(`/climate/humidity-range-operator/`, {
+          params: { zone, part },
+        }),
       ]);
 
-      const resp4_data = DUMMY_DATA.tempOperators;
-      const resp5_data = DUMMY_DATA.humOperators;
-
-      if (rangeRes) {
-        setRange1(rangeRes[0]);
-        setRange2(rangeRes[1]);
-        setRange3(rangeRes[2]);
+      if (rangeRes.data) {
+        setRange1(rangeRes.data[0]);
+        setRange2(rangeRes.data[1]);
+        setRange3(rangeRes.data[2]);
       }
 
       if (tempRes) {
-        setTempMax1(tempRes["1"]?.maximum || 0);
-        setTempMin1(tempRes["1"]?.minimum || 0);
-        setTempMax2(tempRes["2"]?.maximum || 0);
-        setTempMin2(tempRes["2"]?.minimum || 0);
-        setTempMax3(tempRes["3"]?.maximum || 0);
-        setTempMin3(tempRes["3"]?.minimum || 0);
+        setTempMax1(tempRes.data["1"]?.maximum || 0);
+        setTempMin1(tempRes.data["1"]?.minimum || 0);
+        setTempMax2(tempRes.data["2"]?.maximum || 0);
+        setTempMin2(tempRes.data["2"]?.minimum || 0);
+        setTempMax3(tempRes.data["3"]?.maximum || 0);
+        setTempMin3(tempRes.data["3"]?.minimum || 0);
       }
 
       if (humRes) {
-        sethumMax1(humRes["1"]?.maximum || 0);
-        setHumMin1(humRes["1"]?.minimum || 0);
-        sethumMax2(humRes["2"]?.maximum || 0);
-        setHumMin2(humRes["2"]?.minimum || 0);
-        sethumMax3(humRes["3"]?.maximum || 0);
-        setHumMin3(humRes["3"]?.minimum || 0);
+        sethumMax1(humRes.data["1"]?.maximum || 0);
+        setHumMin1(humRes.data["1"]?.minimum || 0);
+        sethumMax2(humRes.data["2"]?.maximum || 0);
+        setHumMin2(humRes.data["2"]?.minimum || 0);
+        sethumMax3(humRes.data["3"]?.maximum || 0);
+        setHumMin3(humRes.data["3"]?.minimum || 0);
       }
 
-      setTempControllers(resp4_data);
-      setHumControllers(resp5_data);
+      if (tempOpRes) {
+        setTempControllers((prev) => ({
+          ...prev,
+          ...tempOpRes.data,
+        }));
+      }
+
+      if (humOpRes) {
+        setHumControllers((prev) => ({
+          ...prev,
+          ...humOpRes.data,
+          // Map circulating_fan to sirkoole_fan for existing UI keys if necessary
+          sirkoole_fan_1: humOpRes.data.circulating_fan_1 || false,
+          sirkoole_fan_2: humOpRes.data.circulating_fan_2 || false,
+        }));
+      }
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("خطا در دریافت داده‌ها.");
@@ -429,6 +444,21 @@ const PayeshSetting = ({ zone }) => {
     });
 
     try {
+      // Prepare temp operators
+      const tempApiOperators = { ...tempControllers };
+
+      // Prepare hum operators (with mapping)
+      const humApiOperators = {};
+      for (const key in humControllers) {
+        if (key === "sirkoole_fan_1") {
+          humApiOperators["circulating_fan_1"] = humControllers[key];
+        } else if (key === "sirkoole_fan_2") {
+          humApiOperators["circulating_fan_2"] = humControllers[key];
+        } else {
+          humApiOperators[key] = humControllers[key];
+        }
+      }
+
       await Promise.all([
         apiClient.post(`/climate/temperature-range/`, {
           temperature_range: formatRangeObject(tempObject),
@@ -446,6 +476,16 @@ const PayeshSetting = ({ zone }) => {
             parseInt(range2 || 0),
             parseInt(range3 || 0),
           ],
+        }),
+        apiClient.post(`/climate/temperature-range-operator/`, {
+          temperature_range_operator: tempApiOperators,
+          zone,
+          part,
+        }),
+        apiClient.post(`/climate/humidity-range-operator/`, {
+          humidity_range_operator: humApiOperators,
+          zone,
+          part,
         }),
       ]);
       console.log("Data successfully saved!");
@@ -515,13 +555,13 @@ const PayeshSetting = ({ zone }) => {
     },
     {
       label: "فن سیرکوله۱",
-      key: "sirkoole_fan_1",
-      onClick: () => toggleHumController("sirkoole_fan_1"),
+      key: "circulating_fan_1",
+      onClick: () => toggleHumController("circulating_fan_1"),
     },
     {
       label: "فن سیرکوله۲",
-      key: "sirkoole_fan_2",
-      onClick: () => toggleHumController("sirkoole_fan_2"),
+      key: "circulating_fan_2",
+      onClick: () => toggleHumController("circulating_fan_2"),
     },
   ];
 
