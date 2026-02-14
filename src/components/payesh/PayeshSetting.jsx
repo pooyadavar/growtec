@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Button,
@@ -321,19 +321,53 @@ const PayeshSetting = ({ zone }) => {
   const [humControllers, setHumControllers] = useState({
     exhaust_fan_1: false,
     exhaust_fan_2: false,
-    exhaust_fan_3: false,
-    exhaust_fan_4: false,
-    circulating_fan_1: false,
-    circulating_fan_2: false,
-  });
-  const [tempControllers, setTempControllers] = useState({
-    shid: false,
-    meh_pash: false,
-    pump_pad: false,
-    heater_1: false,
-    heater_2: false,
+    fogger: false,
+    pump_pad_off: false,
     roof_hatch: false,
   });
+  const [tempControllers, setTempControllers] = useState({
+    circulating_fan_1: false,
+    circulating_fan_2: false,
+    exhaust_fan_1: false,
+    exhaust_fan_2: false,
+    exhaust_fan_3: false,
+    heater_1: false,
+    heater_2: false,
+    pump_pad: false,
+    roof_hatch: false,
+  });
+
+  const initialRangeRef = useRef(null);
+  const initialTempRangeRef = useRef(null);
+  const initialHumRangeRef = useRef(null);
+  const initialTempOpRef = useRef(null);
+  const initialHumOpRef = useRef(null);
+
+  const normalizeRange = (arr) => arr.map((x) => parseInt(x || 0));
+  const formatValue = (value) => parseFloat(value || 0).toFixed(1);
+  const normalizeClimateRange = (obj) => ({
+    1: {
+      minimum: formatValue(obj["1"]?.minimum),
+      maximum: formatValue(obj["1"]?.maximum),
+    },
+    2: {
+      minimum: formatValue(obj["2"]?.minimum),
+      maximum: formatValue(obj["2"]?.maximum),
+    },
+    3: {
+      minimum: formatValue(obj["3"]?.minimum),
+      maximum: formatValue(obj["3"]?.maximum),
+    },
+  });
+
+  const areOperatorsEqual = (op1, op2) => {
+    if (!op1 || !op2) return false;
+    const keys = Object.keys(op1);
+    for (let key of keys) {
+      if (op1[key] !== op2[key]) return false;
+    }
+    return true;
+  };
 
   const humidityObject = useMemo(
     () => ({
@@ -359,7 +393,7 @@ const PayeshSetting = ({ zone }) => {
     setError(null);
 
     try {
-      const [rangeRes, tempRes, humRes, tempOpRes, humOpRes] = await Promise.all([
+      const [rangeRes, tempRes, humRes, opRes, humOpRes] = await Promise.all([
         apiClient.get(`/climate/range-start-time/`),
         apiClient.get(`/climate/temperature-range/`, {
           params: { zone, part },
@@ -373,45 +407,43 @@ const PayeshSetting = ({ zone }) => {
         }),
       ]);
 
-      if (rangeRes.data) {
-        setRange1(rangeRes.data[0]);
-        setRange2(rangeRes.data[1]);
-        setRange3(rangeRes.data[2]);
+      if (rangeRes) {
+        setRange1(rangeRes[0]);
+        setRange2(rangeRes[1]);
+        setRange3(rangeRes[2]);
+        initialRangeRef.current = normalizeRange(rangeRes);
       }
 
       if (tempRes) {
-        setTempMax1(tempRes.data["1"]?.maximum || 0);
-        setTempMin1(tempRes.data["1"]?.minimum || 0);
-        setTempMax2(tempRes.data["2"]?.maximum || 0);
-        setTempMin2(tempRes.data["2"]?.minimum || 0);
-        setTempMax3(tempRes.data["3"]?.maximum || 0);
-        setTempMin3(tempRes.data["3"]?.minimum || 0);
+        setTempMax1(tempRes["1"]?.maximum || 0);
+        setTempMin1(tempRes["1"]?.minimum || 0);
+        setTempMax2(tempRes["2"]?.maximum || 0);
+        setTempMin2(tempRes["2"]?.minimum || 0);
+        setTempMax3(tempRes["3"]?.maximum || 0);
+        setTempMin3(tempRes["3"]?.minimum || 0);
+        initialTempRangeRef.current = normalizeClimateRange(tempRes);
       }
 
       if (humRes) {
-        sethumMax1(humRes.data["1"]?.maximum || 0);
-        setHumMin1(humRes.data["1"]?.minimum || 0);
-        sethumMax2(humRes.data["2"]?.maximum || 0);
-        setHumMin2(humRes.data["2"]?.minimum || 0);
-        sethumMax3(humRes.data["3"]?.maximum || 0);
-        setHumMin3(humRes.data["3"]?.minimum || 0);
+        sethumMax1(humRes["1"]?.maximum || 0);
+        setHumMin1(humRes["1"]?.minimum || 0);
+        sethumMax2(humRes["2"]?.maximum || 0);
+        setHumMin2(humRes["2"]?.minimum || 0);
+        sethumMax3(humRes["3"]?.maximum || 0);
+        setHumMin3(humRes["3"]?.minimum || 0);
+        initialHumRangeRef.current = normalizeClimateRange(humRes);
       }
 
-      if (tempOpRes) {
-        setTempControllers((prev) => ({
-          ...prev,
-          ...tempOpRes.data,
-        }));
+      if (opRes) {
+        const newTempControllers = { ...tempControllers, ...opRes };
+        setTempControllers(newTempControllers);
+        initialTempOpRef.current = newTempControllers;
       }
 
       if (humOpRes) {
-        setHumControllers((prev) => ({
-          ...prev,
-          ...humOpRes.data,
-          // Map circulating_fan to sirkoole_fan for existing UI keys if necessary
-          sirkoole_fan_1: humOpRes.data.circulating_fan_1 || false,
-          sirkoole_fan_2: humOpRes.data.circulating_fan_2 || false,
-        }));
+        const newHumControllers = { ...humControllers, ...humOpRes };
+        setHumControllers(newHumControllers);
+        initialHumOpRef.current = newHumControllers;
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -426,69 +458,85 @@ const PayeshSetting = ({ zone }) => {
   }, [fetchData]);
 
   const handleSave = async () => {
-    const formatValue = (value) => parseFloat(value || 0).toFixed(1);
+    const promises = [];
 
-    const formatRangeObject = (obj) => ({
-      1: {
-        minimum: formatValue(obj[1].minimum),
-        maximum: formatValue(obj[1].maximum),
-      },
-      2: {
-        minimum: formatValue(obj[2].minimum),
-        maximum: formatValue(obj[2].maximum),
-      },
-      3: {
-        minimum: formatValue(obj[3].minimum),
-        maximum: formatValue(obj[3].maximum),
-      },
-    });
+    // 1. Check Range Start Times
+    const currentRange = normalizeRange([range1, range2, range3]);
+    if (JSON.stringify(currentRange) !== JSON.stringify(initialRangeRef.current)) {
+      promises.push(
+        apiClient.post(`/climate/range-start-time/`, {
+          range_start_time: currentRange,
+        })
+      );
+    }
+
+    // 2. Check Temperature Ranges
+    const currentTempRange = normalizeClimateRange(tempObject);
+    if (
+      JSON.stringify(currentTempRange) !==
+      JSON.stringify(initialTempRangeRef.current)
+    ) {
+      promises.push(
+        apiClient.post(`/climate/temperature-range/`, {
+          temperature_range: currentTempRange,
+          zone,
+          part,
+        })
+      );
+    }
+
+    // 3. Check Humidity Ranges
+    const currentHumRange = normalizeClimateRange(humidityObject);
+    if (
+      JSON.stringify(currentHumRange) !==
+      JSON.stringify(initialHumRangeRef.current)
+    ) {
+      promises.push(
+        apiClient.post(`/climate/humidity-range/`, {
+          humidity_range: currentHumRange,
+          zone,
+          part,
+        })
+      );
+    }
+
+    // 4. Check Temperature Operators
+    if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
+      promises.push(
+        apiClient.post(`/climate/temperature-range-operator/`, {
+          temperature_range_operator: tempControllers,
+          zone,
+          part,
+        })
+      );
+    }
+
+    // 5. Check Humidity Operators
+    if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
+      promises.push(
+        apiClient.post(`/climate/humidity-range-operator/`, {
+          humidity_range_operator: humControllers,
+          zone,
+          part,
+        })
+      );
+    }
+
+    if (promises.length === 0) {
+      alert("تغییری برای ذخیره وجود ندارد.");
+      return;
+    }
 
     try {
-      // Prepare temp operators
-      const tempApiOperators = { ...tempControllers };
-
-      // Prepare hum operators (with mapping)
-      const humApiOperators = {};
-      for (const key in humControllers) {
-        if (key === "sirkoole_fan_1") {
-          humApiOperators["circulating_fan_1"] = humControllers[key];
-        } else if (key === "sirkoole_fan_2") {
-          humApiOperators["circulating_fan_2"] = humControllers[key];
-        } else {
-          humApiOperators[key] = humControllers[key];
-        }
-      }
-
-      await Promise.all([
-        apiClient.post(`/climate/temperature-range/`, {
-          temperature_range: formatRangeObject(tempObject),
-          zone,
-          part,
-        }),
-        apiClient.post(`/climate/humidity-range/`, {
-          humidity_range: formatRangeObject(humidityObject),
-          zone,
-          part,
-        }),
-        apiClient.post(`/climate/range-start-time/`, {
-          range_start_time: [
-            parseInt(range1 || 0),
-            parseInt(range2 || 0),
-            parseInt(range3 || 0),
-          ],
-        }),
-        apiClient.post(`/climate/temperature-range-operator/`, {
-          temperature_range_operator: tempApiOperators,
-          zone,
-          part,
-        }),
-        apiClient.post(`/climate/humidity-range-operator/`, {
-          humidity_range_operator: humApiOperators,
-          zone,
-          part,
-        }),
-      ]);
+      await Promise.all(promises);
       console.log("Data successfully saved!");
+      // Update refs to the new saved state so subsequent saves work correctly without refresh
+      initialRangeRef.current = currentRange;
+      initialTempRangeRef.current = currentTempRange;
+      initialHumRangeRef.current = currentHumRange;
+      initialTempOpRef.current = { ...tempControllers };
+      initialHumOpRef.current = { ...humControllers };
+      alert("داده‌ها با موفقیت ذخیره شدند.");
     } catch (error) {
       console.error("Error saving data:", error);
       alert("خطا در ذخیره داده‌ها.");
@@ -502,19 +550,29 @@ const PayeshSetting = ({ zone }) => {
 
   const tempControllerList = [
     {
-      label: "شید",
-      key: "shid",
-      onClick: () => toggleTempController("shid"),
+      label: "فن سیرکوله۱",
+      key: "circulating_fan_1",
+      onClick: () => toggleTempController("circulating_fan_1"),
     },
     {
-      label: "مه پاش",
-      key: "meh_pash",
-      onClick: () => toggleTempController("meh_pash"),
+      label: "فن سیرکوله۲",
+      key: "circulating_fan_2",
+      onClick: () => toggleTempController("circulating_fan_2"),
     },
     {
-      label: "پمپ پد",
-      key: "pump_pad",
-      onClick: () => toggleTempController("pump_pad"),
+      label: "فن ۱",
+      key: "exhaust_fan_1",
+      onClick: () => toggleTempController("exhaust_fan_1"),
+    },
+    {
+      label: "فن ۲",
+      key: "exhaust_fan_2",
+      onClick: () => toggleTempController("exhaust_fan_2"),
+    },
+    {
+      label: "فن ۳",
+      key: "exhaust_fan_3",
+      onClick: () => toggleTempController("exhaust_fan_3"),
     },
     {
       label: "بخاری ۱",
@@ -525,6 +583,11 @@ const PayeshSetting = ({ zone }) => {
       label: "بخاری ۲",
       key: "heater_2",
       onClick: () => toggleTempController("heater_2"),
+    },
+    {
+      label: "پمپ پد",
+      key: "pump_pad",
+      onClick: () => toggleTempController("pump_pad"),
     },
     {
       label: "دریچه",
@@ -544,24 +607,19 @@ const PayeshSetting = ({ zone }) => {
       onClick: () => toggleHumController("exhaust_fan_2"),
     },
     {
-      label: "فن ۳",
-      key: "exhaust_fan_3",
-      onClick: () => toggleHumController("exhaust_fan_3"),
+      label: "مه پاش",
+      key: "fogger",
+      onClick: () => toggleHumController("fogger"),
     },
     {
-      label: "فن ۴",
-      key: "exhaust_fan_4",
-      onClick: () => toggleHumController("exhaust_fan_4"),
+      label: "پمپ پد خاموش",
+      key: "pump_pad_off",
+      onClick: () => toggleHumController("pump_pad_off"),
     },
     {
-      label: "فن سیرکوله۱",
-      key: "circulating_fan_1",
-      onClick: () => toggleHumController("circulating_fan_1"),
-    },
-    {
-      label: "فن سیرکوله۲",
-      key: "circulating_fan_2",
-      onClick: () => toggleHumController("circulating_fan_2"),
+      label: "دریچه",
+      key: "roof_hatch",
+      onClick: () => toggleHumController("roof_hatch"),
     },
   ];
 

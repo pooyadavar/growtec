@@ -5,11 +5,67 @@ import {
   Box,
   TextField,
   Grid,
+  CircularProgress,
 } from "@mui/material";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import assets from "../../assets";
+import apiClient from "../../api/apiClient";
 
 const AdminSetting = () => {
+  const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState({
+    max_stock: "",
+    max_acid: "",
+    tank_volume: "",
+    pump_duration: "",
+    max_water_input_time: "",
+    optimal_ec: "",
+    optimal_ph: "",
+  });
+
+  const fetchSettings = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get("/admin/setting/");
+      const data = response.data || response; // Handle response.data or direct data
+      if (data) {
+        setSettings({
+          max_stock: data.max_stock || "",
+          max_acid: data.max_acid || "",
+          tank_volume: data.tank_volume || "",
+          pump_duration: data.pump_duration || "",
+          max_water_input_time: data.max_water_input_time || "",
+          optimal_ec: data.optimal_ec || "",
+          optimal_ph: data.optimal_ph || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching admin settings:", error);
+      // alert("خطا در دریافت داده‌ها");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await apiClient.post("/admin/setting/", settings);
+      alert("تنظیمات با موفقیت ذخیره شد");
+    } catch (error) {
+      console.error("Error saving admin settings:", error);
+      alert("خطا در ذخیره تنظیمات");
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setSettings((prev) => ({ ...prev, [name]: value }));
+  };
+
   return (
     <Container
       sx={{
@@ -58,8 +114,27 @@ const AdminSetting = () => {
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
+            position: "relative",
           }}
         >
+          {loading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 10,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
           <Box
             sx={{
               backgroundColor: "#f5f5f5",
@@ -69,7 +144,6 @@ const AdminSetting = () => {
               mx: "auto",
               textAlign: "left",
               direction: "rtl",
-
             }}
           >
             <Grid container spacing={3}>
@@ -80,6 +154,9 @@ const AdminSetting = () => {
                   label="حداکثر تعداد مجاز استوک"
                   variant="outlined"
                   size="small"
+                  name="max_stock"
+                  value={settings.max_stock}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -87,6 +164,9 @@ const AdminSetting = () => {
                   label="حداکثر تعداد مجاز اسید"
                   variant="outlined"
                   size="small"
+                  name="max_acid"
+                  value={settings.max_acid}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -94,6 +174,9 @@ const AdminSetting = () => {
                   label="حجم مخازن"
                   variant="outlined"
                   size="small"
+                  name="tank_volume"
+                  value={settings.tank_volume}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -101,6 +184,9 @@ const AdminSetting = () => {
                   label="مدت زمان روشن بودن پمپ‌ها"
                   variant="outlined"
                   size="small"
+                  name="pump_duration"
+                  value={settings.pump_duration}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -108,6 +194,9 @@ const AdminSetting = () => {
                   label="حداکثر زمان روشن بودن ورودی آب"
                   variant="outlined"
                   size="small"
+                  name="max_water_input_time"
+                  value={settings.max_water_input_time}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -115,6 +204,9 @@ const AdminSetting = () => {
                   label="EC بهینه"
                   variant="outlined"
                   size="small"
+                  name="optimal_ec"
+                  value={settings.optimal_ec}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -122,6 +214,9 @@ const AdminSetting = () => {
                   label="pH بهینه"
                   variant="outlined"
                   size="small"
+                  name="optimal_ph"
+                  value={settings.optimal_ph}
+                  onChange={handleChange}
                 />
               </Grid>
 
@@ -132,6 +227,9 @@ const AdminSetting = () => {
                   label="حداکثر تعداد مجاز استوک"
                   variant="outlined"
                   size="small"
+                  name="max_stock"
+                  value={settings.max_stock}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -139,6 +237,9 @@ const AdminSetting = () => {
                   label="حداکثر تعداد مجاز اسید"
                   variant="outlined"
                   size="small"
+                  name="max_acid"
+                  value={settings.max_acid}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -146,6 +247,9 @@ const AdminSetting = () => {
                   label="حجم مخازن"
                   variant="outlined"
                   size="small"
+                  name="tank_volume"
+                  value={settings.tank_volume}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -153,6 +257,9 @@ const AdminSetting = () => {
                   label="مدت زمان روشن بودن پمپ‌ها"
                   variant="outlined"
                   size="small"
+                  name="pump_duration"
+                  value={settings.pump_duration}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -160,6 +267,9 @@ const AdminSetting = () => {
                   label="حداکثر زمان روشن بودن ورودی آب"
                   variant="outlined"
                   size="small"
+                  name="max_water_input_time"
+                  value={settings.max_water_input_time}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -167,6 +277,9 @@ const AdminSetting = () => {
                   label="EC بهینه"
                   variant="outlined"
                   size="small"
+                  name="optimal_ec"
+                  value={settings.optimal_ec}
+                  onChange={handleChange}
                   sx={{ mb: 2 }}
                 />
                 <TextField
@@ -174,6 +287,9 @@ const AdminSetting = () => {
                   label="pH بهینه"
                   variant="outlined"
                   size="small"
+                  name="optimal_ph"
+                  value={settings.optimal_ph}
+                  onChange={handleChange}
                 />
               </Grid>
             </Grid>
@@ -182,6 +298,7 @@ const AdminSetting = () => {
       </Box>
       <Box sx={{ width: "246px", height: "56px" }}>
         <Button
+          onClick={handleSave}
           sx={{
             width: "100%",
             height: "100%",
@@ -190,6 +307,7 @@ const AdminSetting = () => {
             justifyContent: "space-around",
             paddingX: "10px",
             borderRadius: "10px",
+            "&:hover": { backgroundColor: "#5bbd9e" },
           }}
           color="#000000"
         >
