@@ -344,7 +344,7 @@ const PayeshSetting = ({ zone }) => {
   const initialHumOpRef = useRef(null);
 
   const normalizeRange = (arr) => arr.map((x) => parseInt(x || 0));
-  const formatValue = (value) => parseFloat(value || 0).toFixed(1);
+  const formatValue = (value) => parseFloat(value || 0); // Returns a number
   const normalizeClimateRange = (obj) => ({
     1: {
       minimum: formatValue(obj["1"]?.minimum),
