@@ -81,7 +81,7 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
     const chartData = data.history;
     return {
       data: chartData,
-      padding: { top: 5, right: 15, bottom: 5, left: 5 },
+      padding: { top: 5, right: 15, bottom: 20, left: 5 },
       series: [
         {
           type: "line",
@@ -175,9 +175,9 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
         </Box>
       </Box>
 
-      <Box sx={{ width: "95%", height: "113px", border: "0.5px solid #9F9F9F", borderRadius: "10px", bgcolor: "#FFFFFF", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "10px", overflow: "hidden" }}>
-        <Box sx={{ width: "calc(100% - 40px)", height: "80%" }}>
-          <AgCharts options={chartOptions} style={{ width: "90%", height: "100%" }} display={"flex"} justifyContent={"center"} alignItems={"center"} />
+      <Box sx={{ width: "95%", height: "113px", border: "0.5px solid #9F9F9F", borderRadius: "10px", bgcolor: "#FFFFFF", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px", overflow: "hidden", padding: "5px" }}>
+        <Box sx={{ width: "calc(100% - 40px - 10px)", height: "calc(100% - 10px)" }}>
+          <AgCharts options={chartOptions} style={{ width: "100%", height: "100%" }} />
         </Box>
       </Box>
 

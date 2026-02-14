@@ -1,8 +1,76 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Typography, Box, Container, Divider } from "@mui/material";
 import assets from "../assets"; // مسیردهی از src/card/ به src/assets/
 import IconTextButton from "./IconTextButton"; // ایمپورت دکمه جدید
-const TimePlansCards = ({ fan, float1, float2, float3 }) => {
+import { AgCharts } from "ag-charts-react";
+
+const TimePlansCards = ({ fan, float1, float2, float3, data }) => {
+  const chartOptions = useMemo(
+    () => ({
+      data: data || [],
+      series: [
+        {
+          type: "line",
+          xKey: "time",
+          yKey: "value",
+          yName: fan,
+          stroke: "#007bff", // Blue color for visibility
+          strokeWidth: 3,
+          marker: {
+            enabled: true,
+            size: 5,
+            fill: "#007bff",
+          },
+        },
+      ],
+      axes: [
+        {
+          type: "category",
+          position: "bottom",
+          label: {
+            enabled: false,
+          },
+          // title: { text: "زمان" } // Removed title to save space
+        },
+        {
+          type: "number",
+          position: "left",
+          min: 0,
+          max: 1,
+          nice: false, // Prevent auto-padding the range
+          tick: {
+            values: [0, 1], // Strict ticks
+            count: 2,
+          },
+          label: {
+            formatter: (params) => {
+              if (params.value === 1) return "روشن";
+              if (params.value === 0) return "خاموش";
+              return ""; // Hide other values
+            },
+            fontSize: 10,
+          },
+          gridStyle: [
+            {
+              stroke: "#e2e2e2",
+              lineDash: [4, 2],
+            },
+          ],
+        },
+      ],
+      background: {
+        fill: "transparent",
+      },
+      padding: {
+        top: 5,
+        right: 10,
+        bottom: 20,
+        left: 5,
+      },
+    }),
+    [data, fan],
+  );
+
   return (
     <Container
       sx={{
@@ -16,8 +84,8 @@ const TimePlansCards = ({ fan, float1, float2, float3 }) => {
         alignItems: "center",
 
         transition: "transform 0.2s",
-        p:2,
-        transform:"scale(1)",
+        p: 2,
+        transform: "scale(1)",
       }}
     >
       {/* ... (بخش عنوان و نمودار بدون تغییر) ... */}
@@ -67,19 +135,26 @@ const TimePlansCards = ({ fan, float1, float2, float3 }) => {
           display: "flex",
           flexDirection: "row-reverse",
           alignItems: "center",
-          justifyContent: "space-around",
+          justifyContent: "center",
           marginX: "10px",
         }}
       >
         <Box
           sx={{
             width: "237px",
-            height: "113px",
+            height: "113px", // ارتفاع مورد نظر شما
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            paddingTop: "15px",
+            paddingRight:"15px"
           }}
         >
-          {/* Placeholder for Chart */}
+          <Box sx={{ width: "calc(100% - 10px)", height: "calc(100% - 10px)" }}>
+            <AgCharts options={chartOptions} style={{ width: "100%", height: "100%" }} />
+          </Box>
         </Box>
         <div
           style={{
@@ -425,7 +500,7 @@ const TimePlansCards = ({ fan, float1, float2, float3 }) => {
         >
           <IconTextButton
             text="تغییر تنظیمات"
-            icon={assets.svg.setting2} // استفاده از asset
+            icon={assets?.svg?.setting2} // استفاده ایمن از asset
             iconPosition="left" // آیکون در سمت چپ بود
             bgColor="#FFCB82"
             textColor="#000000"
