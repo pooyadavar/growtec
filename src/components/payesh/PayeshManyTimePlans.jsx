@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Box,
   Container,
@@ -10,15 +10,46 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import TimePlansCards from "../../card/TimePlansCards"; 
 import apiClient from "../../api/apiClient";
+import { getOperatorSchedule } from "../../api/climateApi";
 
 const PayeshManyTimePlans = ({ onCardClick, zone }) => {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   
-  const [cardsData, setCardsData] = useState([]);
+  const [logOperators, setLogOperators] = useState([]);
+  const [scheduleOperators, setScheduleOperators] = useState([]);
   const [chartsData, setChartsData] = useState({}); 
   const [loading, setLoading] = useState(true);
+  const [schedules, setSchedules] = useState({});
+
+  const cardsData = useMemo(() => {
+    return Array.from(new Set([...logOperators, ...scheduleOperators]));
+  }, [logOperators, scheduleOperators]);
+
+  const fetchSchedules = useCallback(async () => {
+    try {
+      const response = await getOperatorSchedule({ zone: zone || 1 });
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response && response.results && Array.isArray(response.results)) {
+        data = response.results;
+      } else if (response && response.data && Array.isArray(response.data)) {
+        data = response.data;
+      }
+
+      const grouped = {};
+      data.forEach((item) => {
+        if (!grouped[item.operator]) grouped[item.operator] = [];
+        grouped[item.operator].push(item);
+      });
+      setSchedules(grouped);
+      setScheduleOperators(Object.keys(grouped));
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+    }
+  }, [zone]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -32,7 +63,6 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         logs = response.results;
       }
 
-      // ۱. مرتب‌سازی زمانی (بسیار مهم برای رسم صحیح نمودار)
       logs.sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time));
 
       if (logs.length > 0) {
@@ -40,12 +70,11 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         
         if (latestLog && latestLog.log_data) {
             const operators = Object.keys(latestLog.log_data).filter(key => key !== 'zone');
-            setCardsData(operators);
+            setLogOperators(operators);
 
             const newChartsData = {};
             operators.forEach(op => {
                 newChartsData[op] = logs.map(log => {
-                    // استخراج ساعت و دقیقه و ثانیه برای محور افقی
                     let timePart = '00:00';
                     if (log.log_date_time) {
                         const parts = log.log_date_time.split(' ');
@@ -54,7 +83,6 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
                     
                     return {
                         time: timePart,
-                        // ۲. اصلاح تبدیل وضعیت به ۰ و ۱ (حمایت از تمام فرمت‌های Boolean)
                         value: Boolean(log.log_data[op]) ? 1 : 0
                     };
                 });
@@ -63,7 +91,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
             setChartsData(newChartsData);
         }
       } else {
-        setCardsData([]);
+        setLogOperators([]);
       }
     } catch (error) {
       console.error("Error fetching operator logs:", error);
@@ -74,9 +102,10 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
 
   useEffect(() => {
     fetchData();
+    fetchSchedules();
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, fetchSchedules]);
 
   const handleScrollEvents = useCallback(() => {
     const el = scrollRef.current;
@@ -112,7 +141,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     }
   };
 
-  if (loading) {
+  if (loading && cardsData.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px' }}>
         <CircularProgress />
@@ -149,13 +178,13 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         ref={scrollRef}
         sx={{
           width: "970px", 
-          height: "600px",
+          height: "auto", // Changed from 600px
           display: "flex",
           flexDirection: "row-reverse",
           overflowX: "hidden",
           alignItems: "center",
           scrollSnapType: "x mandatory",
-          padding: "20px 0",
+          padding: "0", // Changed from "20px 0"
           transform: "scale(0.95)",
         }}
       >
@@ -167,15 +196,15 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
                 flexShrink: 0, 
                 scrollSnapAlign: "start",
                 marginX: "10px",
-                cursor: "pointer"
               }}
-              onClick={() => onCardClick && onCardClick(operatorKey)}
             >
-              {/* ۳. ارسال دیتای نمودار به کامپوننت فرزند */}
               <TimePlansCards 
                 fan={operatorKey} 
                 data={chartsData[operatorKey] || []} 
-                status={chartsData[operatorKey]?.slice(-1)[0]?.value === 1} // وضعیت لحظه‌ای
+                status={chartsData[operatorKey]?.slice(-1)[0]?.value === 1}
+                zone={zone || 1}
+                schedules={schedules[operatorKey] || []}
+                onRefresh={fetchSchedules}
               />
             </Box>
           ))
@@ -202,5 +231,4 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     </Container>
   );
 };
-
 export default PayeshManyTimePlans;

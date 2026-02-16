@@ -139,11 +139,15 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
   const handleModalOpen = () => setModalOpen(true);
   const handleModalClose = () => setModalOpen(false);
 
-  const tableData = [
-    { startTime: "۰۰:۰۰:۰۰", endTime: "۰۰:۰۰:۰۰", zone: 1, volume: "", status: "green" },
-    { startTime: "۰۰:۰۰:۰۰", endTime: "۰۰:۰۰:۰۰", zone: 1, volume: "", status: "red" },
-    { startTime: "۰۰:۰۰:۰۰", endTime: "۰۰:۰۰:۰۰", zone: 1, volume: "", status: "green" },
-  ];
+  const [rows, setRows] = React.useState([
+    { startTime: "۰۰:۰۰:۰۰", endTime: "۰۰:۰۰:۰۰", onDuration: "۰۰:۰۰:۰۰", offDuration: "۰۰:۰۰:۰۰" },
+    { startTime: "۰۰:۰۰:۰۰", endTime: "۰۰:۰۰:۰۰", onDuration: "۰۰:۰۰:۰۰", offDuration: "۰۰:۰۰:۰۰" },
+    { startTime: "۰۰:۰۰:۰۰", endTime: "۰۰:۰۰:۰۰", onDuration: "۰۰:۰۰:۰۰", offDuration: "۰۰:۰۰:۰۰" },
+  ]);
+
+  const handleAddRow = () => {
+    setRows([...rows, { startTime: "۰۰:۰۰:۰۰", endTime: "۰۰:۰۰:۰۰", onDuration: "۰۰:۰۰:۰۰", offDuration: "۰۰:۰۰:۰۰" }]);
+  };
 
   return (
     <Container
@@ -187,13 +191,12 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
         </Typography>
         <Divider sx={{ width: "100%", backgroundColor: "#9F9F9F", mb: "10px" }} />
         <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", marginBottom: "5px", px: "15px" }}>
-          <Typography fontFamily={"IRANSANS"} fontSize={14} width="25%" textAlign={"center"}>زمان شروع</Typography>
-          <Typography fontFamily={"IRANSANS"} fontSize={14} width="25%" textAlign={"center"}>زمان پایان</Typography>
-          <Typography fontFamily={"IRANSANS"} fontSize={14} width="15%" textAlign="center">زون</Typography>
-          <Typography fontFamily={"IRANSANS"} fontSize={14} width="15%" textAlign="center">مقدار</Typography>
-          <Typography fontFamily={"IRANSANS"} fontSize={14} width="15%" textAlign="center">وضعیت</Typography>
+          <Typography fontFamily={"IRANSANS"} fontSize={14} width="25%" textAlign={"center"}>تایم شروع</Typography>
+          <Typography fontFamily={"IRANSANS"} fontSize={14} width="25%" textAlign={"center"}>تایم پایان</Typography>
+          <Typography fontFamily={"IRANSANS"} fontSize={12} width="25%" textAlign="center">تایم روشن</Typography>
+          <Typography fontFamily={"IRANSANS"} fontSize={12} width="25%" textAlign="center">تایم خاموش</Typography>
         </Box>
-        {tableData.map((row, index) => (
+        {rows.map((row, index) => (
           <React.Fragment key={index}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "97%", height: "50px", px: "15px" }}>
               <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -202,26 +205,41 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
               <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.endTime)}</Typography>
               </Box>
-              <Box sx={{ width: "15%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.zone)}</Typography>
+              <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.onDuration)}</Typography> {/* Assuming 'onDuration' field */}
               </Box>
-              <Box sx={{ width: "15%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.volume)}</Typography>
+              <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.offDuration)}</Typography> {/* Assuming 'offDuration' field */}
               </Box>
-              <DataCell sx={{ width: "10%" }} isStatus={true}>
-                <StatusBox status={row.status === "green" ? 3 : 0}>
-                  {row.status === "green" ? <img src={assets.svg.tike} alt="success" style={{ width: 16, height: 16 }} /> : <img src={assets.svg.cross} alt="failed" style={{ width: 16, height: 16 }} />}
-                </StatusBox>
-              </DataCell>
             </Box>
-            {index < tableData.length - 1 && <Divider sx={{ width: "100%", backgroundColor: "#E0E0E0", my: "5px" }} />}
+            {index < rows.length - 1 && <Divider sx={{ width: "100%", backgroundColor: "#E0E0E0", my: "5px" }} />}
           </React.Fragment>
         ))}
       </Box>
 
-      <Box sx={{ width: "95%", display: "flex", justifyContent: "center", marginTop: "10px", gap: 6 }}>
-        <IconTextButton text="ماشین حساب" icon={<CalculateIcon />} iconPosition="left" bgColor="#86CCB2" textColor="#000000" width="30%" height="30px" borderColor="#77b39dff" />
-        <IconTextButton text="تغییر تنظیمات" icon={<SettingsIcon />} iconPosition="left" bgColor="#FFCB82" textColor="#000000" width="30%" height="30px" borderColor="#c59b61ff" onClick={handleModalOpen} />
+      <Box sx={{ width: "95%", display: "flex", justifyContent: "center", marginTop: "10px", gap: 1 }}>
+        <IconTextButton text="ماشین حساب" icon={<CalculateIcon />} iconPosition="left" bgColor="#86CCB2" textColor="#000000" width="32%" height="30px" borderColor="#77b39dff" />
+        <IconTextButton
+          text="اضافه کردن سطر"
+          icon={assets?.svg?.addField}
+          iconPosition="left"
+          bgColor="#FFCB82"
+          textColor="#000000"
+          width="32%"
+          height="30px"
+          borderColor="#FFCB82"
+          onClick={handleAddRow}
+        />
+        <IconTextButton
+          text="ذخیره"
+          icon={assets?.svg?.Save}
+          iconPosition="left"
+          bgColor="#86CCB2"
+          textColor="#000000"
+          width="32%"
+          height="30px"
+          borderColor="#86CCB2"
+        />
       </Box>
 
       <Modal open={modalOpen} onClose={handleModalClose} aria-labelledby="settings-modal-title">
@@ -245,26 +263,20 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
                     <Typography fontFamily={"IRANSANS"} fontSize={12} mb={1}>جدول برنامه</Typography>
                     {/* Header */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", marginBottom: "5px", px: "10px" }}>
-                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="19%" textAlign={"center"}>زمان شروع</Typography>
-                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="12%" textAlign={"right"}>زمان پایان</Typography>
-                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="10%" textAlign="center">زون</Typography>
-                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="15%" textAlign="center">حجم</Typography>
-                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="15%" textAlign="right">وضعیت</Typography>
+                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="25%" textAlign={"center"}>تایم شروع</Typography>
+                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="25%" textAlign={"right"}>تایم پایان</Typography>
+                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="25%" textAlign="center">تایم روشن</Typography>
+                        <Typography fontFamily={"IRANSANS"} fontSize={12} width="25%" textAlign="right">تایم خاموش</Typography>
                     </Box>
                     {/* Rows */}
                     <Box sx={{ width: "96%", flexGrow: 1, overflowY: "auto" }}>
-                        {tableData.concat(tableData).map((row, index) => (
+                        {rows.concat(rows).map((row, index) => (
                             <React.Fragment key={index}>
-                                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 1, width: "100%", height: "50px", alignItems: "center" }}>
+                                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 1, width: "100%", height: "50px", alignItems: "center" }}>
                                     <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.startTime)}</Typography></Box>
                                     <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.endTime)}</Typography></Box>
-                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.zone)}</Typography></Box>
-                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.volume)}</Typography></Box>
-                                    <DataCell isStatus={true}>
-                                        <StatusBox status={row.status === "green" ? 3 : 0}>
-                                            {row.status === "green" ? <img src={assets.svg.tike} alt="success" style={{ width: 16, height: 16 }} /> : <img src={assets.svg.cross} alt="failed" style={{ width: 16, height: 16 }} />}
-                                        </StatusBox>
-                                    </DataCell>
+                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.onDuration)}</Typography></Box> {/* Assuming 'onDuration' field */}
+                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.offDuration)}</Typography></Box> {/* Assuming 'offDuration' field */}
                                 </Box>
                                 <Divider sx={{ width: "100%", backgroundColor: "#E0E0E0", my: "5px" }} />
                             </React.Fragment>
