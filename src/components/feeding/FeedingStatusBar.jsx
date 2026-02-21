@@ -501,13 +501,14 @@ const FeedingStatusBar = () => {
         sx={{
           width: 300,
           height: "auto",
+          minHeight: "230px",
           backgroundColor: "#FFFFFF",
           borderRadius: "10px",
           padding: "16px",
           pb: 5,
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         <Box

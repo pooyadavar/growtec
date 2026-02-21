@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   Box,
   Container,
@@ -22,7 +28,7 @@ import IconTextButton from "../../card/IconTextButton";
 import assets from "../../assets";
 import SaveIcon from "@mui/icons-material/Save";
 import { styled } from "@mui/system";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 // Styled components for the modal
 const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
@@ -54,12 +60,12 @@ const StatusBox = styled(Box)(({ theme, status }) => ({
 // Helper function to determine display status
 const getDisplayStatus = (startStatus, endStatus) => {
   if (startStatus === 3 && endStatus === 3) {
-    return 'tick';
+    return "tick";
   }
   if (startStatus === 4 || endStatus === 4) {
-    return 'cross';
+    return "cross";
   }
-  return 'blank';
+  return "blank";
 };
 
 const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
@@ -77,11 +83,23 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
 
   const statusContent = useMemo(() => {
     switch (displayStatus) {
-      case 'tick':
-        return <img src={assets.svg.tike} alt="Success" style={{ width: '16px', height: '16px' }} />;
-      case 'cross':
-        return <img src={assets.svg.cross} alt="Error" style={{ width: '16px', height: '16px' }} />;
-      case 'blank':
+      case "tick":
+        return (
+          <img
+            src={assets.svg.tike}
+            alt="Success"
+            style={{ width: "16px", height: "16px" }}
+          />
+        );
+      case "cross":
+        return (
+          <img
+            src={assets.svg.cross}
+            alt="Error"
+            style={{ width: "16px", height: "16px" }}
+          />
+        );
+      case "blank":
       default:
         return null;
     }
@@ -104,22 +122,24 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
       }}
     >
       {/* Delete Button (moved to left) */}
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Button 
+      <Box
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      >
+        <Button
           variant="text"
-          onClick={() => onDelete(id)} 
+          onClick={() => onDelete(id)}
           sx={{
-            backgroundColor: "#FED9D9", 
+            backgroundColor: "#FED9D9",
             border: "0.5px solid #CC0000",
             borderRadius: "10px",
-            width: "auto", 
-            height: "35px", 
-            minWidth: "45px", 
+            width: "auto",
+            height: "35px",
+            minWidth: "45px",
             color: "#CC0000",
-            '&:hover': {
-              backgroundColor: "#E0B3B3", 
+            "&:hover": {
+              backgroundColor: "#E0B3B3",
             },
-            padding: '0 8px', 
+            padding: "0 8px",
           }}
         >
           <Typography color="inherit" fontFamily={"IRANSANS"} fontSize={14}>
@@ -197,7 +217,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          bgcolor: "#E0E0E0", 
+          bgcolor: "#E0E0E0",
           fontFamily: "IRANSANS",
           fontSize: "12px",
           color: "#333",
@@ -239,12 +259,17 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
       <Box
         sx={{
           height: "35px",
-          border: '0.5px solid #E0E0E0', 
-          borderRadius: '10px',
+          border: "0.5px solid #E0E0E0",
+          borderRadius: "10px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: displayStatus === 'tick' ? "#E8F5E9" : displayStatus === 'cross' ? "#FFEBEE" : 'transparent',
+          backgroundColor:
+            displayStatus === "tick"
+              ? "#E8F5E9"
+              : displayStatus === "cross"
+                ? "#FFEBEE"
+                : "transparent",
         }}
       >
         {statusContent}
@@ -282,13 +307,13 @@ const IrrigationManyStorage = () => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [tanksData, setTanksData] = useState({});
-  const [rawSchedules, setRawSchedules] = useState([]); 
+  const [rawSchedules, setRawSchedules] = useState([]);
   const [allSchedulesLoading, setAllSchedulesLoading] = useState(false);
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTankId, setSelectedTankId] = useState(null);
-  const [modalRows, setModalRows] = useState([]); 
+  const [modalRows, setModalRows] = useState([]);
 
   const handleScrollEvents = useCallback(() => {
     const el = scrollRef.current;
@@ -317,10 +342,14 @@ const IrrigationManyStorage = () => {
   // Fetch real-time tank data
   const fetchData = async () => {
     try {
-      const response = await apiClient.post("/log/irrigation/irrigation-tanks-status/");
+      const response = await apiClient.post(
+        "/log/irrigation/irrigation-tanks-status/",
+      );
       const data = Array.isArray(response) ? response : [];
       // ... sorting logic ...
-      const sortedData = [...data].sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time));
+      const sortedData = [...data].sort(
+        (a, b) => new Date(a.log_date_time) - new Date(b.log_date_time),
+      );
 
       const grouped = {};
       sortedData.forEach((log) => {
@@ -354,7 +383,7 @@ const IrrigationManyStorage = () => {
   const fetchAllSchedules = async () => {
     setAllSchedulesLoading(true);
     try {
-      const response = await apiClient.get("/irrigation/irrigation-schedule"); 
+      const response = await apiClient.get("/irrigation/irrigation-schedule");
       const data = Array.isArray(response) ? response : [];
       setRawSchedules(data);
     } catch (error) {
@@ -367,14 +396,14 @@ const IrrigationManyStorage = () => {
 
   useEffect(() => {
     fetchAllSchedules();
-    const interval = setInterval(fetchAllSchedules, 60000); 
+    const interval = setInterval(fetchAllSchedules, 60000);
     return () => clearInterval(interval);
   }, []);
 
   const slide = (direction) => {
     const el = scrollRef.current;
     if (el) {
-      const scrollAmount = 323; 
+      const scrollAmount = 323;
       el.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -401,25 +430,25 @@ const IrrigationManyStorage = () => {
   // Helper to extract HH:mm:ss from a time string
   const getCleanTime = (timeStr) => {
     if (!timeStr) return "";
-    if (timeStr.includes('T')) return timeStr.split('T')[1].substring(0, 8); 
-    if (timeStr.length > 8) return timeStr.substring(0, 8); 
+    if (timeStr.includes("T")) return timeStr.split("T")[1].substring(0, 8);
+    if (timeStr.length > 8) return timeStr.substring(0, 8);
     return timeStr;
   };
 
   const handleSettingsClick = (id) => {
     setSelectedTankId(id);
     const filteredRows = rawSchedules
-        .filter(item => item.zone === id) 
-        .map(item => ({
-            ...item,
-            tempId: item.id || crypto.randomUUID(), 
-            id: item.id, // Store original API ID
-            start_status: item.start_status !== undefined ? item.start_status : 0,
-            end_status: item.end_status !== undefined ? item.end_status : 0,
-            // Clean time for inputs
-            start_time: getCleanTime(item.start_time),
-            end_time: getCleanTime(item.end_time),
-        }));
+      .filter((item) => item.zone === id)
+      .map((item) => ({
+        ...item,
+        tempId: item.id || crypto.randomUUID(),
+        id: item.id, // Store original API ID
+        start_status: item.start_status !== undefined ? item.start_status : 0,
+        end_status: item.end_status !== undefined ? item.end_status : 0,
+        // Clean time for inputs
+        start_time: getCleanTime(item.start_time),
+        end_time: getCleanTime(item.end_time),
+      }));
     setModalRows(filteredRows);
     setModalOpen(true);
   };
@@ -436,48 +465,50 @@ const IrrigationManyStorage = () => {
       tempId: crypto.randomUUID(),
       start_time: "00:00:00",
       end_time: "00:00:00",
-      zone: selectedTankId, 
+      zone: selectedTankId,
       volume: 0,
-      is_active: true, 
+      is_active: true,
       start_status: 0,
-      end_status: 0,   
-      isNew: true, 
+      end_status: 0,
+      isNew: true,
     };
-    setModalRows(prev => [newRow, ...prev]);
+    setModalRows((prev) => [newRow, ...prev]);
   };
 
-  const handleDeleteRow = async (tempIdToDelete) => { 
-    const rowToDelete = modalRows.find(row => row.tempId === tempIdToDelete);
+  const handleDeleteRow = async (tempIdToDelete) => {
+    const rowToDelete = modalRows.find((row) => row.tempId === tempIdToDelete);
 
-    if (rowToDelete && rowToDelete.id) { 
+    if (rowToDelete && rowToDelete.id) {
       try {
-        await apiClient.delete(`/irrigation/irrigation-schedule/${rowToDelete.id}/`); 
+        await apiClient.delete(
+          `/irrigation/irrigation-schedule/${rowToDelete.id}/`,
+        );
         toast.success("ردیف با موفقیت حذف شد.");
-        fetchAllSchedules(); 
+        fetchAllSchedules();
       } catch (error) {
         console.error("Error deleting schedule:", error);
         toast.error("خطا در حذف ردیف.");
       }
     } else {
-      toast.success("ردیف از لیست حذف شد."); 
+      toast.success("ردیف از لیست حذف شد.");
     }
-    setModalRows(prev => prev.filter(row => row.tempId !== tempIdToDelete));
+    setModalRows((prev) => prev.filter((row) => row.tempId !== tempIdToDelete));
   };
 
   const handleRowChange = (id, field, value) => {
-    setModalRows(prev => prev.map(row => 
-      row.tempId === id ? { ...row, [field]: value } : row
-    ));
+    setModalRows((prev) =>
+      prev.map((row) => (row.tempId === id ? { ...row, [field]: value } : row)),
+    );
   };
 
   const handleSave = async () => {
     const newRows = modalRows.filter((row) => row.isNew);
-    
+
     const updatedRows = modalRows.filter((row) => {
       if (row.isNew) return false;
       const original = rawSchedules.find((r) => r.id === row.id);
       if (!original) return false;
-      
+
       return (
         row.start_time !== getCleanTime(original.start_time) ||
         row.end_time !== getCleanTime(original.end_time) ||
@@ -493,45 +524,100 @@ const IrrigationManyStorage = () => {
     }
 
     const convertToISO = (timeString) => {
-        if (!timeString) return null;
-        const parts = timeString.split(':');
-        if (parts.length === 2) parts.push('00'); 
-        return `${parts.join(':')}.000Z`;
+      if (!timeString) return null;
+      const parts = timeString.split(":");
+      if (parts.length === 2) parts.push("00");
+      return `${parts.join(":")}.000Z`;
     };
 
-    const promises = [];
-
-    newRows.forEach((row) => {
+    const createPromises = newRows.map((row) => {
       const payload = {
         is_active: row.is_active,
-        start_status: 1, 
-        end_status: 1,   
+        start_status: 1,
+        end_status: 1,
         zone: row.zone,
         volume: row.volume,
         start_time: convertToISO(row.start_time),
         end_time: convertToISO(row.end_time),
       };
-      promises.push(apiClient.post("/irrigation/irrigation-schedule", payload));
+      return apiClient.post("/irrigation/irrigation-schedule/", payload);
     });
 
-    updatedRows.forEach((row) => {
-        const payload = {
-            is_active: row.is_active,
-            start_status: row.start_status, 
-            end_status: row.end_status,
-            zone: row.zone,
-            volume: row.volume,
-            start_time: convertToISO(row.start_time),
-            end_time: convertToISO(row.end_time),
-        };
-        promises.push(apiClient.patch(`/irrigation/irrigation-schedule/${row.id}/`, payload));
+    const updatePromises = updatedRows.map((row) => {
+      const payload = {
+        is_active: row.is_active,
+        start_status: row.start_status,
+        end_status: row.end_status,
+        zone: row.zone,
+        volume: row.volume,
+        start_time: convertToISO(row.start_time),
+        end_time: convertToISO(row.end_time),
+      };
+      return apiClient.patch(
+        `/irrigation/irrigation-schedule/${row.id}/`,
+        payload,
+      );
     });
 
     try {
-      await Promise.all(promises);
+      const [createdResults, updatedResults] = await Promise.all([
+        Promise.all(createPromises),
+        Promise.all(updatePromises),
+      ]);
+
       toast.success("تغییرات با موفقیت ذخیره شد.");
-      fetchAllSchedules(); 
-      handleModalClose();
+
+      const processedCreatedRows = createdResults.map((item, index) => {
+        const originalTempId = newRows[index].tempId;
+        return {
+          ...item,
+          tempId: originalTempId,
+          id: item.id,
+          start_status: item.start_status !== undefined ? item.start_status : 0,
+          end_status: item.end_status !== undefined ? item.end_status : 0,
+          start_time: getCleanTime(item.start_time),
+          end_time: getCleanTime(item.end_time),
+          isNew: false,
+        };
+      });
+
+      const processedUpdatedRows = updatedResults.map((item, index) => {
+        const originalTempId = updatedRows[index].tempId;
+        return {
+          ...item,
+          tempId: originalTempId,
+          id: item.id,
+          start_status: item.start_status !== undefined ? item.start_status : 0,
+          end_status: item.end_status !== undefined ? item.end_status : 0,
+          start_time: getCleanTime(item.start_time),
+          end_time: getCleanTime(item.end_time),
+          isNew: false,
+        };
+      });
+
+      setModalRows((prev) => {
+        const newRowsMap = new Map(
+          processedCreatedRows.map((r) => [r.tempId, r]),
+        );
+        const updatedRowsMap = new Map(
+          processedUpdatedRows.map((r) => [r.tempId, r]),
+        );
+
+        return prev.map((row) => {
+          if (newRowsMap.has(row.tempId)) return newRowsMap.get(row.tempId);
+          if (updatedRowsMap.has(row.tempId))
+            return updatedRowsMap.get(row.tempId);
+          return row;
+        });
+      });
+
+      setRawSchedules((prev) => {
+        const updatedIds = new Set(updatedResults.map((r) => r.id));
+        const filtered = prev.filter((r) => !updatedIds.has(r.id));
+        return [...filtered, ...createdResults, ...updatedResults];
+      });
+
+      fetchAllSchedules();
     } catch (error) {
       console.error("Error saving schedule:", error);
       toast.error("خطا در ذخیره تغییرات.");
@@ -544,11 +630,11 @@ const IrrigationManyStorage = () => {
     left: "50%",
     transform: "translate(-50%, -50%)",
     width: 700,
-    height: 430, 
-    bgcolor: "#F0F0F0", 
+    height: 430,
+    bgcolor: "#F0F0F0",
     border: "0.5px solid #000",
     boxShadow: 24,
-    p: 2, 
+    p: 2,
     borderRadius: "15px",
     display: "flex",
     justifyContent: "space-between",
@@ -557,7 +643,7 @@ const IrrigationManyStorage = () => {
 
   return (
     <Container
-      disableGutters 
+      disableGutters
       sx={{
         width: "100%",
         height: "100%",
@@ -565,7 +651,7 @@ const IrrigationManyStorage = () => {
         justifyContent: "center",
         alignItems: "center",
         marginTop: "0px",
-        gap: 0, 
+        gap: 0,
       }}
     >
       <IconButton
@@ -607,12 +693,15 @@ const IrrigationManyStorage = () => {
           const tank = tanksData[id];
           const current = tank ? tank.current : {};
           const history = tank ? tank.history : [];
-          
+
+          // Filter schedules for this specific tank
+          const tankSchedules = rawSchedules.filter((s) => s.zone === id);
+
           return (
-            <Box 
-              key={id} 
-              sx={{ 
-                flexShrink: 0, 
+            <Box
+              key={id}
+              sx={{
+                flexShrink: 0,
                 scrollSnapAlign: "start",
               }}
             >
@@ -625,7 +714,7 @@ const IrrigationManyStorage = () => {
                 float3={current?.top_float_switch || false}
                 chartData={history}
                 onClickSettings={() => handleSettingsClick(id)}
-                irrigationScheduleItems={rawSchedules}
+                irrigationScheduleItems={tankSchedules}
                 allSchedulesLoading={allSchedulesLoading}
               />
             </Box>
@@ -721,7 +810,7 @@ const IrrigationManyStorage = () => {
                 text="ذخیره"
                 icon={<SaveIcon />}
                 iconPosition="left"
-                bgColor="#86CCB2" 
+                bgColor="#86CCB2"
                 textColor="#FFFFFF"
                 width="160px"
                 height="40px"
@@ -733,7 +822,15 @@ const IrrigationManyStorage = () => {
               {/* Add Button (Replaces History/Load) */}
               <IconTextButton
                 text="اضافه کردن"
-                icon={assets.svg.addField ? <img src={assets.svg.addField} alt="add" style={{width: 24, height: 24}}/> : null} // Removed HistoryIcon fallback
+                icon={
+                  assets.svg.addField ? (
+                    <img
+                      src={assets.svg.addField}
+                      alt="add"
+                      style={{ width: 24, height: 24 }}
+                    />
+                  ) : null
+                } // Removed HistoryIcon fallback
                 iconPosition="left"
                 bgColor="#FFCB82"
                 textColor="#000000"
@@ -765,7 +862,8 @@ const IrrigationManyStorage = () => {
               }}
             >
               <Typography fontFamily={"IRANSANS"} fontSize={12} mb={1}>
-                جدول آبیاری (مخزن {selectedTankId ? convert(selectedTankId) : ''})
+                جدول آبیاری (مخزن{" "}
+                {selectedTankId ? convert(selectedTankId) : ""})
               </Typography>
 
               {/* Table Header */}
@@ -777,19 +875,64 @@ const IrrigationManyStorage = () => {
                   width: "96%",
                   marginBottom: "5px",
                   px: "0px",
+
                 }}
               >
                 <Box /> {/* Empty for delete button column */}
-                <Typography fontFamily={"IRANSANS"} fontSize={12} textAlign={"center"}>زمان شروع</Typography>
-                <Typography fontFamily={"IRANSANS"} fontSize={12} textAlign={"center"}>زمان پایان</Typography>
-                <Typography fontFamily={"IRANSANS"} fontSize={12} textAlign={"center"}>زون</Typography>
-                <Typography fontFamily={"IRANSANS"} fontSize={12} textAlign={"center"}>حجم</Typography>
-                <Typography fontFamily={"IRANSANS"} fontSize={12} textAlign={"center"}>وضعیت</Typography>
-                <Typography fontFamily={"IRANSANS"} fontSize={12} textAlign={"center"}>وضعیت۲</Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={12}
+                  textAlign={"center"}
+                >
+                  زمان شروع
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={12}
+                  textAlign={"center"}
+                >
+                  زمان پایان
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={12}
+                  textAlign={"center"}
+                >
+                  زون
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={12}
+                  textAlign={"center"}
+                >
+                  حجم
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={12}
+                  textAlign={"center"}
+                >
+                  وضعیت
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={10n}
+                  textAlign={"center"}
+                >
+                  فعال/غیرفعال
+                </Typography>
               </Box>
 
               {/* Table Body */}
-              <Box sx={{ width: "96%", flexGrow: 1, overflowY: "auto", overflowX: "hidden", pr: 1 }}>
+              <Box
+                sx={{
+                  width: "96%",
+                  flexGrow: 1,
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  pr: 1,
+                }}
+              >
                 <TransitionGroup>
                   {modalRows.map((row) => (
                     <Collapse key={row.tempId}>
@@ -805,11 +948,16 @@ const IrrigationManyStorage = () => {
                     </Collapse>
                   ))}
                 </TransitionGroup>
-                
+
                 {modalRows.length === 0 && !allSchedulesLoading && (
-                   <Typography fontFamily={"IRANSANS"} fontSize={14} textAlign="center" mt={2}>
-                      داده‌ای موجود نیست. دکمه اضافه کردن را بزنید.
-                   </Typography>
+                  <Typography
+                    fontFamily={"IRANSANS"}
+                    fontSize={14}
+                    textAlign="center"
+                    mt={2}
+                  >
+                    داده‌ای موجود نیست. دکمه اضافه کردن را بزنید.
+                  </Typography>
                 )}
               </Box>
             </Box>

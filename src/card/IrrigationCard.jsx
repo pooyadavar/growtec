@@ -35,10 +35,20 @@ const IrrigationCard = ({
     return res;
   };
 
-  const formatTime = (isoString) => {
-    if (!isoString) return "";
-    // Return the time string directly as it is already in HH:mm:ss format
-    return isoString;
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    return timeString;
+  };
+
+  // Helper function to determine display status
+  const getDisplayStatus = (startStatus, endStatus) => {
+    if (startStatus === 3 && endStatus === 3) {
+      return 'tick';
+    }
+    if (startStatus === 4 || endStatus === 4) {
+      return 'cross';
+    }
+    return 'blank';
   };
 
   const chartOptions = React.useMemo(() => {
@@ -298,7 +308,10 @@ const IrrigationCard = ({
       >
         <Box sx={{ flexGrow: 1, overflowY: "auto", display: 'flex', flexDirection: 'column', gap: 1 }}>
         {irrigationScheduleItems.length > 0 ? (
-          irrigationScheduleItems.map((item, index) => (
+          irrigationScheduleItems.map((item, index) => {
+            const displayStatus = getDisplayStatus(item.start_status, item.end_status);
+            
+            return (
             <React.Fragment key={index}>
               <Box
                 sx={{
@@ -411,7 +424,6 @@ const IrrigationCard = ({
                       fontFamily: 'IRANSANS'
                     }}
                   >
-                    {/* Assuming volume is large number from sample, might need handling if it's too long */}
                     {convert(item.volume)}
                   </Box>
                 </div>
@@ -429,18 +441,19 @@ const IrrigationCard = ({
                     sx={{
                       width: "35px",
                       height: "35px",
-                      border: item.is_active ? "1px solid #4CAF50" : "1px solid #F44336",
+                      border: displayStatus === 'tick' ? "1px solid #4CAF50" : displayStatus === 'cross' ? "1px solid #F44336" : "0.5px solid #9F9F9F",
                       borderRadius: "10px",
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: item.is_active ? "#E8F5E9" : "#FFEBEE",
+                      backgroundColor: displayStatus === 'tick' ? "#E8F5E9" : displayStatus === 'cross' ? "#FFEBEE" : "transparent",
                     }}
                   >
-                     {item.is_active ? (
-                        <img src={assets.svg.tike} alt="Active" style={{ width: '16px', height: '16px' }} />
-                      ) : (
-                        <img src={assets.svg.cross} alt="Inactive" style={{ width: '16px', height: '16px' }} />
+                     {displayStatus === 'tick' && (
+                        <img src={assets.svg.tike} alt="Success" style={{ width: '16px', height: '16px' }} />
+                      )}
+                      {displayStatus === 'cross' && (
+                        <img src={assets.svg.cross} alt="Error" style={{ width: '16px', height: '16px' }} />
                       )}
                   </Box>
                 </div>
@@ -449,7 +462,7 @@ const IrrigationCard = ({
                 <Divider sx={{ width: "100%", backgroundColor: "#9F9F9F" }} />
               )}
             </React.Fragment>
-          ))
+          )})
         ) : (
              <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Typography fontFamily="IRANSANS" fontSize={14} color="text.secondary">

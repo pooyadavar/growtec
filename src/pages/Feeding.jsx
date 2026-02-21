@@ -108,9 +108,10 @@ const Feeding = () => {
           <div
             style={{
               width: "100%",
-               height: "310px",
+              height: "310px",
               display: "flex",
               flexDirection: "column",
+
               justifyContent: "space-between",
             }}
           >
