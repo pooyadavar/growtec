@@ -1,37 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import IrrigationManyStorage from "../components/Irrigation/IrrigationManyStorage";
 import IrrigationOneStorage from "../components/Irrigation/IrrigationOneStorage";
-import { Container, Button, Box } from "@mui/material";
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { Container, CircularProgress } from "@mui/material";
+import apiClient from "../api/apiClient";
 
 const Irrigation = () => {
-  const [selectedStorage, setSelectedStorage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [singleTankId, setSingleTankId] = useState(null);
 
-  const handleStorageClick = (id) => {
-    setSelectedStorage(id);
-  };
+  useEffect(() => {
+    const checkTankCount = async () => {
+      try {
+        const response = await apiClient.post("/log/irrigation/irrigation-tanks-status/");
+        const data = Array.isArray(response) ? response : [];
+        
+        const uniqueTanks = new Set(data.map(log => log.log_data?.number));
+        
+        if (uniqueTanks.size === 1) {
+          setSingleTankId([...uniqueTanks][0]);
+        } else {
+          setSingleTankId(null);
+        }
+      } catch (error) {
+        console.error("Error checking tank count:", error);
+        setSingleTankId(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleBack = () => {
-    setSelectedStorage(null);
-  };
+    checkTankCount();
+  }, []);
+
+  if (loading) {
+    return (
+      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container disableGutters sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {selectedStorage ? (
-        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-start', maxWidth: '825px' }}>
-             <Button 
-                onClick={handleBack} 
-                startIcon={<ArrowForwardIcon sx={{ transform: 'rotate(180deg)' }} />}
-                sx={{ fontFamily: 'IRANSANS', fontSize: '16px' }}
-             >
-               بازگشت به لیست مخازن
-             </Button>
-          </Box>
-          <IrrigationOneStorage storageNumber={selectedStorage} /> 
-        </Box>
+      {singleTankId ? (
+         <IrrigationOneStorage storageNumber={singleTankId} /> 
       ) : (
-        <IrrigationManyStorage onStorageClick={handleStorageClick} />
+        <IrrigationManyStorage />
       )}
     </Container>
   );
