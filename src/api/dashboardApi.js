@@ -21,3 +21,7 @@ export const getInsideCliment = async () => {
 export const getOutsideCliment = async () => {
   return apiClient.get('/info/outside-climent/');
 };
+
+export const getErrorCodes = async () => {
+  return apiClient.post('/log/info/error-code/');
+};
