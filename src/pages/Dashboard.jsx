@@ -35,10 +35,12 @@ const Dashboard = () => {
     refetchInterval: 5000,
     select: (data) => {
       if (!data || typeof data !== "object") return [];
-      return Object.entries(data).map(([key, value]) => ({
-        id: key,
-        ...value?.contents,
-      }));
+      return Object.entries(data)
+        .map(([key, value]) => ({
+          id: key,
+          ...value?.contents,
+        }))
+        .filter((item) => item.max_volume != null);
     },
   });
 

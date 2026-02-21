@@ -71,11 +71,12 @@ const AdminSetting = () => {
       sx={{
         width: "858px",
         height: "568px",
-        display: "flex",
+      display:"flex",
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
         marginTop: "30px",
+
       }}
     >
       <Box
@@ -84,7 +85,7 @@ const AdminSetting = () => {
           height: "492px",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
+
         }}
       >
         <Box
@@ -147,150 +148,93 @@ const AdminSetting = () => {
             }}
           >
             <Grid container spacing={3}>
-              {/* Left column */}
+              {/* Left main column */}
               <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="حداکثر تعداد مجاز استوک"
-                  variant="outlined"
-                  size="small"
-                  name="max_stock"
-                  value={settings.max_stock}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="حداکثر تعداد مجاز اسید"
-                  variant="outlined"
-                  size="small"
-                  name="max_acid"
-                  value={settings.max_acid}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="حجم مخازن"
-                  variant="outlined"
-                  size="small"
-                  name="tank_volume"
-                  value={settings.tank_volume}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="مدت زمان روشن بودن پمپ‌ها"
-                  variant="outlined"
-                  size="small"
-                  name="pump_duration"
-                  value={settings.pump_duration}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="حداکثر زمان روشن بودن ورودی آب"
-                  variant="outlined"
-                  size="small"
-                  name="max_water_input_time"
-                  value={settings.max_water_input_time}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="EC بهینه"
-                  variant="outlined"
-                  size="small"
-                  name="optimal_ec"
-                  value={settings.optimal_ec}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="pH بهینه"
-                  variant="outlined"
-                  size="small"
-                  name="optimal_ph"
-                  value={settings.optimal_ph}
-                  onChange={handleChange}
-                />
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="حداکثر تعداد مجاز استوک"
+                      variant="outlined"
+                      size="small"
+                      name="max_stock"
+                      value={settings.max_stock}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="حداکثر تعداد مجاز اسید"
+                      variant="outlined"
+                      size="small"
+                      name="max_acid"
+                      value={settings.max_acid}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="حجم مخازن"
+                      variant="outlined"
+                      size="small"
+                      name="tank_volume"
+                      value={settings.tank_volume}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="مدت زمان روشن بودن پمپ‌ها"
+                      variant="outlined"
+                      size="small"
+                      name="pump_duration"
+                      value={settings.pump_duration}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                </Grid>
               </Grid>
 
-              {/* Right column */}
+              {/* Right main column */}
               <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="حداکثر تعداد مجاز استوک"
-                  variant="outlined"
-                  size="small"
-                  name="max_stock"
-                  value={settings.max_stock}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="حداکثر تعداد مجاز اسید"
-                  variant="outlined"
-                  size="small"
-                  name="max_acid"
-                  value={settings.max_acid}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="حجم مخازن"
-                  variant="outlined"
-                  size="small"
-                  name="tank_volume"
-                  value={settings.tank_volume}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="مدت زمان روشن بودن پمپ‌ها"
-                  variant="outlined"
-                  size="small"
-                  name="pump_duration"
-                  value={settings.pump_duration}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="حداکثر زمان روشن بودن ورودی آب"
-                  variant="outlined"
-                  size="small"
-                  name="max_water_input_time"
-                  value={settings.max_water_input_time}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="EC بهینه"
-                  variant="outlined"
-                  size="small"
-                  name="optimal_ec"
-                  value={settings.optimal_ec}
-                  onChange={handleChange}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="pH بهینه"
-                  variant="outlined"
-                  size="small"
-                  name="optimal_ph"
-                  value={settings.optimal_ph}
-                  onChange={handleChange}
-                />
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="حداکثر زمان روشن بودن ورودی آب"
+                      variant="outlined"
+                      size="small"
+                      name="max_water_input_time"
+                      value={settings.max_water_input_time}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="EC بهینه"
+                      variant="outlined"
+                      size="small"
+                      name="optimal_ec"
+                      value={settings.optimal_ec}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="pH بهینه"
+                      variant="outlined"
+                      size="small"
+                      name="optimal_ph"
+                      value={settings.optimal_ph}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                </Grid>
               </Grid>
             </Grid>
           </Box>
