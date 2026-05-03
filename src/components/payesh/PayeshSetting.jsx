@@ -12,6 +12,7 @@ import {
 import axios from "axios";
 import assets from "../../assets";
 import apiClient from "../../api/apiClient";
+import toast from "react-hot-toast";
 
 // --- Sub-components ---
 
@@ -523,7 +524,7 @@ const PayeshSetting = ({ zone }) => {
     }
 
     if (promises.length === 0) {
-      alert("تغییری برای ذخیره وجود ندارد.");
+      toast.error("تغییری برای ذخیره وجود ندارد.");
       return;
     }
 
@@ -536,10 +537,10 @@ const PayeshSetting = ({ zone }) => {
       initialHumRangeRef.current = currentHumRange;
       initialTempOpRef.current = { ...tempControllers };
       initialHumOpRef.current = { ...humControllers };
-      alert("داده‌ها با موفقیت ذخیره شدند.");
+      toast.success("داده‌ها با موفقیت ذخیره شدند.");
     } catch (error) {
       console.error("Error saving data:", error);
-      alert("خطا در ذخیره داده‌ها.");
+      toast.error("خطا در ذخیره داده‌ها.");
     }
   };
 
@@ -817,32 +818,46 @@ const PayeshSetting = ({ zone }) => {
                       setMinState={setTempMin3}
                     />
 
-                    <Grid
-                      container
-                      spacing={1}
-                      justifyContent="center"
-                      sx={{ width: "320px", marginTop: 2 }}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        width: "320px",
+                        marginTop: 2,
+                        gap: "8px", // Adjust gap as needed for spacing between items
+                      }}
                     >
-                      {tempControllerList.map((ctrl) => (
-                        <Grid
-                          item
+                      {tempControllerList.slice(0, 5).map((ctrl) => (
+                        <ControllerStatus
                           key={ctrl.key}
-                          xs={2}
-                          sx={{
-                            padding: "4px !important",
-                            display: "flex",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <ControllerStatus
-                            label={ctrl.label}
-                            isActive={tempControllers[ctrl.key]}
-                            iconSrc={assets.svg.done}
-                            onClick={ctrl.onClick}
-                          />
-                        </Grid>
+                          label={ctrl.label}
+                          isActive={tempControllers[ctrl.key]}
+                          iconSrc={assets.svg.done}
+                          onClick={ctrl.onClick}
+                        />
                       ))}
-                    </Grid>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        width: "320px",
+                        marginTop: 1, // Adjust top margin for spacing between rows
+                        gap: "8px", // Adjust gap as needed for spacing between items
+                      }}
+                    >
+                      {tempControllerList.slice(5, 9).map((ctrl) => (
+                        <ControllerStatus
+                          key={ctrl.key}
+                          label={ctrl.label}
+                          isActive={tempControllers[ctrl.key]}
+                          iconSrc={assets.svg.done}
+                          onClick={ctrl.onClick}
+                        />
+                      ))}
+                    </Box>
                   </Box>
                 </Stack>
 
