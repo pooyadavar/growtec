@@ -799,7 +799,7 @@ const PayeshSetting = ({ zone }) => {
                         justifyContent: "center",
                         width: "320px",
                         marginTop: 2,
-                        gap: "8px", // Adjust gap as needed for spacing between items
+                        gap: "2px", // Adjust gap as needed for spacing between items
                       }}
                     >
                       {tempControllerList.slice(0, 5).map((ctrl) => (
@@ -886,32 +886,46 @@ const PayeshSetting = ({ zone }) => {
                       setMinState={setHumMin3}
                     />
 
-                    <Grid
-                      container
-                      spacing={1}
-                      justifyContent="center"
-                      sx={{ width: "320px", marginTop: 2 }}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        width: "320px",
+                        marginTop: 2,
+                        gap: "8px", // Adjust gap as needed for spacing between items
+                      }}
                     >
-                      {humControllerList.map((ctrl) => (
-                        <Grid
-                          item
+                      {humControllerList.slice(0, 5).map((ctrl) => (
+                        <ControllerStatus
                           key={ctrl.key}
-                          xs={2}
-                          sx={{
-                            padding: "4px !important",
-                            display: "flex",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <ControllerStatus
-                            label={ctrl.label}
-                            isActive={humControllers[ctrl.key]}
-                            iconSrc={assets.svg.done}
-                            onClick={ctrl.onClick}
-                          />
-                        </Grid>
+                          label={ctrl.label}
+                          isActive={humControllers[ctrl.key]}
+                          iconSrc={assets.svg.done}
+                          onClick={ctrl.onClick}
+                        />
                       ))}
-                    </Grid>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        width: "320px",
+                        marginTop: 1, // Adjust top margin for spacing between rows
+                        gap: "8px", // Adjust gap as needed for spacing between items
+                      }}
+                    >
+                      {humControllerList.slice(5, 9).map((ctrl) => (
+                        <ControllerStatus
+                          key={ctrl.key}
+                          label={ctrl.label}
+                          isActive={humControllers[ctrl.key]}
+                          iconSrc={assets.svg.done}
+                          onClick={ctrl.onClick}
+                        />
+                      ))}
+                    </Box>
                   </Box>
                 </Stack>
               </Box>

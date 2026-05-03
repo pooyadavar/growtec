@@ -2,7 +2,7 @@ import React from "react";
 import { AppBar, Toolbar, Button, Container } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import assets from "../assets";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const useStyles = makeStyles(() => ({
   appBar: {
@@ -43,6 +43,17 @@ const useStyles = makeStyles(() => ({
 
 const Navbar = () => {
   const classes = useStyles();
+  const location = useLocation();
+
+  // Function to determine if a path is active
+  const isActive = (path) => {
+    // Special case: if current path is '/' and the tab path is '/Feeding', consider it active
+    if (location.pathname === '/' && path === '/Feeding') {
+      return true;
+    }
+    // For other paths, check if the current path starts with the tab's path
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <Container
@@ -68,6 +79,11 @@ const Navbar = () => {
               sx={{
                 marginRight: "2rem",
                 borderRadius: "4px",
+                ...(isActive("/login") && {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  transform: 'scale(1.05)',
+                  transition: 'all 0.3s ease-in-out',
+                }),
               }}
             >
               <img src={assets.svg.lock} alt="Sign" className={classes.iconImage} />
@@ -80,6 +96,14 @@ const Navbar = () => {
               to={"/Home"}
               variant="text"
               className={classes.navItem}
+              sx={{
+                ...(isActive("/Home") && {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  transform: 'scale(1.05)',
+                  transition: 'all 0.3s ease-in-out',
+                  borderRadius: "8px",
+                }),
+              }}
             >
               <img src={assets.svg.homeIcon} alt="home" className={classes.iconImage} />
               خانه
@@ -89,6 +113,14 @@ const Navbar = () => {
               to={"/Feeding"}
               variant="text"
               className={classes.navItem}
+              sx={{
+                ...(isActive("/Feeding") && {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  transform: 'scale(1.05)',
+                  transition: 'all 0.3s ease-in-out',
+                  borderRadius: "8px",
+                }),
+              }}
             >
               <img src={assets.svg.feeding} alt="feeding" className={classes.iconImage} />
               تغذیه
@@ -98,6 +130,14 @@ const Navbar = () => {
               to={"/irrigation"}
               variant="text"
               className={classes.navItem}
+              sx={{
+                ...(isActive("/irrigation") && {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  transform: 'scale(1.05)',
+                  transition: 'all 0.3s ease-in-out',
+                  borderRadius: "8px",
+                }),
+              }}
             >
               <img src={assets.svg.water} alt="water" className={classes.iconImage} />
               آب‌رسانی
@@ -107,6 +147,14 @@ const Navbar = () => {
               to={"/payesh"}
               variant="text"
               className={classes.navItem}
+              sx={{
+                ...(isActive("/payesh") && {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  transform: 'scale(1.05)',
+                  transition: 'all 0.3s ease-in-out',
+                  borderRadius: "8px",
+                }),
+              }}
             >
               <img src={assets.svg.monitoring} alt="Growtec" className={classes.iconImage} />
               پایش
@@ -116,6 +164,14 @@ const Navbar = () => {
               to={"/admin-settings"}
               variant="text"
               className={classes.navItem}
+              sx={{
+                ...(isActive("/admin-settings") && {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  transform: 'scale(1.05)',
+                  transition: 'all 0.3s ease-in-out',
+                  borderRadius: "8px",
+                }),
+              }}
             >
               <img src={assets.svg.setting} alt="setting" className={classes.iconImage} />
               تنظیمات
