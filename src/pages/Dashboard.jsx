@@ -49,7 +49,7 @@ const Dashboard = () => {
   };
 
   const getStatusText = (statusNumber) => {
-    return statusNumber === 0 ? "در حال چک و اصلاح pH" : "وضعیت دیگر";
+    return statusNumber === 0 ? "در حال چک  pH" : "وضعیت دیگر";
   };
 
   return (

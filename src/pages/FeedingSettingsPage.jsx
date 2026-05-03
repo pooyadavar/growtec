@@ -16,6 +16,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { useNavigate } from "react-router-dom";
+import { useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getFoodstuffPreparationProgram,
   updateFoodstuffPreparationProgram,
@@ -256,75 +257,209 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const [tabValue, setTabValue] = useState(2);
   const navigate = useNavigate();
 
-  const [ecPrograms, setEcPrograms] = useState({});
-  const [initialEcPrograms, setInitialEcPrograms] = useState({}); 
-  const [isEcSaveDisabled, setIsEcSaveDisabled] = useState(true);
+    const [ecPrograms, setEcPrograms] = useState({});
 
-  const [phPrograms, setPhPrograms] = useState({});
-  const [initialPhPrograms, setInitialPhPrograms] = useState({});
-  const [isPhSaveDisabled, setIsPhSaveDisabled] = useState(true);
+    const [initialEcPrograms, setInitialEcPrograms] = useState({}); 
+
+    const [isEcSaveDisabled, setIsEcSaveDisabled] = useState(true);
+
+  
+
+    const [phPrograms, setPhPrograms] = useState({});
+
+    const [initialPhPrograms, setInitialPhPrograms] = useState({});
+
+    const [isPhSaveDisabled, setIsPhSaveDisabled] = useState(true);
   
   // Slider state
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
+  
 
-  // Fetch EC Programs
-  useEffect(() => {
-    if (tabValue === 2) {
-      const fetchPrograms = async () => {
-        const newPrograms = {};
-        for (let i = 1; i <= 5; i++) {
-          try {
-            const response = await getFoodstuffPreparationProgram(i);
-            newPrograms[i] = response;
-          } catch (error) {
-            console.error(`Error fetching EC program ${i}:`, error);
-          }
+    const programNumbers = [1, 2, 3, 4, 5];
+
+  
+
+    const ecProgramQueries = useQueries({
+
+      queries: programNumbers.map((i) => ({
+
+        queryKey: ["foodstuffEcProgram", i],
+
+        queryFn: () => getFoodstuffPreparationProgram(i),
+
+        enabled: tabValue === 2, // Only fetch when EC tab is active
+
+        staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+
+        cacheTime: 10 * 60 * 1000, // Data stays in cache for 10 minutes
+
+      })),
+
+    });
+
+  
+
+    const phProgramQueries = useQueries({
+
+      queries: programNumbers.map((i) => ({
+
+        queryKey: ["foodstuffPhProgram", i],
+
+        queryFn: () => getFoodstuffPreparationProgramPh(i),
+
+        enabled: tabValue === 1, // Only fetch when pH tab is active
+
+        staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+
+        cacheTime: 10 * 60 * 1000, // Data stays in cache for 10 minutes
+
+      })),
+
+    });
+
+  
+
+    // Effect to process EC program data from useQueries
+
+    useEffect(() => {
+
+      const newPrograms = {};
+
+      let allFetched = true;
+
+      ecProgramQueries.forEach((query, index) => {
+
+        if (query.isSuccess) {
+
+          newPrograms[programNumbers[index]] = query.data;
+
+        } else if (query.isLoading || query.isFetching) {
+
+          allFetched = false;
+
+        } else if (query.isError) {
+
+          console.error(`Error fetching EC program ${programNumbers[index]}:`, query.error);
+
+          // Handle error for individual queries, maybe set an error state
+
         }
+
+      });
+
+  
+
+      if (allFetched && Object.keys(newPrograms).length > 0) {
+
         setEcPrograms(newPrograms);
-        setInitialEcPrograms(JSON.parse(JSON.stringify(newPrograms))); 
-      };
-      fetchPrograms();
-    }
-  }, [tabValue]);
 
-  // Fetch pH Programs
-  useEffect(() => {
-    if (tabValue === 1) {
-      const fetchPrograms = async () => {
-        const newPrograms = {};
-        for (let i = 1; i <= 5; i++) {
-          try {
-            const response = await getFoodstuffPreparationProgramPh(i);
-            newPrograms[i] = response;
-          } catch (error) {
-            console.error(`Error fetching pH program ${i}:`, error);
-          }
+        setInitialEcPrograms(JSON.parse(JSON.stringify(newPrograms))); // Deep copy for comparison
+
+      }
+
+    }, [ecProgramQueries, tabValue]); // Only re-run if queries change or tab changes
+
+  
+
+    // Effect to process pH program data from useQueries
+
+    useEffect(() => {
+
+      const newPrograms = {};
+
+      let allFetched = true;
+
+      phProgramQueries.forEach((query, index) => {
+
+        if (query.isSuccess) {
+
+          newPrograms[programNumbers[index]] = query.data;
+
+        } else if (query.isLoading || query.isFetching) {
+
+          allFetched = false;
+
+        } else if (query.isError) {
+
+          console.error(`Error fetching pH program ${programNumbers[index]}:`, query.error);
+
+          // Handle error for individual queries
+
         }
-        setPhPrograms(newPrograms);
-        setInitialPhPrograms(JSON.parse(JSON.stringify(newPrograms)));
-      };
-      fetchPrograms();
-    }
-  }, [tabValue]);
 
+      });
+
+  
+
+      if (allFetched && Object.keys(newPrograms).length > 0) {
+
+        setPhPrograms(newPrograms);
+
+        setInitialPhPrograms(JSON.parse(JSON.stringify(newPrograms))); // Deep copy for comparison
+
+      }
+
+    }, [phProgramQueries, tabValue]); // Only re-run if queries change or tab changes
+
+  
 
     // Check for EC changes
+
     useEffect(() => {
+
         if (Object.keys(ecPrograms).length === 0 || Object.keys(initialEcPrograms).length === 0) return;
+
         const hasChanges = !deepEqual(ecPrograms, initialEcPrograms);
+
         setIsEcSaveDisabled(!hasChanges);
+
     }, [ecPrograms, initialEcPrograms]);
 
+  
+
     // Check for pH changes
+
     useEffect(() => {
+
         if (Object.keys(phPrograms).length === 0 || Object.keys(initialPhPrograms).length === 0) return;
+
         const hasChanges = !deepEqual(phPrograms, initialPhPrograms);
+
         setIsPhSaveDisabled(!hasChanges);
+
     }, [phPrograms, initialPhPrograms]);
 
+
+  const queryClient = useQueryClient();
+
+  const updateEcProgramMutation = useMutation({
+    mutationFn: updateFoodstuffPreparationProgram,
+    onSuccess: (data, variables) => {
+      // Invalidate the specific query for the updated program number
+      queryClient.invalidateQueries(["foodstuffEcProgram", variables.program_number]);
+      toast.success(`برنامه EC ${variables.program_number} با موفقیت ذخیره شد`);
+    },
+    onError: (error, variables) => {
+      console.error(`Error saving EC program ${variables.program_number}:`, error);
+      toast.error(`خطا در ذخیره برنامه EC ${variables.program_number}`);
+    },
+  });
+
+  const updatePhProgramMutation = useMutation({
+    mutationFn: updateFoodstuffPreparationProgramPh,
+    onSuccess: (data, variables) => {
+      // Invalidate the specific query for the updated program number
+      queryClient.invalidateQueries(["foodstuffPhProgram", variables.program_number]);
+      toast.success(`برنامه pH ${variables.program_number} با موفقیت ذخیره شد`);
+    },
+    onError: (error, variables) => {
+      console.error(`Error saving pH program ${variables.program_number}:`, error);
+      toast.error(`خطا در ذخیره برنامه pH ${variables.program_number}`);
+    },
+  });
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -343,6 +478,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
     if (tabValue === 2) { // EC Tab Save
         if (isEcSaveDisabled) return;
 
+        const updatePromises = [];
         for (let i = 1; i <= 5; i++) {
             const initial = initialEcPrograms[i];
             const current = ecPrograms[i];
@@ -367,21 +503,23 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
                         }
                     }
                 };
-
-                try {
-                    await updateFoodstuffPreparationProgram(payload);
-                    toast.success(`برنامه EC ${i} با موفقیت ذخیره شد`);
-                } catch (error) {
-                    console.error(`Error saving EC program ${i}:`, error);
-                    toast.error(`خطا در ذخیره برنامه EC ${i}`);
-                }
+                updatePromises.push(updateEcProgramMutation.mutateAsync(payload));
             }
         }
-        setInitialEcPrograms(JSON.parse(JSON.stringify(ecPrograms)));
-        setIsEcSaveDisabled(true); // Disable after save
+        try {
+            await Promise.all(updatePromises);
+            // After all updates, re-fetch the programs to update initial states and reflect changes
+            ecProgramQueries.forEach(query => query.refetch());
+            setInitialEcPrograms(JSON.parse(JSON.stringify(ecPrograms)));
+            setIsEcSaveDisabled(true); // Disable after save
+        } catch (error) {
+            // Error handling is done by individual mutation's onError
+            toast.error("خطا در ذخیره سازی برخی از برنامه های EC");
+        }
     } else if (tabValue === 1) { // pH Tab Save
         if (isPhSaveDisabled) return;
 
+        const updatePromises = [];
         for (let i = 1; i <= 5; i++) {
             const initial = initialPhPrograms[i];
             const current = phPrograms[i];
@@ -394,18 +532,19 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
                         ph_acceptable_error: Number(current.ph_acceptable_error),
                     }
                 };
-
-                try {
-                    await updateFoodstuffPreparationProgramPh(payload);
-
-                } catch (error) {
-                    console.error(`Error saving pH program ${i}:`, error);
-                    toast.error(`خطا در ذخیره برنامه pH ${i}`);
-                }
+                updatePromises.push(updatePhProgramMutation.mutateAsync(payload));
             }
         }
-        setInitialPhPrograms(JSON.parse(JSON.stringify(phPrograms)));
-        setIsPhSaveDisabled(true); // Disable after save
+        try {
+            await Promise.all(updatePromises);
+            // After all updates, re-fetch the programs
+            phProgramQueries.forEach(query => query.refetch());
+            setInitialPhPrograms(JSON.parse(JSON.stringify(phPrograms)));
+            setIsPhSaveDisabled(true); // Disable after save
+        } catch (error) {
+            // Error handling is done by individual mutation's onError
+            toast.error("خطا در ذخیره سازی برخی از برنامه های pH");
+        }
     }
   };
 

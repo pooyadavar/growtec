@@ -37,10 +37,10 @@ const Around = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["outsideCliment"],
-    queryFn: getOutsideCliment,
-
-  });
+        queryKey: ["outsideCliment"],
+        queryFn: getOutsideCliment,
+        refetchInterval: 5000,
+      });
 
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {

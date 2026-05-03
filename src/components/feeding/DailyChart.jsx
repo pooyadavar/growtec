@@ -14,10 +14,11 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { AgCharts } from "ag-charts-react";
 import assets from "../../assets";
 import IconTextButton from "../../card/IconTextButton";
-import apiClient from "../../api/apiClient";
-import { calibrationEc, calibrationPh, getSolubleEcPhTemperature } from "../../api/solubleApi";
+import { useQuery } from "@tanstack/react-query";
+import { calibrationEc, calibrationPh, getSolubleEcPhTemperature, getSolubleLogEcPhTemperature } from "../../api/solubleApi";
 import toast from "react-hot-toast";
 import { Scale } from "@mui/icons-material";
+import apiClient from "../../api/apiClient";
 
 const SENSORS = [
   { id: 1, name: "سنسور شماره ۱" },

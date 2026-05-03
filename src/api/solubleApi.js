@@ -79,3 +79,7 @@ export const calibrationPh = async (data) => {
 export const getSolubleEcPhTemperature = async () => {
   return apiClient.get('/soluble/ec-ph-temperature/');
 };
+
+export const getFoodstuffHistory = async (limit = 10) => {
+  return apiClient.post('/log/soluble/foodstuff-preparation-program-schedule/', { limit });
+};

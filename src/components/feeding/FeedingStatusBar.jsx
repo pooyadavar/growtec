@@ -16,8 +16,14 @@ import {
 import { TransitionGroup } from "react-transition-group";
 import IconTextButton from "../../card/IconTextButton";
 import assets from "../../assets";
-import { getFoodstuffSchedule, saveFoodstuffSchedule, updateFoodstuffSchedule, deleteFoodstuffSchedule } from "../../api/solubleApi";
-import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getFoodstuffSchedule,
+  saveFoodstuffSchedule,
+  updateFoodstuffSchedule,
+  deleteFoodstuffSchedule,
+} from "../../api/solubleApi";
+import toast from "react-hot-toast";
 
 // کامپوننت سطر (الان یک کامپوننت کنترل‌شده است و استیت داخلی ندارد)
 const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew }) => {
@@ -218,9 +224,8 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew })
 };
 
 const FeedingStatusBar = () => {
+  const queryClient = useQueryClient();
   const [modalPlans, setModalPlans] = useState(false);
-  const [isLoadingSchedule, setIsLoadingSchedule] = useState(true);
-  const [isErrorSchedule, setIsErrorSchedule] = useState(false);
 
   const [planRows, setPlanRows] = useState([
     {
@@ -232,8 +237,6 @@ const FeedingStatusBar = () => {
       isActive: false,
     },
   ]);
-  const [scheduleData, setScheduleData] = useState([]);
-  const [rawSchedule, setRawSchedule] = useState([]);
 
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
@@ -246,39 +249,73 @@ const FeedingStatusBar = () => {
     return res;
   };
 
-  const fetchSchedule = async () => {
-    setIsLoadingSchedule(true);
-    setIsErrorSchedule(false);
-    try {
-      const response = await getFoodstuffSchedule();
+  const {
+    data: rawSchedule,
+    isLoading: isLoadingSchedule,
+    isError: isErrorSchedule,
+    error: scheduleError,
+  } = useQuery({
+    queryKey: ["foodstuffSchedule"],
+    queryFn: getFoodstuffSchedule,
+    refetchInterval: 5000, // Assuming real-time updates are desired
+    select: (response) => {
+      // Assuming response.data contains the array
       const data = response.data || response;
-      if (Array.isArray(data)) {
-        setRawSchedule(data);
-        const formatted = data.map((item) => ({
-          time: item.time,
-          zone: convert(item.zone),
-          type: convert(item.type),
-          volume: convert(item.volume),
-          status: item.is_active ? "فعال" : "غیرفعال",
-        }));
-        setScheduleData(formatted);
-      }
-    } catch (error) {
-      console.error("Failed to fetch schedule", error);
-      setIsErrorSchedule(true);
-    } finally {
-      setIsLoadingSchedule(false);
-    }
-  };
+      return Array.isArray(data) ? data : [];
+    },
+  });
 
-  useEffect(() => {
-    fetchSchedule();
-  }, []);
+  const scheduleData = useMemo(() => {
+    if (!rawSchedule) return [];
+    return rawSchedule.map((item) => ({
+      time: item.time,
+      zone: convert(item.zone),
+      type: convert(item.type),
+      volume: convert(item.volume),
+      status: item.is_active ? "فعال" : "غیرفعال",
+    }));
+  }, [rawSchedule]);
+
+  const deleteScheduleMutation = useMutation({
+    mutationFn: deleteFoodstuffSchedule,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["foodstuffSchedule"]); // Refetch the schedule after deletion
+      toast.success("ردیف با موفقیت حذف شد");
+    },
+    onError: (error) => {
+      console.error("Error deleting row:", error);
+      toast.error("خطا در حذف ردیف");
+    },
+  });
+
+  const saveScheduleMutation = useMutation({
+    mutationFn: saveFoodstuffSchedule,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["foodstuffSchedule"]);
+      toast.success("برنامه با موفقیت ذخیره شد.");
+    },
+    onError: (error) => {
+      console.error("Error saving new schedule:", error);
+      toast.error("خطا در ذخیره سازی برنامه جدید.");
+    },
+  });
+
+  const updateScheduleMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateFoodstuffSchedule(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["foodstuffSchedule"]);
+      toast.success("برنامه با موفقیت به روز شد.");
+    },
+    onError: (error) => {
+      console.error("Error updating schedule:", error);
+      toast.error("خطا در به روزرسانی برنامه.");
+    },
+  });
 
   const handleModalPlansClose = () => setModalPlans(false);
 
   const handleModalPlansOpen = () => {
-    if (rawSchedule.length > 0) {
+    if (rawSchedule && rawSchedule.length > 0) {
       const rows = rawSchedule.map((item) => ({
         id: item.id || crypto.randomUUID(),
         zone: item.zone,
@@ -286,9 +323,21 @@ const FeedingStatusBar = () => {
         time: item.time,
         volume: item.volume,
         isActive: item.is_active,
-        status: item.status,
+        status: item.status, // Keep original status from rawSchedule if available
       }));
       setPlanRows(rows);
+    } else {
+      // If no existing schedule, initialize with one empty row
+      setPlanRows([
+        {
+          id: crypto.randomUUID(),
+          zone: "",
+          type: "",
+          time: "",
+          volume: "",
+          isActive: false,
+        },
+      ]);
     }
     setModalPlans(true);
   };
@@ -307,18 +356,11 @@ const FeedingStatusBar = () => {
     ]);
   };
 
-  const handleDeleteRow = async (idToDelete) => {
+  const handleDeleteRow = (idToDelete) => {
     const isExisting = rawSchedule.some((r) => r.id === idToDelete);
     if (isExisting) {
-      try {
-        await deleteFoodstuffSchedule(idToDelete);
-        toast.success("ردیف با موفقیت حذف شد");
-        fetchSchedule();
-        setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
-      } catch (error) {
-        console.error("Error deleting row:", error);
-        toast.error("خطا در حذف ردیف");
-      }
+      deleteScheduleMutation.mutate(idToDelete);
+      setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete)); // Optimistic update
     } else {
       if (planRows.length <= 1) return;
       setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
@@ -332,12 +374,12 @@ const FeedingStatusBar = () => {
   };
 
   const newRows = useMemo(() => {
-    return planRows.filter(row => !rawSchedule.some(raw => raw.id === row.id));
+    return planRows.filter(row => !((rawSchedule || []).some(raw => raw.id === row.id)));
   }, [planRows, rawSchedule]);
 
   const updatedRows = useMemo(() => {
     return planRows.filter((row) => {
-      const original = rawSchedule.find((raw) => raw.id === row.id);
+      const original = (rawSchedule || []).find((raw) => raw.id === row.id);
       if (!original) return false;
       return (
         String(row.zone) !== String(original.zone) ||
@@ -355,9 +397,7 @@ const FeedingStatusBar = () => {
       return;
     }
 
-    const promises = [];
-
-    newRows.forEach((row) => {
+    const savePromises = newRows.map((row) => {
       const payload = {
         is_active: row.isActive,
         status: row.status || 1,
@@ -366,10 +406,10 @@ const FeedingStatusBar = () => {
         type: row.type,
         time: row.time,
       };
-      promises.push(saveFoodstuffSchedule(payload));
+      return saveScheduleMutation.mutateAsync(payload);
     });
 
-    updatedRows.forEach((row) => {
+    const updatePromises = updatedRows.map((row) => {
       const payload = {
         is_active: row.isActive,
         status: row.status || 1,
@@ -378,17 +418,17 @@ const FeedingStatusBar = () => {
         type: row.type,
         time: row.time,
       };
-      promises.push(updateFoodstuffSchedule(row.id, payload));
+      return updateScheduleMutation.mutateAsync({ id: row.id, payload });
     });
 
     try {
-      await Promise.all(promises);
-      fetchSchedule();
-      toast.success("تغییرات با موفقیت ثبت شد");
+      await Promise.all([...savePromises, ...updatePromises]);
+      // Invalidation and toast are handled by onSuccess of individual mutations
       handleModalPlansClose();
     } catch (error) {
-      console.error("Error saving schedule:", error);
-      toast.error("خطا در ذخیره سازی برنامه");
+      // Errors are handled by onError of individual mutations
+      console.error("Error during batch save/update:", error);
+      toast.error("برخی از تغییرات با خطا مواجه شدند."); // Generic error for batch operation
     }
   };
 

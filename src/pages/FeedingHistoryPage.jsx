@@ -6,12 +6,14 @@ import {
   TextField,
   IconButton,
   Container,
+  CircularProgress, // Added for loading state
+  Alert, // Added for error state
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
-import apiClient from "../api/apiClient";
+import { useQuery } from "@tanstack/react-query";
+import { getFoodstuffHistory } from "../api/solubleApi";
 
-// --- کامپوننت کمکی برای ستون‌های برنامه (عریض‌تر و فشرده‌تر) ---
 const PlanColumn = ({ number, values = [] }) => (
   <Paper
     variant="outlined"
@@ -63,43 +65,68 @@ const PlanColumn = ({ number, values = [] }) => (
   </Paper>
 );
 
-// --- کامپوننت اصلی صفحه ---
+
 const FeedingHistoryPage = ({ onClose, isModal = false }) => {
-  const [historyData, setHistoryData] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await apiClient.post(
-          "/log/soluble/foodstuff-preparation-program-schedule/",
-          { limit: 10 }
-        );
-        const data = Array.isArray(response) ? response : response.results || [];
-        // Take the last 10 items if more are returned, or just the data if less.
-        // Assuming the API returns them in chronological order, we might want the *latest* 10.
-        // Usually "limit: 10" on a log endpoint returns the *latest* 10.
-        // Let's assume the API returns the latest ones directly or we just take the first 10 of the response.
-        // If we need to map 1-10 as "most recent first" or "oldest first", it depends on user intent.
-        // Usually a history list is "latest at top" (1) or "oldest at top".
-        // Given the UI has 1..10, let's map index 0 to 1.
-        setHistoryData(data.slice(0, 10));
-      } catch (error) {
-        console.error("Error fetching history data:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const {
+    data: historyData = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["foodstuffHistory"],
+    queryFn: () => getFoodstuffHistory(10), // Fetching with limit 10
+    refetchInterval: 15000, // Refetch every 15 seconds to keep history relatively up-to-date
+    select: (response) => {
+      const data = Array.isArray(response) ? response : response.results || [];
+      return data.slice(0, 10); // Ensure only 10 items are taken
+    },
+  });
 
   const handleBackClick = () => {
     if (onClose) {
       onClose();
       return;
     }
-
     navigate(-1);
   };
+
+  if (isLoading) {
+    return (
+      <Container
+        sx={{
+          mt: 1,
+          mb: 0,
+          px: isModal ? "0 !important" : undefined,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "calc(100vh - 64px)",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Container
+        sx={{
+          mt: 1,
+          mb: 0,
+          px: isModal ? "0 !important" : undefined,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "calc(100vh - 64px)",
+        }}
+      >
+        <Alert severity="error">خطا در بارگیری تاریخچه: {error?.message || "خطای ناشناخته"}</Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container

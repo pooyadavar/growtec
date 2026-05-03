@@ -16,6 +16,7 @@ import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکم
 import assets from "../../assets";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
+import { useMutation } from "@tanstack/react-query";
 import {
   makeManualSoluble,
   emptyingTank,
@@ -98,7 +99,78 @@ const Control = () => {
 
   const [emptyStatusText, setEmptyStatusText] = React.useState("");
 
-  const handleEmptyingSubmit = async () => {
+  const { mutate: emptyTankMutation } = useMutation({
+    mutationFn: emptyingTank,
+    onSuccess: (data, variables) => {
+      toast.success(variables.status === "start" ? "تخلیه شروع شد" : "تخلیه پایان یافت");
+      handleClearClose();
+    },
+    onError: (error) => {
+      console.error("Error in emptying tank:", error);
+      toast.error("خطا در عملیات تخلیه");
+    },
+  });
+
+  const { mutate: manualInjectionMutation } = useMutation({
+    mutationFn: manualInjection,
+    onSuccess: () => {
+      toast.success("تزریق دستی با موفقیت انجام شد");
+      handleInjectionClose();
+    },
+    onError: (error) => {
+      console.error("Error during manual injection:", error);
+      toast.error("خطا در تزریق دستی");
+    },
+  });
+
+  const { mutate: makeManualSolubleMutation } = useMutation({
+    mutationFn: makeManualSoluble,
+    onSuccess: () => {
+      toast.success("محلول با موفقیت ساخته شد");
+      handleCreateClose();
+    },
+    onError: (error) => {
+      console.error("Error creating manual soluble:", error);
+      toast.error("خطا در ساخت محلول");
+    },
+  });
+
+  const { mutate: controlMixerMutation } = useMutation({
+    mutationFn: controlMixer,
+    onSuccess: (data, variables) => {
+      setIsMixerOn(variables.status === "on");
+      toast.success(`میکسر ${variables.status === "on" ? "روشن شد" : "خاموش شد"}`);
+    },
+    onError: (error) => {
+      console.error("Error controlling mixer:", error);
+      toast.error("خطا در کنترل میکسر");
+    },
+  });
+
+  const { mutate: controlStocksMixerMutation } = useMutation({
+    mutationFn: controlStocksMixer,
+    onSuccess: (data, variables) => {
+      setIsHemzanOn(variables.status === "on");
+      toast.success(`همزن ${variables.status === "on" ? "روشن شد" : "خاموش شد"}`);
+    },
+    onError: (error) => {
+      console.error("Error controlling stocks mixer:", error);
+      toast.error("خطا در کنترل همزن");
+    },
+  });
+
+  const { mutate: emergencyStopMutation } = useMutation({
+    mutationFn: emergencyStop,
+    onSuccess: () => {
+      toast.success("توقف اضطراری ارسال شد");
+    },
+    onError: (error) => {
+      console.error("Error executing emergency stop:", error);
+      toast.error("خطا در توقف اضطراری");
+    },
+  });
+
+  const handleEmptyingSubmit = () => {
     let status = "";
     if (emptyStatusText === "آغاز") status = "start";
     else if (emptyStatusText === "تمام") status = "finish";
@@ -111,14 +183,7 @@ const Control = () => {
       status: status,
       zone: selectedZone,
     };
-    try {
-      await emptyingTank(data);
-      toast.success(status === "start" ? "تخلیه شروع شد" : "تخلیه پایان یافت");
-      handleClearClose();
-    } catch (error) {
-      console.error("Error in emptying tank:", error);
-      toast.error("خطا در عملیات تخلیه");
-    }
+    emptyTankMutation(data);
   };
   return (
     <Container
@@ -162,17 +227,9 @@ const Control = () => {
           bgColor={isMixerOn ? "#B8FFDD" : "#FFFFFF"}
           textColor={isMixerOn ? "#004323" : "#1E1E1E"}
           borderColor={isMixerOn ? "#004323" : "#E0E0E0"}
-          onClick={async () => {
+          onClick={() => {
             const newStatus = isMixerOn ? "off" : "on";
-            const data = { status: newStatus };
-            try {
-              await controlMixer(data);
-              setIsMixerOn(!isMixerOn); // Toggle state only on success
-              toast.success(`میکسر ${newStatus === "on" ? "روشن شد" : "خاموش شد"}`);
-            } catch (error) {
-              console.error("Error controlling mixer:", error);
-              toast.error("خطا در کنترل میکسر");
-            }
+            controlMixerMutation({ status: newStatus });
           }}
           width="195px"     />
 
@@ -183,17 +240,9 @@ const Control = () => {
           bgColor={isHemzanOn ? "#B8FFDD" : "#FFFFFF"}
           textColor={isHemzanOn ? "#004323" : "#1E1E1E"}
           borderColor={isHemzanOn ? "#004323" : "#E0E0E0"}
-          onClick={async () => {
+          onClick={() => {
             const newStatus = isHemzanOn ? "off" : "on";
-            const data = { status: newStatus };
-            try {
-              await controlStocksMixer(data);
-              setIsHemzanOn(!isHemzanOn); // Toggle state only on success
-              toast.success(`همزن ${newStatus === "on" ? "روشن شد" : "خاموش شد"}`);
-            } catch (error) {
-              console.error("Error controlling stocks mixer:", error);
-              toast.error("خطا در کنترل همزن");
-            }
+            controlStocksMixerMutation({ status: newStatus });
           }}
           width="195px"      />
 
@@ -204,15 +253,7 @@ const Control = () => {
           bgColor="#FED9D9"
           textColor="#CC0000"
           borderColor="#CC0000"
-          onClick={async () => {
-            try {
-              await emergencyStop();
-              toast.success("توقف اضطراری ارسال شد");
-            } catch (error) {
-              console.error("Error executing emergency stop:", error);
-              toast.error("خطا در توقف اضطراری");
-            }
-          }}
+          onClick={() => emergencyStopMutation()}
           width="195px"      />
       </Stack>
 
@@ -410,29 +451,16 @@ const Control = () => {
 
             <Button
               variant="contained"
-              onClick={async () => {
+              onClick={() => {
                 const data = {
                   dosing_pump: injectionType, // "stock" or "acid"
                   volume: injectionVolume,
                 };
 
-                // Only add dosing_pump_number if injectionType is 'stock'
                 if (injectionType === "stock") {
                   data.dosing_pump_number = selectedPomp;
-                } else {
-                  // If 'acid' is selected, ensure dosing_pump_number is not sent or is null
-                  // Depending on backend, either omit or set to null/0. Omitting is generally safer.
                 }
-
-                try {
-                  const response = await manualInjection(data);
-                  console.log("Manual injection successful:", response);
-                  toast.success("تزریق دستی با موفقیت انجام شد");
-                  handleInjectionClose();
-                } catch (error) {
-                  console.error("Error during manual injection:", error);
-                  toast.error("خطا در تزریق دستی");
-                }
+                manualInjectionMutation(data);
               }}
               sx={{
                 width: "154px",
@@ -646,21 +674,13 @@ const Control = () => {
 
             <Button
               variant="contained"
-              onClick={async () => {
+              onClick={() => {
                 const data = {
                   soluble_type: selectedType,
                   volume: volume,
                   zone: selectedZone,
                 };
-                try {
-                  const response = await makeManualSoluble(data);
-                  console.log("Manual soluble creation successful:", response);
-                  toast.success("محلول با موفقیت ساخته شد");
-                  handleCreateClose();
-                } catch (error) {
-                  console.error("Error creating manual soluble:", error);
-                  toast.error("خطا در ساخت محلول");
-                }
+                makeManualSolubleMutation(data);
               }}
               sx={{
                 width: "154px",

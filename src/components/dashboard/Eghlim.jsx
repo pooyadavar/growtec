@@ -34,8 +34,7 @@ const Eghlim = () => {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["insideClimentAll"], // کلید کوئری را تغییر دادیم
     queryFn: getInsideCliment,
-
-    // refetchInterval: 10000, // اگر نیاز به آپدیت خودکار دارید آنکامنت کنید
+    refetchInterval: 5000,
   });
 
   // تبدیل فرمت دیتای دریافتی به آرایه برای نمایش در کارت‌ها
