@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -252,7 +252,7 @@ const PlanColumnPh = ({ number, data, onChange }) => {
 
 
 // --- کامپوننت اصلی صفحه ---
-const FeedingSettingsPage = () => {
+const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const [tabValue, setTabValue] = useState(2);
   const navigate = useNavigate();
 
@@ -331,6 +331,11 @@ const FeedingSettingsPage = () => {
   };
 
   const handleBackClick = () => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+
     navigate(-1);
   };
 
@@ -457,82 +462,106 @@ const FeedingSettingsPage = () => {
 
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 1, mb: 0 }}>
-        <Toaster position="top-center" reverseOrder={false} />
+    <Container
+      maxWidth={isModal ? false : "lg"}
+      sx={{
+        mt: 1,
+        mb: 0,
+        px: isModal ? "0 !important" : undefined,
+      }}
+    >
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          direction: "ltr",
-          pb: 0,
-        }}
-      >
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          sx={{
-            direction: "rtl",
-            minHeight: "40px",
-            "& .MuiTabs-indicator": { display: "none" },
-          }}
-        >
-          {["مخزن و دوزینگ پمپ", "pH", "EC"].map((label, index) => (
-            <Tab
-              key={index}
-              label={label}
-              sx={{
-                mr: "5px",
-                fontFamily: "IRANSANS",
-                fontSize: "0.9rem",
-                fontWeight: "bold",
-                px: 2,
-                py: 0.8,
-                minHeight: "40px",
-                borderTopLeftRadius: "8px",
-                borderTopRightRadius: "8px",
-                border: tabValue === index ? "2px solid #d9a45f" : "1px solid #ddd",
-                backgroundColor: tabValue === index ? "#f5f5f5" : "#f5b982",
-                color: "#000",
-                transition: "all 0.3s ease",
-                "&:hover": { backgroundColor: "#f5d3a8" },
-                "&.Mui-selected": {
-                  backgroundColor: "#f5f5f5",
-                  color: "#000",
-                  border: "0.5px solid gray",
+        sx={
+          isModal
+            ? {
+                transform: {
+                  xs: "scale(0.94)",
+                  md: "scale(0.9)",
                 },
-                textTransform: "none",
-                boxShadow: tabValue === index ? "0px 2px 4px rgba(0,0,0,0.1)" : "none",
-              }}
-            />
-          ))}
-        </Tabs>
-        <IconButton
-          onClick={handleBackClick}
-          title="بستن"
-          size="small"
+                transformOrigin: "top center",
+                width: "100%",
+                mx: "auto",
+                pt: 0.5,
+                overflowX: "hidden",
+              }
+            : undefined
+        }
+      >
+        <Toaster position="top-center" reverseOrder={false} />
+        <Box
           sx={{
-            color: "#FFF",
-            backgroundColor: "red",
-            borderRadius: "8px",
-            "&:hover": { backgroundColor: "#D32F2F" },
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            direction: "ltr",
+            pb: 0,
           }}
         >
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Box>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            sx={{
+              direction: "rtl",
+              minHeight: "40px",
+              "& .MuiTabs-indicator": { display: "none" },
+            }}
+          >
+            {["مخزن و دوزینگ پمپ", "pH", "EC"].map((label, index) => (
+              <Tab
+                key={index}
+                label={label}
+                sx={{
+                  mr: "5px",
+                  fontFamily: "IRANSANS",
+                  fontSize: "0.9rem",
+                  fontWeight: "bold",
+                  px: 2,
+                  py: 0.8,
+                  minHeight: "40px",
+                  borderTopLeftRadius: "8px",
+                  borderTopRightRadius: "8px",
+                  border: tabValue === index ? "2px solid #ffffff" : "1px solid #ffffff",
+                  backgroundColor: tabValue === index ? "#f5f5f5" : "#f5b982",
+                  color: "#000",
+                  transition: "all 0.3s ease",
+                  "&:hover": { backgroundColor: "#f5d3a8" },
+                  "&.Mui-selected": {
+                    backgroundColor: "#f5f5f5",
+                    color: "#000",
+                    border: "0.5px solid white",
+                  },
+                  textTransform: "none",
+                  boxShadow: tabValue === index ? "0px 2px 4px rgba(0,0,0,0.1)" : "none",
+                }}
+              />
+            ))}
+          </Tabs>
+          <IconButton
+            onClick={handleBackClick}
+            title="بستن"
+            size="small"
+            sx={{
+              color: "#FFF",
+              backgroundColor: "red",
+              borderRadius: "8px",
+              "&:hover": { backgroundColor: "#D32F2F" },
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
 
-      <Paper
-        elevation={3}
-        sx={{
-          height: "auto",
-          maxHeight: "calc(100vh - 32px)",
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: "10px",
-          overflow: "hidden",
-        }}
-      >
+        <Paper
+          elevation={3}
+          sx={{
+            height: "auto",
+            maxHeight: "calc(100vh - 32px)",
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: "10px",
+            overflow: "hidden",
+          }}
+        >
         {tabValue === 2 && (
           <Box
             sx={{
@@ -817,7 +846,8 @@ const FeedingSettingsPage = () => {
             </Box>
           </Box>
         )}
-      </Paper>
+        </Paper>
+      </Box>
     </Container>
   );
 };

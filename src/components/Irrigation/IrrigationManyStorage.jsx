@@ -916,7 +916,7 @@ const IrrigationManyStorage = () => {
                 </Typography>
                 <Typography
                   fontFamily={"IRANSANS"}
-                  fontSize={10n}
+                  fontSize={10}
                   textAlign={"center"}
                 >
                   فعال/غیرفعال

@@ -17,6 +17,7 @@ import PayeshSetting from "./PayeshSetting";
 import IconTextButton from "../../card/IconTextButton";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import apiClient from "../../api/apiClient";
+import { useQuery } from "@tanstack/react-query";
 
 const StatusIndicators = ({ states }) => (
   <Box
@@ -58,28 +59,6 @@ const Payesh = () => {
   const [operatorMode, setOperatorMode] = React.useState(false); // New state for operator mode
 const [activity, setActivity] = React.useState(!operatorMode); // New state for operator mode
   const [zone, setZone] = useState(1);
-  const [temperaturePartStatus, setTemperaturePartStatus] = useState("");
-  const [humidityPartStatus, setHumidityPartStatus] = useState("");
-
-  const fetchTemperaturePartStatus = async (zoneNum) => {
-    try {
-      const data = await apiClient.get(`/climate/temperature-part/?zone=${zoneNum}`);
-      setTemperaturePartStatus(data);
-    } catch (error) {
-      console.error("Error fetching temperature part status:", error);
-    }
-  };
-
-  const fetchHumidityPartStatus = async (zoneNum) => {
-    try {
-      const data = await apiClient.get(`/climate/humidity-part/?zone=${zoneNum}`);
-      setHumidityPartStatus(data);
-    } catch (error) {
-      console.error("Error fetching humidity part status:", error);
-    }
-  };
-
-
   const sendOperatorModeUpdate = async (newMode) => {
     try {
       // Use apiClient for POST request
@@ -181,14 +160,10 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
   useEffect(() => {
     fetchOperatorMode(zone);
     fetchOperatorStatus(zone);
-    fetchTemperaturePartStatus(zone);
-    fetchHumidityPartStatus(zone);
 
     const interval = setInterval(() => {
       fetchOperatorMode(zone);
       fetchOperatorStatus(zone);
-      fetchTemperaturePartStatus(zone);
-      fetchHumidityPartStatus(zone);
     }, 30000);
 
     return () => clearInterval(interval);
@@ -199,12 +174,6 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
   const handleClose = () => setOpen(false);
   // Modal States --------
 
-  const apiDomain = "http://192.168.100.51:8000";
-  const [humidity, setHumidity] = useState([]);
-  const [temp, setTemp] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [xAxisInterval, setXAxisInterval] = useState(180); // پیش‌فرض: هر 3 ساعت
 
   // Exhaust Fan Modal States
   const [exhaustFanModalOpen, setExhaustFanModalOpen] = useState(false);
@@ -454,235 +423,6 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
     }
   };
 
-  function getTempData() {
-    return temp.map((entry) => ({
-      time: entry.time,
-      sensor1: entry.sensor1,
-      sensor2: entry.sensor2,
-      sensor3: entry.sensor3,
-      sensor4: entry.sensor4,
-      sensor5: entry.sensor5,
-      sensor6: entry.sensor6,
-    }));
-  }
-
-  // تابع formatter برای محور X
-  const getXAxisFormatter = useMemo(() => {
-    return (params) => {
-      const timeParts = params.value.split(":");
-      if (timeParts.length >= 2) {
-        const minute = parseInt(timeParts[1]);
-
-        // نمایش بر اساس interval تنظیم شده
-        if (xAxisInterval === 60) {
-          // هر 1 ساعت: نمایش ساعت‌های کامل
-          if (minute === 0) {
-            return `${timeParts[0]}:${timeParts[1]}`;
-          }
-        } else if (xAxisInterval === 30) {
-          // هر نیم ساعت: نمایش ساعت:00 و ساعت:30
-          if (minute === 0 || minute === 30) {
-            return `${timeParts[0]}:${timeParts[1]}`;
-          }
-        } else {
-          // هر 15 دقیقه: نمایش همه
-          return `${timeParts[0]}:${timeParts[1]}`;
-        }
-      }
-      return "";
-    };
-  }, [xAxisInterval]);
-
-  const [tempOptions, setTempOptions] = useState({
-    title: { text: "دما", fontFamily: "IRANSANS" },
-    data: temp,
-    series: [
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor1",
-        yName: "سنسور 1",
-        stroke: "#FF6B6B",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor2",
-        yName: "سنسور 2",
-        stroke: "#4ECDC4",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor3",
-        yName: "سنسور 3",
-        stroke: "#45B7D1",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor4",
-        yName: "سنسور 4",
-        stroke: "#FFA07A",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor5",
-        yName: "سنسور 5",
-        stroke: "#98D8C8",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor6",
-        yName: "سنسور 6",
-        stroke: "#F7DC6F",
-      },
-    ],
-    axes: [
-      {
-        type: "category",
-        position: "bottom",
-        title: { text: "" },
-        label: {
-          formatter: getXAxisFormatter,
-        },
-        tick: {
-          interval: xAxisInterval,
-        },
-      },
-      { type: "number", position: "left", title: { text: "دما (°C)" } },
-    ],
-    legend: { enabled: false },
-  });
-
-  const [humOptions, setHumOptions] = useState({
-    title: { text: "رطوبت", fontFamily: "IRANSANS" },
-    data: humidity,
-    series: [
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor1",
-        yName: "سنسور 1",
-        stroke: "#FF6B6B",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor2",
-        yName: "سنسور 2",
-        stroke: "#4ECDC4",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor3",
-        yName: "سنسور 3",
-        stroke: "#45B7D1",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor4",
-        yName: "سنسور 4",
-        stroke: "#FFA07A",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor5",
-        yName: "سنسور 5",
-        stroke: "#98D8C8",
-      },
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "sensor6",
-        yName: "سنسور 6",
-        stroke: "#F7DC6F",
-      },
-    ],
-    axes: [
-      {
-        type: "category",
-        position: "bottom",
-        title: { text: "" },
-        label: {
-          formatter: getXAxisFormatter,
-        },
-        tick: {
-          interval: xAxisInterval,
-        },
-      },
-      { type: "number", position: "right", title: { text: "درصد" } },
-    ],
-    legend: {
-      enabled: true,
-      position: "bottom",
-      spacing: 10,
-      item: {
-        spacing: 24,
-        marker: {
-          shape: "circle",
-          size: 12,
-        },
-        label: {
-          fontFamily: "IRANSANS",
-          direction: "rtl",
-        },
-      },
-    },
-  });
-
-  useEffect(() => {
-    setTemp([]);
-    setHumidity([]);
-    setTempOptions((prev) => ({ ...prev, data: [] }));
-    setHumOptions((prev) => ({ ...prev, data: [] }));
-    setXAxisInterval(180); // reset به پیش‌فرض
-  }, [zone]);
-
-  // به‌روزرسانی نمودارها وقتی xAxisInterval تغییر می‌کند
-  useEffect(() => {
-    setTempOptions((prev) => ({
-      ...prev,
-      axes: [
-        {
-          type: "category",
-          position: "bottom",
-          title: { text: "" },
-          label: {
-            formatter: getXAxisFormatter,
-          },
-          tick: {
-            interval: xAxisInterval,
-          },
-        },
-        { type: "number", position: "left", title: { text: "دما (°C)" } },
-      ],
-    }));
-
-    setHumOptions((prev) => ({
-      ...prev,
-      axes: [
-        {
-          type: "category",
-          position: "bottom",
-          title: { text: "" },
-          label: {
-            formatter: getXAxisFormatter,
-          },
-          tick: {
-            interval: xAxisInterval,
-          },
-        },
-        { type: "number", position: "left", title: { text: "درصد" } },
-      ],
-    }));
-  }, [xAxisInterval, getXAxisFormatter]);
-
   // تابع retry برای درخواست‌های با timeout
   const fetchWithRetry = async (zoneNum, retries = 3) => {
     // استفاده از baseURL از apiClient
@@ -716,31 +456,38 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
     }
   };
 
-  // تابع برای دریافت داده‌ها برای zone فعلی
-  const fetchDataZoneByZone = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const { data: temperaturePartStatus = "" } = useQuery({
+    queryKey: ["payesh", "temperature-part", zone],
+    queryFn: () => apiClient.get(`/climate/temperature-part/?zone=${zone}`),
+    staleTime: 20_000,
+    gcTime: 5 * 60_000,
+    refetchInterval: 30_000,
+  });
 
-      // دریافت داده‌ها فقط برای zone فعلی
+  const { data: humidityPartStatus = "" } = useQuery({
+    queryKey: ["payesh", "humidity-part", zone],
+    queryFn: () => apiClient.get(`/climate/humidity-part/?zone=${zone}`),
+    staleTime: 20_000,
+    gcTime: 5 * 60_000,
+    refetchInterval: 30_000,
+  });
+
+  const { data: climateChartData } = useQuery({
+    queryKey: ["payesh", "temperature-humidity", zone],
+    queryFn: async () => {
       const response = await fetchWithRetry(zone);
       const data = Array.isArray(response) ? response : response.results || [];
-
-      // فیلتر کردن داده‌ها بر اساس zone در log_data
       const zoneData = data.filter((item) => item.log_data?.zone === zone);
       const sortedData = [...zoneData].reverse();
-
-      // پردازش داده‌ها و تبدیل به فرمت نمودار
       const tempData = [];
       const humData = [];
 
       sortedData.forEach((item) => {
-        const timeStr = item.log_date_time.split(" ")[1]; // Extract HH:MM:SS
+        const timeStr = item.log_date_time.split(" ")[1];
         const t = item.log_data.temperature;
         const h = item.log_data.humidity;
 
-        // ایجاد رکورد برای دما
-        const tempEntry = {
+        tempData.push({
           time: timeStr,
           sensor1: t?.["1"] ?? 0,
           sensor2: t?.["2"] ?? 0,
@@ -748,10 +495,9 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
           sensor4: t?.["4"] ?? 0,
           sensor5: t?.["5"] ?? 0,
           sensor6: t?.["6"] ?? 0,
-        };
+        });
 
-        // ایجاد رکورد برای رطوبت
-        const humEntry = {
+        humData.push({
           time: timeStr,
           sensor1: h?.["1"] ?? 0,
           sensor2: h?.["2"] ?? 0,
@@ -759,80 +505,147 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
           sensor4: h?.["4"] ?? 0,
           sensor5: h?.["5"] ?? 0,
           sensor6: h?.["6"] ?? 0,
-        };
-
-        tempData.push(tempEntry);
-        humData.push(humEntry);
+        });
       });
 
-      // مرتب‌سازی بر اساس زمان
       tempData.sort((a, b) => a.time.localeCompare(b.time));
       humData.sort((a, b) => a.time.localeCompare(b.time));
 
-      // محاسبه بازه زمانی و تنظیم interval محور X
+      let intervalMinutes = 180;
       if (tempData.length > 0) {
-        const firstTime = tempData[0].time;
-        const lastTime = tempData[tempData.length - 1].time;
-
-        // تبدیل زمان به دقیقه برای محاسبه تفاوت
+        const [firstTime, lastTime] = [
+          tempData[0].time,
+          tempData[tempData.length - 1].time,
+        ];
         const timeToMinutes = (timeStr) => {
           const [hours, minutes] = timeStr.split(":").map(Number);
           return hours * 60 + minutes;
         };
+        const timeRangeMinutes =
+          timeToMinutes(lastTime) - timeToMinutes(firstTime);
 
-        const firstMinutes = timeToMinutes(firstTime);
-        const lastMinutes = timeToMinutes(lastTime);
-        const timeRangeMinutes = lastMinutes - firstMinutes;
-
-        // اگر بازه زمانی بیشتر از 12 ساعت باشد، هر 1 ساعت نمایش بده
-        // اگر بازه زمانی بین 2 تا 12 ساعت باشد، هر نیم ساعت نمایش بده
-        // اگر بازه زمانی کمتر از 2 ساعت باشد، هر 15 دقیقه نمایش بده
-        let intervalMinutes;
         if (timeRangeMinutes > 12 * 60) {
-          intervalMinutes = 60; // هر 1 ساعت
+          intervalMinutes = 60;
         } else if (timeRangeMinutes > 2 * 60) {
-          intervalMinutes = 30; // هر نیم ساعت
+          intervalMinutes = 30;
         } else {
-          intervalMinutes = 15; // هر 15 دقیقه
+          intervalMinutes = 15;
         }
-
-        setXAxisInterval(intervalMinutes);
-        console.log(
-          `Time range: ${firstTime} to ${lastTime} (${timeRangeMinutes} minutes), interval: ${intervalMinutes} minutes`,
-        );
       }
 
-      setTemp(tempData);
-      setHumidity(humData);
+      return {
+        tempData,
+        humData,
+        xAxisInterval: intervalMinutes,
+      };
+    },
+    staleTime: 20_000,
+    gcTime: 10 * 60_000,
+    refetchInterval: 20_000,
+  });
 
-      // لاگ برای دیباگ
-      if (tempData.length > 0) {
-        console.log(`Zone ${zone} data sample:`, tempData[0]);
-        console.log(`Total records: ${tempData.length}`);
+  const temp = useMemo(() => climateChartData?.tempData || [], [climateChartData]);
+  const humidity = useMemo(
+    () => climateChartData?.humData || [],
+    [climateChartData],
+  );
+  const xAxisInterval = climateChartData?.xAxisInterval || 180;
+
+  const lineSeriesBase = useMemo(
+    () => [
+      { yKey: "sensor1", yName: "سنسور 1", stroke: "#FF6B6B" },
+      { yKey: "sensor2", yName: "سنسور 2", stroke: "#4ECDC4" },
+      { yKey: "sensor3", yName: "سنسور 3", stroke: "#45B7D1" },
+      { yKey: "sensor4", yName: "سنسور 4", stroke: "#FFA07A" },
+      { yKey: "sensor5", yName: "سنسور 5", stroke: "#98D8C8" },
+      { yKey: "sensor6", yName: "سنسور 6", stroke: "#F7DC6F" },
+    ],
+    [],
+  );
+
+  const getXAxisFormatter = useMemo(() => {
+    return (params) => {
+      const timeParts = params.value.split(":");
+      if (timeParts.length >= 2) {
+        const minute = parseInt(timeParts[1], 10);
+        if (xAxisInterval === 60) {
+          if (minute === 0) return `${timeParts[0]}:${timeParts[1]}`;
+        } else if (xAxisInterval === 30) {
+          if (minute === 0 || minute === 30) {
+            return `${timeParts[0]}:${timeParts[1]}`;
+          }
+        } else {
+          return `${timeParts[0]}:${timeParts[1]}`;
+        }
       }
-    } catch (err) {
-      console.error("Error fetching climate data:", err);
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return "";
+    };
+  }, [xAxisInterval]);
 
-  useEffect(() => {
-    fetchDataZoneByZone();
-    const interval = setInterval(fetchDataZoneByZone, 20000); // Poll every 10 seconds
-    return () => clearInterval(interval);
-  }, [zone]);
-  // ✅ Update chart data when `temp` changes
-  useEffect(() => {
-    setTempOptions((prev) => ({ ...prev, data: temp }));
-  }, [temp]);
+  const tempOptions = useMemo(
+    () => ({
+      title: { text: "دما", fontFamily: "IRANSANS" },
+      data: temp,
+      series: lineSeriesBase.map((series) => ({
+        type: "line",
+        xKey: "time",
+        marker: { enabled: false },
+        ...series,
+      })),
+      axes: [
+        {
+          type: "category",
+          position: "bottom",
+          title: { text: "" },
+          label: { formatter: getXAxisFormatter },
+          tick: { interval: xAxisInterval },
+        },
+        { type: "number", position: "left", title: { text: "دما (°C)" } },
+      ],
+      legend: { enabled: false },
+    }),
+    [temp, lineSeriesBase, getXAxisFormatter, xAxisInterval],
+  );
 
-  // ✅ Update chart data when `humidity` changes
-  useEffect(() => {
-    setHumOptions((prev) => ({ ...prev, data: humidity }));
-    // console.log("Updated Humidity Chart Data:", humidity);
-  }, [humidity]);
+  const humOptions = useMemo(
+    () => ({
+      title: { text: "رطوبت", fontFamily: "IRANSANS" },
+      data: humidity,
+      series: lineSeriesBase.map((series) => ({
+        type: "line",
+        xKey: "time",
+        marker: { enabled: false },
+        ...series,
+      })),
+      axes: [
+        {
+          type: "category",
+          position: "bottom",
+          title: { text: "" },
+          label: { formatter: getXAxisFormatter },
+          tick: { interval: xAxisInterval },
+        },
+        { type: "number", position: "left", title: { text: "درصد" } },
+      ],
+      legend: {
+        enabled: true,
+        position: "bottom",
+        spacing: 10,
+        item: {
+          spacing: 24,
+          marker: {
+            shape: "circle",
+            size: 12,
+          },
+          label: {
+            fontFamily: "IRANSANS",
+            direction: "rtl",
+          },
+        },
+      },
+    }),
+    [humidity, lineSeriesBase, getXAxisFormatter, xAxisInterval],
+  );
 
   // const sendBoolean = async () => {
   //   try {
@@ -971,8 +784,6 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
                 className="button"
                 onClick={() => {
                   setZone((prev) => Math.min(prev + 1, 5));
-                  setTempOptions((prev) => ({ ...prev, data: [] }));
-                  setHumOptions((prev) => ({ ...prev, data: [] }));
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.15)")
@@ -1028,8 +839,6 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
                 className="button"
                 onClick={() => {
                   setZone((prev) => Math.max(prev - 1, 1));
-                  setTempOptions((prev) => ({ ...prev, data: [] }));
-                  setHumOptions((prev) => ({ ...prev, data: [] }));
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.15)")

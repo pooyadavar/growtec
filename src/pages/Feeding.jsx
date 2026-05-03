@@ -9,6 +9,7 @@ import {
   Paper,
   CircularProgress,
   Alert,
+  Modal,
 } from "@mui/material";
 import React, { useState } from "react";
 import PhEcControlCardMixer from "../components/feeding/FeedingMixer";
@@ -16,10 +17,35 @@ import IconTextButton from "../card/IconTextButton";
 import assets from "../assets";
 import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus } from "../api/dashboardApi";
-import { Navigate, useNavigate } from "react-router-dom";
+import FeedingHistoryPage from "./FeedingHistoryPage";
+import FeedingSettingsPage from "./FeedingSettingsPage";
 
 const Feeding = () => {
-  const navigate = useNavigate();
+  const modalFrameStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: { xs: "96vw", md: "91vw" },
+    maxWidth: "1200px",
+    height: { xs: "88vh", md: "760px" },
+    maxHeight: "92vh",
+    p: 1.5,
+    bgcolor: "#efeeee",
+    borderRadius: "15px",
+    boxShadow: "0 22px 60px rgba(0, 0, 0, 0.18)",
+    border: "1px solid rgba(120, 140, 120, 0.22)",
+    overflow: "hidden",
+    outline: "none",
+  };
+
+  const settingsModalFrameStyle = {
+    ...modalFrameStyle,
+    width: { xs: "96vw", md: "88vw" },
+    maxWidth: "1280px",
+    height: { xs: "88vh", md: "780px" },
+  };
+
   const {
     data: mixTankData,
     isLoading,
@@ -31,9 +57,12 @@ const Feeding = () => {
     refetchInterval: 5000,
   });
 
-  const handleHistoryClick = () => navigate("/feeding-history");
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  const handleHistoryClick = () => setIsHistoryModalOpen(true);
   const handleAiClick = () => console.log("هوش مصنوعی کلیک شد");
-  const handleSettingsClick = () => navigate("/feeding-settings");
+  const handleSettingsClick = () => setIsSettingsModalOpen(true);
 
   const [ecTarget, setEcTarget] = useState(2.1);
 
@@ -234,6 +263,34 @@ const Feeding = () => {
           </Paper>
         </div>
       </div>
+      <Modal
+        open={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        aria-labelledby="feeding-history-modal-title"
+      >
+        <Box sx={modalFrameStyle}>
+          <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
+            <FeedingHistoryPage
+              isModal
+              onClose={() => setIsHistoryModalOpen(false)}
+            />
+          </Box>
+        </Box>
+      </Modal>
+      <Modal
+        open={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        aria-labelledby="feeding-settings-modal-title"
+      >
+        <Box sx={settingsModalFrameStyle}>
+          <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
+            <FeedingSettingsPage
+              isModal
+              onClose={() => setIsSettingsModalOpen(false)}
+            />
+          </Box>
+        </Box>
+      </Modal>
       <div
         style={{
           marginTop: "125px",

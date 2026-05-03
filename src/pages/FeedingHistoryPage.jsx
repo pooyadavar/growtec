@@ -64,8 +64,7 @@ const PlanColumn = ({ number, values = [] }) => (
 );
 
 // --- کامپوننت اصلی صفحه ---
-const FeedingHistoryPage = () => {
-  const [tabValue, setTabValue] = useState(2);
+const FeedingHistoryPage = ({ onClose, isModal = false }) => {
   const [historyData, setHistoryData] = useState([]);
   const navigate = useNavigate();
 
@@ -94,11 +93,23 @@ const FeedingHistoryPage = () => {
   }, []);
 
   const handleBackClick = () => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+
     navigate(-1);
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 1, mb: 0 }}>
+    <Container
+      maxWidth={isModal ? false : "lg"}
+      sx={{
+        mt: 1,
+        mb: 0,
+        px: isModal ? "0 !important" : undefined,
+      }}
+    >
       {/* --- هدر (سربرگ) --- */}
       <Box
         sx={{
@@ -138,49 +149,45 @@ const FeedingHistoryPage = () => {
         }}
       >
         {/* --- محتوای صفحه --- */}
-        {tabValue === 2 && (
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: "auto",
+            p: { xs: 1, md: 2 },
+            direction: "rtl",
+          }}
+        >
           <Box
             sx={{
-              flexGrow: 1,
-              overflowY: "auto",
-              p: { xs: 1, md: 2 },
-              direction: "rtl",
+              overflowX: "auto",
+              display: "flex",
+              flexDirection: "row",
+              gap: "20px",
+              p: 1.5,
+              pb: 2,
+              backgroundColor: "#f9f9f9",
+              borderRadius: "8px",
+              border: "1px solid #eee",
             }}
           >
-            {/* بخش پایین: ستون‌های برنامه‌ها */}
-            <Box
-              sx={{
-                overflowX: "auto",
-                display: "flex",
-                flexDirection: "row",
-                gap: "20px",
-                p: 1.5,
-                pb: 2,
-                backgroundColor: "#f9f9f9",
-                borderRadius: "8px",
-                border: "1px solid #eee",
-              }}
-            >
-              {/* --- ۱۳. فقط ۴ کارت رندر می‌شود --- */}
-              <PlanColumn
-                number="دفعات تزریق استوک"
-                values={historyData.map((item) => item.log_data?.reported_stock_injection_count)}
-              />
-              <PlanColumn
-                number="حجن ساخت محلول"
-                values={historyData.map((item) => item.log_data?.reported_volume)}
-              />
-              <PlanColumn
-                number="ایندکس ph"
-                values={historyData.map((item) => item.log_data?.reported_ph)}
-              />
-              <PlanColumn
-                number="ایندکس ec"
-                values={historyData.map((item) => item.log_data?.reported_ec)}
-              />
-            </Box>
+            <PlanColumn
+              number="دفعات تزریق استوک"
+              values={historyData.map((item) => item.log_data?.reported_stock_injection_count)}
+            />
+            <PlanColumn
+              number="حجن ساخت محلول"
+              values={historyData.map((item) => item.log_data?.reported_volume)}
+            />
+            <PlanColumn
+              number="ایندکس ph"
+              values={historyData.map((item) => item.log_data?.reported_ph)}
+            />
+            <PlanColumn
+              number="ایندکس ec"
+              values={historyData.map((item) => item.log_data?.reported_ec)}
+            />
           </Box>
-        )}
+        </Box>
       </Paper>
     </Container>
   );
