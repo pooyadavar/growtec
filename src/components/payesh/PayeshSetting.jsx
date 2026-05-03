@@ -9,10 +9,11 @@ import {
   TextField,
   CircularProgress,
 } from "@mui/material";
-import axios from "axios";
+
 import assets from "../../assets";
 import apiClient from "../../api/apiClient";
 import toast from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
 
 // --- Sub-components ---
 
@@ -250,38 +251,7 @@ const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
 
 // --- Constants ---
 
-const DUMMY_DATA = {
-  rangeStartTimes: [8, 16, 0],
-  tempRanges: {
-    1: { minimum: 20, maximum: 30 },
-    2: { minimum: 18, maximum: 25 },
-    3: { minimum: 15, maximum: 22 },
-  },
-  humRanges: {
-    1: { minimum: 60.5, maximum: 85.0 },
-    2: { minimum: 55.0, maximum: 75.5 },
-    3: { minimum: 50.0, maximum: 70.0 },
-  },
-  tempOperators: {
-    exhaust_fan_1: true,
-    exhaust_fan_2: false,
-    exhaust_fan_3: true,
-    shid: false,
-    mehpash: true,
-    pump_pad: true,
-    heater_1: false,
-    heater_2: true,
-    roof_hatch: false,
-  },
-  humOperators: {
-    exhaust_fan_1: true,
-    exhaust_fan_2: false,
-    exhaust_fan_2: true, // Note: duplicate key in original data, keeping for now
-    exhaust_fan_4: false,
-    sirkoole_fan_1: true,
-    sirkoole_fan_2: false,
-  },
-};
+
 
 const PayeshSetting = ({ zone }) => {
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
@@ -296,10 +266,7 @@ const PayeshSetting = ({ zone }) => {
 
   const [selected, setSelected] = useState("A");
   const [part, setPart] = useState(1);
-  const buttons = ["A", "B", "C", "D", "تنظیمات ویژه"];
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const buttons = ["A", "B", "C", "D"];
 
   const [range1, setRange1] = useState(0);
   const [range2, setRange2] = useState(0);
@@ -345,8 +312,8 @@ const PayeshSetting = ({ zone }) => {
   const initialHumOpRef = useRef(null);
 
   const normalizeRange = (arr) => arr.map((x) => parseInt(x || 0));
-  const formatValue = (value) => parseFloat(value || 0); // Returns a number
-  const normalizeClimateRange = (obj) => ({
+  const formatValue = useCallback((value) => parseFloat(value || 0), []); // Returns a number
+  const normalizeClimateRange = useCallback((obj) => ({
     1: {
       minimum: formatValue(obj["1"]?.minimum),
       maximum: formatValue(obj["1"]?.maximum),
@@ -359,7 +326,7 @@ const PayeshSetting = ({ zone }) => {
       minimum: formatValue(obj["3"]?.minimum),
       maximum: formatValue(obj["3"]?.maximum),
     },
-  });
+  }), [formatValue]);
 
   const areOperatorsEqual = (op1, op2) => {
     if (!op1 || !op2) return false;
@@ -389,24 +356,36 @@ const PayeshSetting = ({ zone }) => {
   );
 
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchClimateData = async () => {
+    const [rangeRes, tempRes, humRes, opRes, humOpRes] = await Promise.all([
+      apiClient.get(`/climate/range-start-time/`),
+      apiClient.get(`/climate/temperature-range/`, {
+        params: { zone, part },
+      }),
+      apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
+      apiClient.get(`/climate/temperature-range-operator/`, {
+        params: { zone, part },
+      }),
+      apiClient.get(`/climate/humidity-range-operator/`, {
+        params: { zone, part },
+      }),
+    ]);
+    return { rangeRes, tempRes, humRes, opRes, humOpRes };
+  };
 
-    try {
-      const [rangeRes, tempRes, humRes, opRes, humOpRes] = await Promise.all([
-        apiClient.get(`/climate/range-start-time/`),
-        apiClient.get(`/climate/temperature-range/`, {
-          params: { zone, part },
-        }),
-        apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
-        apiClient.get(`/climate/temperature-range-operator/`, {
-          params: { zone, part },
-        }),
-        apiClient.get(`/climate/humidity-range-operator/`, {
-          params: { zone, part },
-        }),
-      ]);
+  const {
+    data: queryData,
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ["climateSettings", zone, part],
+    queryFn: fetchClimateData,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (queryData) {
+      const { rangeRes, tempRes, humRes, opRes, humOpRes } = queryData;
 
       if (rangeRes) {
         setRange1(rangeRes[0]);
@@ -436,27 +415,22 @@ const PayeshSetting = ({ zone }) => {
       }
 
       if (opRes) {
-        const newTempControllers = { ...tempControllers, ...opRes };
-        setTempControllers(newTempControllers);
-        initialTempOpRef.current = newTempControllers;
+        setTempControllers((prev) => {
+          const newState = { ...prev, ...opRes };
+          initialTempOpRef.current = newState;
+          return newState;
+        });
       }
 
       if (humOpRes) {
-        const newHumControllers = { ...humControllers, ...humOpRes };
-        setHumControllers(newHumControllers);
-        initialHumOpRef.current = newHumControllers;
+        setHumControllers((prev) => {
+          const newState = { ...prev, ...humOpRes };
+          initialHumOpRef.current = newState;
+          return newState;
+        });
       }
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("خطا در دریافت داده‌ها.");
-    } finally {
-      setLoading(false);
     }
-  }, [zone, part]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  }, [queryData, normalizeClimateRange]);
 
   const handleSave = async () => {
     const promises = [];
@@ -742,6 +716,7 @@ const PayeshSetting = ({ zone }) => {
                 backgroundColor: "rgba(255, 255, 255, 0.8)",
                 borderRadius: "0 10px 10px 10px",
                 zIndex: 10,
+                overflowY: "auto", // Add this line
               }}
             >
               {loading && (
@@ -754,7 +729,7 @@ const PayeshSetting = ({ zone }) => {
               )}
               {error && (
                 <Typography fontFamily={"IRANSANS"} color="error">
-                  خطا: {error}
+                  خطا: {error.message || "خطا در دریافت داده‌ها."}
                 </Typography>
               )}
             </Box>
@@ -765,7 +740,6 @@ const PayeshSetting = ({ zone }) => {
                   width: "733px",
                   height: "390px",
                   display: "flex",
-                  justifyContent: "space-between",
                 }}
               >
                 {/* بخش دما (Temperature) */}
@@ -773,7 +747,7 @@ const PayeshSetting = ({ zone }) => {
                   width="356px"
                   spacing={2}
                   sx={{
-                    display: selected !== "تنظیمات ویژه" ? "flex" : "none",
+                    display: "flex",
                   }}
                 >
                   <Typography
@@ -865,8 +839,9 @@ const PayeshSetting = ({ zone }) => {
                 <Stack
                   width="356px"
                   spacing={2}
+                  
                   sx={{
-                    display: selected !== "تنظیمات ویژه" ? "flex" : "none",
+                    display: "flex",
                   }}
                 >
                   <Typography

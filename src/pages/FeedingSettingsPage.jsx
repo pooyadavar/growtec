@@ -397,7 +397,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
 
                 try {
                     await updateFoodstuffPreparationProgramPh(payload);
-                    toast.success(`برنامه pH ${i} با موفقیت ذخیره شد`);
+
                 } catch (error) {
                     console.error(`Error saving pH program ${i}:`, error);
                     toast.error(`خطا در ذخیره برنامه pH ${i}`);
