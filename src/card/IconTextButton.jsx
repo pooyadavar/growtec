@@ -56,11 +56,11 @@ const IconTextButton = ({
         </Box>
         <Typography
           fontFamily="IRANSANS"
-          fontSize="16px" // اندازه فونت برای خوانایی
+          fontSize="16px" 
           fontWeight="bold"
           sx={{
-            flexGrow: 1, // متن فضای خالی را پر می‌کند
-            textAlign: 'center', // متن در مرکز قرار می‌گیرد
+            flexGrow: 1, 
+            textAlign: 'center', 
           }}
         >
           {text}

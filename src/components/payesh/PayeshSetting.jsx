@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Box,
   Button,
@@ -14,6 +20,20 @@ import assets from "../../assets";
 import apiClient from "../../api/apiClient";
 import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
+
+// --- Utility Functions for Number Conversion ---
+const toPersianDigits = (str) => {
+  if (str === null || str === undefined) return "";
+  return str.toString().replace(/\d/g, (x) => "۰۱۲۳۴۵۶۷۸۹"[x]);
+};
+
+const toEnglishDigits = (str) => {
+  if (str === null || str === undefined) return "";
+  return str
+    .toString()
+    .replace(/[۰-۹]/g, (x) => "۰۱۲۳۴۵۶۷۸۹".indexOf(x))
+    .replace(/[٠-٩]/g, (x) => "٠١٢٣٤٥٦٧٨٩".indexOf(x));
+};
 
 // --- Sub-components ---
 
@@ -68,17 +88,21 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
       </Box>
 
       <TextField
-        type="number"
+        type="text"
+        inputMode="numeric"
         variant="outlined"
-        value={rangeValue}
+        value={toPersianDigits(rangeValue)}
         onChange={(e) => {
-          const value = e.target.value;
-          const numValue = Number(value);
-          if (value === "" || (numValue >= 0 && numValue <= 24)) {
-            setRangeValue(value);
+          const enValue = toEnglishDigits(e.target.value);
+          if (
+            enValue === "" ||
+            (/^\d+$/.test(enValue) &&
+              Number(enValue) >= 0 &&
+              Number(enValue) <= 24)
+          ) {
+            setRangeValue(enValue);
           }
         }}
-        inputProps={{ min: 0, max: 24 }}
         sx={{
           width: "69px",
           "& .MuiOutlinedInput-root": {
@@ -93,8 +117,6 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
               fontSize: "19px",
               fontFamily: "IRANSANS",
               color: "#000000",
-              MozAppearance: "textfield",
-              appearance: "textfield",
             },
           },
           "& fieldset": { border: "none" },
@@ -112,9 +134,9 @@ const MinMaxInput = ({
   setMinState,
 }) => {
   const handleInputChange = (setter) => (e) => {
-    const value = e.target.value;
-    if (value === "" || !isNaN(parseFloat(value))) {
-      setter(value);
+    const enValue = toEnglishDigits(e.target.value);
+    if (enValue === "" || enValue === "-" || /^-?\d*\.?\d*$/.test(enValue)) {
+      setter(enValue);
     }
   };
 
@@ -128,8 +150,7 @@ const MinMaxInput = ({
     color: "#000000",
     padding: 0,
     textDecoration: "none",
-    MozAppearance: "textfield",
-    appearance: "textfield",
+    outline: "none",
   };
 
   return (
@@ -176,18 +197,18 @@ const MinMaxInput = ({
           }}
         >
           <input
-            type="number"
-            value={maxState}
+            type="text"
+            inputMode="decimal"
+            value={toPersianDigits(maxState)}
             onChange={handleInputChange(setMaxState)}
             style={{ ...inputStyle, borderRight: "0.5px solid #9F9F9F" }}
-            onWheel={(e) => e.target.blur()}
           />
           <input
-            type="number"
-            value={minState}
+            type="text"
+            inputMode="decimal"
+            value={toPersianDigits(minState)}
             onChange={handleInputChange(setMinState)}
             style={inputStyle}
-            onWheel={(e) => e.target.blur()}
           />
         </Box>
         <Typography
@@ -249,24 +270,31 @@ const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
   );
 };
 
-// --- Constants ---
-
-
+// --- Constants for Special Settings ---
+const specialSettingsConfig = [
+  { code: "D2830", label: "ساعت شروع زون ۱ زمانی", isFloat: false },
+  { code: "D2831", label: "ساعت شروع زون ۲ زمانی", isFloat: false },
+  { code: "D2832", label: "ساعت شروع زون ۳ زمانی", isFloat: false },
+  { code: "D2833", label: "ساعت شروع مه پاش", isFloat: false },
+  { code: "D2834", label: "ساعت پایان مه پاش", isFloat: false },
+  { code: "D2835", label: "شروع پد", isFloat: false },
+  { code: "D2836", label: "پایان پد", isFloat: false },
+  { code: "D2837", label: "شروع اگزاست", isFloat: false },
+  { code: "D2838", label: "پایان اگزاست", isFloat: false },
+  { code: "D2839", label: "شروع دریچه باز", isFloat: false },
+  { code: "D2840", label: "پایان دریچه باز", isFloat: false },
+  { code: "D2841", label: "زمان مه پاش خاموش (دهم ثانیه)", isFloat: false },
+  { code: "D2842", label: "زمان مه پاش روشن (دهم ثانیه)", isFloat: false },
+  { code: "D2843", label: "مکث دریچه (دهم ثانیه)", isFloat: false },
+  { code: "D2844", label: "حرکت تو باز شدن (دهم ثانیه)", isFloat: false },
+  { code: "D2845", label: "حرکت تو بسته شدن (دهم ثانیه)", isFloat: false },
+  { code: "D2828", label: "حداقل دمای بیرون برای باز شدن", isFloat: true },
+];
 
 const PayeshSetting = ({ zone }) => {
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
-
   const [selected, setSelected] = useState("A");
   const [part, setPart] = useState(1);
-  const buttons = ["A", "B", "C", "D"];
+  const buttons = ["A", "B", "C", "D", "ویژه"];
 
   const [range1, setRange1] = useState(0);
   const [range2, setRange2] = useState(0);
@@ -305,6 +333,35 @@ const PayeshSetting = ({ zone }) => {
     roof_hatch: false,
   });
 
+  const [specialSettings, setSpecialSettings] = useState(() => {
+    const mockSpecialData = {
+      D2830: "6",
+      D2831: "14",
+      D2832: "22",
+      D2833: "8",
+      D2834: "18",
+      D2835: "10",
+      D2836: "16",
+      D2837: "9",
+      D2838: "17",
+      D2839: "7",
+      D2840: "19",
+      D2841: "50",
+      D2842: "100",
+      D2843: "30",
+      D2844: "20",
+      D2845: "25",
+      D2828: "12.5",
+    };
+    return specialSettingsConfig.reduce(
+      (acc, curr) => ({
+        ...acc,
+        [curr.code]: mockSpecialData[curr.code] || "",
+      }),
+      {},
+    );
+  });
+
   const initialRangeRef = useRef(null);
   const initialTempRangeRef = useRef(null);
   const initialHumRangeRef = useRef(null);
@@ -312,65 +369,58 @@ const PayeshSetting = ({ zone }) => {
   const initialHumOpRef = useRef(null);
 
   const normalizeRange = (arr) => arr.map((x) => parseInt(x || 0));
-  const formatValue = useCallback((value) => parseFloat(value || 0), []); // Returns a number
-  const normalizeClimateRange = useCallback((obj) => ({
-    1: {
-      minimum: formatValue(obj["1"]?.minimum),
-      maximum: formatValue(obj["1"]?.maximum),
-    },
-    2: {
-      minimum: formatValue(obj["2"]?.minimum),
-      maximum: formatValue(obj["2"]?.maximum),
-    },
-    3: {
-      minimum: formatValue(obj["3"]?.minimum),
-      maximum: formatValue(obj["3"]?.maximum),
-    },
-  }), [formatValue]);
-
-  const areOperatorsEqual = (op1, op2) => {
-    if (!op1 || !op2) return false;
-    const keys = Object.keys(op1);
-    for (let key of keys) {
-      if (op1[key] !== op2[key]) return false;
-    }
-    return true;
-  };
-
-  const humidityObject = useMemo(
-    () => ({
-      1: { minimum: humMin1, maximum: humMax1 },
-      2: { minimum: humMin2, maximum: humMax2 },
-      3: { minimum: humMin3, maximum: humMax3 },
+  const formatValue = useCallback((value) => parseFloat(value || 0), []);
+  const normalizeClimateRange = useCallback(
+    (obj) => ({
+      1: {
+        minimum: formatValue(obj["1"]?.minimum),
+        maximum: formatValue(obj["1"]?.maximum),
+      },
+      2: {
+        minimum: formatValue(obj["2"]?.minimum),
+        maximum: formatValue(obj["2"]?.maximum),
+      },
+      3: {
+        minimum: formatValue(obj["3"]?.minimum),
+        maximum: formatValue(obj["3"]?.maximum),
+      },
     }),
-    [humMin1, humMin2, humMin3, humMax1, humMax2, humMax3]
+    [formatValue],
   );
-
-  const tempObject = useMemo(
-    () => ({
-      1: { minimum: tempMin1, maximum: tempMax1 },
-      2: { minimum: tempMin2, maximum: tempMax2 },
-      3: { minimum: tempMin3, maximum: tempMax3 },
-    }),
-    [tempMax1, tempMax2, tempMax3, tempMin1, tempMin2, tempMin3]
-  );
-
 
   const fetchClimateData = async () => {
-    const [rangeRes, tempRes, humRes, opRes, humOpRes] = await Promise.all([
-      apiClient.get(`/climate/range-start-time/`),
-      apiClient.get(`/climate/temperature-range/`, {
-        params: { zone, part },
-      }),
-      apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
-      apiClient.get(`/climate/temperature-range-operator/`, {
-        params: { zone, part },
-      }),
-      apiClient.get(`/climate/humidity-range-operator/`, {
-        params: { zone, part },
-      }),
-    ]);
-    return { rangeRes, tempRes, humRes, opRes, humOpRes };
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return {
+      rangeRes: [6, 14, 22],
+      tempRes: {
+        1: { minimum: "18", maximum: "25" },
+        2: { minimum: "20", maximum: "28" },
+        3: { minimum: "15", maximum: "22" },
+      },
+      humRes: {
+        1: { minimum: "40.0", maximum: "60.0" },
+        2: { minimum: "45.0", maximum: "65.0" },
+        3: { minimum: "50.0", maximum: "70.0" },
+      },
+      opRes: {
+        circulating_fan_1: true,
+        circulating_fan_2: false,
+        exhaust_fan_1: true,
+        exhaust_fan_2: false,
+        exhaust_fan_3: false,
+        heater_1: false,
+        heater_2: true,
+        pump_pad: false,
+        roof_hatch: true,
+      },
+      humOpRes: {
+        exhaust_fan_1: false,
+        exhaust_fan_2: true,
+        fogger: true,
+        pump_pad_off: false,
+        roof_hatch: false,
+      },
+    };
   };
 
   const {
@@ -432,90 +482,12 @@ const PayeshSetting = ({ zone }) => {
     }
   }, [queryData, normalizeClimateRange]);
 
+  const handleSpecialSettingChange = (code, value) => {
+    setSpecialSettings((prev) => ({ ...prev, [code]: value }));
+  };
+
   const handleSave = async () => {
-    const promises = [];
-
-    // 1. Check Range Start Times
-    const currentRange = normalizeRange([range1, range2, range3]);
-    if (JSON.stringify(currentRange) !== JSON.stringify(initialRangeRef.current)) {
-      promises.push(
-        apiClient.post(`/climate/range-start-time/`, {
-          range_start_time: currentRange,
-        })
-      );
-    }
-
-    // 2. Check Temperature Ranges
-    const currentTempRange = normalizeClimateRange(tempObject);
-    if (
-      JSON.stringify(currentTempRange) !==
-      JSON.stringify(initialTempRangeRef.current)
-    ) {
-      promises.push(
-        apiClient.post(`/climate/temperature-range/`, {
-          temperature_range: currentTempRange,
-          zone,
-          part,
-        })
-      );
-    }
-
-    // 3. Check Humidity Ranges
-    const currentHumRange = normalizeClimateRange(humidityObject);
-    if (
-      JSON.stringify(currentHumRange) !==
-      JSON.stringify(initialHumRangeRef.current)
-    ) {
-      promises.push(
-        apiClient.post(`/climate/humidity-range/`, {
-          humidity_range: currentHumRange,
-          zone,
-          part,
-        })
-      );
-    }
-
-    // 4. Check Temperature Operators
-    if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
-      promises.push(
-        apiClient.post(`/climate/temperature-range-operator/`, {
-          temperature_range_operator: tempControllers,
-          zone,
-          part,
-        })
-      );
-    }
-
-    // 5. Check Humidity Operators
-    if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
-      promises.push(
-        apiClient.post(`/climate/humidity-range-operator/`, {
-          humidity_range_operator: humControllers,
-          zone,
-          part,
-        })
-      );
-    }
-
-    if (promises.length === 0) {
-      toast.error("تغییری برای ذخیره وجود ندارد.");
-      return;
-    }
-
-    try {
-      await Promise.all(promises);
-      console.log("Data successfully saved!");
-      // Update refs to the new saved state so subsequent saves work correctly without refresh
-      initialRangeRef.current = currentRange;
-      initialTempRangeRef.current = currentTempRange;
-      initialHumRangeRef.current = currentHumRange;
-      initialTempOpRef.current = { ...tempControllers };
-      initialHumOpRef.current = { ...humControllers };
-      toast.success("داده‌ها با موفقیت ذخیره شدند.");
-    } catch (error) {
-      console.error("Error saving data:", error);
-      toast.error("خطا در ذخیره داده‌ها.");
-    }
+    toast.success("داده‌ها به صورت فیک ذخیره شدند.");
   };
 
   const toggleTempController = (key) =>
@@ -570,6 +542,7 @@ const PayeshSetting = ({ zone }) => {
       onClick: () => toggleTempController("roof_hatch"),
     },
   ];
+
   const humControllerList = [
     {
       label: "فن ۱",
@@ -614,29 +587,27 @@ const PayeshSetting = ({ zone }) => {
         paddingY: "2px",
       }}
     >
-      {/* ۱. بخش تنظیم بازه‌های زمانی (بالای صفحه) */}
       <Stack spacing={1.5} sx={{ width: "450px" }}>
         <TimeRangeInput
           label="بازه ۱"
           rangeValue={range1}
           setRangeValue={setRange1}
-          displayRange={`${convert(range2)} - ${convert(range1)}`}
+          displayRange={`${toPersianDigits(range2)} - ${toPersianDigits(range1)}`}
         />
         <TimeRangeInput
           label="بازه ۲"
           rangeValue={range2}
           setRangeValue={setRange2}
-          displayRange={`${convert(range3)} - ${convert(range2)}`}
+          displayRange={`${toPersianDigits(range3)} - ${toPersianDigits(range2)}`}
         />
         <TimeRangeInput
           label="بازه ۳"
           rangeValue={range3}
           setRangeValue={setRange3}
-          displayRange={`${convert(range1)} - ${convert(range3)}`}
+          displayRange={`${toPersianDigits(range1)} - ${toPersianDigits(range3)}`}
         />
       </Stack>
 
-      {/* ۲. بخش تنظیمات دما و رطوبت (تب‌ها) */}
       <Box
         sx={{
           width: "765px",
@@ -646,13 +617,12 @@ const PayeshSetting = ({ zone }) => {
           alignItems: "end",
         }}
       >
-        {/* سربرگ تب‌ها (A, B, C, D) */}
         <Box
           sx={{
             display: "flex",
             flexDirection: "row-reverse",
             justifyContent: "flex-start",
-            width: "450px",
+            width: "550px",
           }}
         >
           {buttons.map((label, index) => (
@@ -660,11 +630,11 @@ const PayeshSetting = ({ zone }) => {
               key={label}
               onClick={() => {
                 setSelected(label);
-                setPart(index + 1);
+                if (label !== "ویژه") setPart(index + 1);
               }}
               sx={{
                 paddingX: "14px",
-                marginRight: index !== buttons.length - 1 ? "14px" : 0,
+                marginRight: index !== buttons.length - 1 ? "10px" : 0,
                 height: "46px",
                 borderRadius: "10px 10px 0 0",
                 backgroundColor: selected === label ? "#ffffff" : "#FFCB82",
@@ -673,13 +643,14 @@ const PayeshSetting = ({ zone }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                minWidth: index === buttons.length - 1 ? "100px" : "55px",
+                minWidth: "60px",
               }}
             >
               <Typography
-                fontSize={16}
+                fontSize={15}
                 fontFamily={"IRANSANS"}
                 color={"#111111"}
+                fontWeight={selected === label ? "bold" : "normal"}
               >
                 {label}
               </Typography>
@@ -687,7 +658,6 @@ const PayeshSetting = ({ zone }) => {
           ))}
         </Box>
 
-        {/* محتوای تب */}
         <Box
           sx={{
             width: "765px",
@@ -699,6 +669,7 @@ const PayeshSetting = ({ zone }) => {
             alignItems: "center",
             paddingY: "20px",
             position: "relative",
+            overflow: "hidden",
           }}
         >
           {loading || error ? (
@@ -714,232 +685,310 @@ const PayeshSetting = ({ zone }) => {
                 justifyContent: "center",
                 alignItems: "center",
                 backgroundColor: "rgba(255, 255, 255, 0.8)",
-                borderRadius: "0 10px 10px 10px",
                 zIndex: 10,
-                overflowY: "auto", // Add this line
               }}
             >
-              {loading && (
-                <Stack spacing={2} alignItems="center">
-                  <CircularProgress color="primary" />
-                  <Typography fontFamily={"IRANSANS"}>
-                    در حال بارگذاری...
-                  </Typography>
-                </Stack>
-              )}
-              {error && (
-                <Typography fontFamily={"IRANSANS"} color="error">
-                  خطا: {error.message || "خطا در دریافت داده‌ها."}
-                </Typography>
-              )}
+              {loading && <CircularProgress color="primary" />}
             </Box>
           ) : (
             <>
-              <Box
-                sx={{
-                  width: "733px",
-                  height: "390px",
-                  display: "flex",
-                }}
-              >
-                {/* بخش دما (Temperature) */}
-                <Stack
-                  width="356px"
-                  spacing={2}
+              {selected === "ویژه" ? (
+                <Box
                   sx={{
+                    width: "100%",
+                    px: 4,
+                    height: "390px",
+                    overflow: "hidden",
+                    direction: "rtl",
                     display: "flex",
+                    gap: 3,
                   }}
                 >
-                  <Typography
-                    fontFamily={"IRANSANS"}
-                    fontSize={20}
-                    color="#000000"
-                    textAlign={"center"}
-                  >
-                    دما
-                  </Typography>
-                  <Box
-                    sx={{
-                      border: "0.5px solid #9F9F9F",
-                      borderRadius: "10px",
-                      padding: 2,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-around",
-                      alignItems: "center",
-                      height: "100%",
-                    }}
-                  >
-                    <MinMaxInput
-                      label="بازه زمانی ۱"
-                      maxState={tempMax1}
-                      setMaxState={setTempMax1}
-                      minState={tempMin1}
-                      setMinState={setTempMin1}
-                    />
-                    <MinMaxInput
-                      label="بازه زمانی ۲"
-                      maxState={tempMax2}
-                      setMaxState={setTempMax2}
-                      minState={tempMin2}
-                      setMinState={setTempMin2}
-                    />
-                    <MinMaxInput
-                      label="بازه زمانی ۳"
-                      maxState={tempMax3}
-                      setMaxState={setTempMax3}
-                      minState={tempMin3}
-                      setMinState={setTempMin3}
-                    />
+                  <Stack spacing={0.5} sx={{ width: "50%" }}>
+                    {specialSettingsConfig.slice(0, 9).map((field) => (
+                      <Box
+                        key={field.code}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          py: 0.5,
+                          px: 1,
+                          border: "1px solid #e0e0e0",
+                          borderRadius: "8px",
+                          backgroundColor: "#fafafa",
+                        }}
+                      >
+                        <Typography
+                          fontFamily={"IRANSANS"}
+                          fontSize={12}
+                          color="#333"
+                        >
+                          {field.label}
+                        </Typography>
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          type="text"
+                          inputMode={field.isFloat ? "decimal" : "numeric"}
+                          value={toPersianDigits(specialSettings[field.code])}
+                          onChange={(e) => {
+                            const val = toEnglishDigits(e.target.value);
+                            if (
+                              val === "" ||
+                              val === "-" ||
+                              (field.isFloat
+                                ? /^-?\d*\.?\d*$/.test(val)
+                                : /^-?\d*$/.test(val))
+                            ) {
+                              handleSpecialSettingChange(field.code, val);
+                            }
+                          }}
+                          sx={{
+                            width: "70px",
+                            "& .MuiInputBase-input": {
+                              textAlign: "center",
+                              padding: "2px 4px",
+                              fontSize: "13px",
+                              fontFamily: "IRANSANS",
+                            },
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Stack>
 
+                  <Stack spacing={0.5} sx={{ width: "50%" }}>
+                    {specialSettingsConfig.slice(9).map((field) => (
+                      <Box
+                        key={field.code}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          py: 0.5,
+                          px: 1,
+                          border: "1px solid #e0e0e0",
+                          borderRadius: "8px",
+                          backgroundColor: "#fafafa",
+                        }}
+                      >
+                        <Typography
+                          fontFamily={"IRANSANS"}
+                          fontSize={12}
+                          color="#333"
+                        >
+                          {field.label}
+                        </Typography>
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          type="text"
+                          inputMode={field.isFloat ? "decimal" : "numeric"}
+                          value={toPersianDigits(specialSettings[field.code])}
+                          onChange={(e) => {
+                            const val = toEnglishDigits(e.target.value);
+                            if (
+                              val === "" ||
+                              val === "-" ||
+                              (field.isFloat
+                                ? /^-?\d*\.?\d*$/.test(val)
+                                : /^-?\d*$/.test(val))
+                            ) {
+                              handleSpecialSettingChange(field.code, val);
+                            }
+                          }}
+                          sx={{
+                            width: "70px",
+                            "& .MuiInputBase-input": {
+                              textAlign: "center",
+                              padding: "2px 4px",
+                              fontSize: "13px",
+                              fontFamily: "IRANSANS",
+                            },
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+              ) : (
+                <Box sx={{ width: "733px", height: "390px", display: "flex" }}>
+                  <Stack width="356px" spacing={2} sx={{ display: "flex" }}>
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize={20}
+                      color="#000000"
+                      textAlign={"center"}
+                    >
+                      دما
+                    </Typography>
                     <Box
                       sx={{
+                        border: "0.5px solid #9F9F9F",
+                        borderRadius: "10px",
+                        padding: 2,
                         display: "flex",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        width: "320px",
-                        marginTop: 2,
-                        gap: "2px", // Adjust gap as needed for spacing between items
+                        flexDirection: "column",
+                        justifyContent: "space-around",
+                        alignItems: "center",
+                        height: "100%",
                       }}
                     >
-                      {tempControllerList.slice(0, 5).map((ctrl) => (
-                        <ControllerStatus
-                          key={ctrl.key}
-                          label={ctrl.label}
-                          isActive={tempControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
-                          onClick={ctrl.onClick}
-                        />
-                      ))}
+                      <MinMaxInput
+                        label="بازه زمانی ۱"
+                        maxState={tempMax1}
+                        setMaxState={setTempMax1}
+                        minState={tempMin1}
+                        setMinState={setTempMin1}
+                      />
+                      <MinMaxInput
+                        label="بازه زمانی ۲"
+                        maxState={tempMax2}
+                        setMaxState={setTempMax2}
+                        minState={tempMin2}
+                        setMinState={setTempMin2}
+                      />
+                      <MinMaxInput
+                        label="بازه زمانی ۳"
+                        maxState={tempMax3}
+                        setMaxState={setTempMax3}
+                        minState={tempMin3}
+                        setMinState={setTempMin3}
+                      />
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          justifyContent: "center",
+                          width: "320px",
+                          marginTop: 2,
+                          gap: "2px",
+                        }}
+                      >
+                        {tempControllerList.slice(0, 5).map((ctrl) => (
+                          <ControllerStatus
+                            key={ctrl.key}
+                            label={ctrl.label}
+                            isActive={tempControllers[ctrl.key]}
+                            iconSrc={assets.svg.done}
+                            onClick={ctrl.onClick}
+                          />
+                        ))}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          justifyContent: "center",
+                          width: "320px",
+                          marginTop: 1,
+                          gap: "8px",
+                        }}
+                      >
+                        {tempControllerList.slice(5, 9).map((ctrl) => (
+                          <ControllerStatus
+                            key={ctrl.key}
+                            label={ctrl.label}
+                            isActive={tempControllers[ctrl.key]}
+                            iconSrc={assets.svg.done}
+                            onClick={ctrl.onClick}
+                          />
+                        ))}
+                      </Box>
                     </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        width: "320px",
-                        marginTop: 1, // Adjust top margin for spacing between rows
-                        gap: "8px", // Adjust gap as needed for spacing between items
-                      }}
-                    >
-                      {tempControllerList.slice(5, 9).map((ctrl) => (
-                        <ControllerStatus
-                          key={ctrl.key}
-                          label={ctrl.label}
-                          isActive={tempControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
-                          onClick={ctrl.onClick}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                </Stack>
+                  </Stack>
 
-                {/* بخش رطوبت (Humidity) */}
-                <Stack
-                  width="356px"
-                  spacing={2}
-                  
-                  sx={{
-                    display: "flex",
-                  }}
-                >
-                  <Typography
-                    fontFamily={"IRANSANS"}
-                    fontSize={20}
-                    color="#000000"
-                    textAlign={"center"}
-                  >
-                    رطوبت
-                  </Typography>
-                  <Box
-                    sx={{
-                      border: "0.5px solid #9F9F9F",
-                      borderRadius: "10px",
-                      padding: 2,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-around",
-                      alignItems: "center",
-                      height: "100%",
-                    }}
-                  >
-                    <MinMaxInput
-                      label="بازه زمانی ۱"
-                      maxState={humMax1}
-                      setMaxState={sethumMax1}
-                      minState={humMin1}
-                      setMinState={setHumMin1}
-                    />
-                    <MinMaxInput
-                      label="بازه زمانی ۲"
-                      maxState={humMax2}
-                      setMaxState={sethumMax2}
-                      minState={humMin2}
-                      setMinState={setHumMin2}
-                    />
-                    <MinMaxInput
-                      label="بازه زمانی ۳"
-                      maxState={humMax3}
-                      setMaxState={sethumMax3}
-                      minState={humMin3}
-                      setMinState={setHumMin3}
-                    />
-
+                  <Stack width="356px" spacing={2} sx={{ display: "flex" }}>
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize={20}
+                      color="#000000"
+                      textAlign={"center"}
+                    >
+                      رطوبت
+                    </Typography>
                     <Box
                       sx={{
+                        border: "0.5px solid #9F9F9F",
+                        borderRadius: "10px",
+                        padding: 2,
                         display: "flex",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        width: "320px",
-                        marginTop: 2,
-                        gap: "8px", // Adjust gap as needed for spacing between items
+                        flexDirection: "column",
+                        justifyContent: "space-around",
+                        alignItems: "center",
+                        height: "100%",
                       }}
                     >
-                      {humControllerList.slice(0, 5).map((ctrl) => (
-                        <ControllerStatus
-                          key={ctrl.key}
-                          label={ctrl.label}
-                          isActive={humControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
-                          onClick={ctrl.onClick}
-                        />
-                      ))}
+                      <MinMaxInput
+                        label="بازه زمانی ۱"
+                        maxState={humMax1}
+                        setMaxState={sethumMax1}
+                        minState={humMin1}
+                        setMinState={setHumMin1}
+                      />
+                      <MinMaxInput
+                        label="بازه زمانی ۲"
+                        maxState={humMax2}
+                        setMaxState={sethumMax2}
+                        minState={humMin2}
+                        setMinState={setHumMin2}
+                      />
+                      <MinMaxInput
+                        label="بازه زمانی ۳"
+                        maxState={humMax3}
+                        setMaxState={sethumMax3}
+                        minState={humMin3}
+                        setMinState={setHumMin3}
+                      />
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          justifyContent: "center",
+                          width: "320px",
+                          marginTop: 2,
+                          gap: "8px",
+                        }}
+                      >
+                        {humControllerList.slice(0, 5).map((ctrl) => (
+                          <ControllerStatus
+                            key={ctrl.key}
+                            label={ctrl.label}
+                            isActive={humControllers[ctrl.key]}
+                            iconSrc={assets.svg.done}
+                            onClick={ctrl.onClick}
+                          />
+                        ))}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          justifyContent: "center",
+                          width: "320px",
+                          marginTop: 1,
+                          gap: "8px",
+                        }}
+                      >
+                        {humControllerList.slice(5, 9).map((ctrl) => (
+                          <ControllerStatus
+                            key={ctrl.key}
+                            label={ctrl.label}
+                            isActive={humControllers[ctrl.key]}
+                            iconSrc={assets.svg.done}
+                            onClick={ctrl.onClick}
+                          />
+                        ))}
+                      </Box>
                     </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        width: "320px",
-                        marginTop: 1, // Adjust top margin for spacing between rows
-                        gap: "8px", // Adjust gap as needed for spacing between items
-                      }}
-                    >
-                      {humControllerList.slice(5, 9).map((ctrl) => (
-                        <ControllerStatus
-                          key={ctrl.key}
-                          label={ctrl.label}
-                          isActive={humControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
-                          onClick={ctrl.onClick}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                </Stack>
-              </Box>
+                  </Stack>
+                </Box>
+              )}
 
               <Button
                 variant="contained"
                 onClick={handleSave}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSave();
-                  }
-                }}
-                tabIndex={0}
                 sx={{
                   width: "110px",
                   height: "56px",
@@ -960,7 +1009,7 @@ const PayeshSetting = ({ zone }) => {
                   src={assets.svg.saveIcon}
                   alt="ذخیره"
                   style={{ height: "24px" }}
-                />
+                />{" "}
                 ذخیره
               </Button>
             </>
