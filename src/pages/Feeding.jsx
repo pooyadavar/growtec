@@ -89,14 +89,14 @@ const Feeding = () => {
       >
         <div
           style={{
-            width: "288px",
+            width: "295px",
             height: "338px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            scale: "0.65",
+            scale: "0.6",
             position: "relative",
-            top: "-53px",
+            top: "-60px",
             left: "30px",
             transform: "scaleX(1.05)",
           }}

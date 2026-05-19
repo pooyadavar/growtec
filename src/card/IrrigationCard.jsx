@@ -1,10 +1,5 @@
 import * as React from "react";
-import {
-  Typography,
-  Box,
-  Paper,
-  Divider,
-} from "@mui/material";
+import { Typography, Box, Paper, Divider, Button, Modal } from "@mui/material";
 import { AgCharts } from "ag-charts-react";
 import assets from "../assets/index";
 import IconTextButton from "./IconTextButton";
@@ -19,8 +14,13 @@ const IrrigationCard = ({
   chartData = [],
   onClick,
   onClickSettings,
-  irrigationScheduleItems = [], // New prop for schedule data
+  irrigationScheduleItems = [],
 }) => {
+  // استیت برای باز و بسته کردن مودال A
+  const [isModalAOpen, setIsModalAOpen] = React.useState(false);
+  const [calibBtn1Disabled, setCalibBtn1Disabled] = React.useState(false);
+  const [calibBtn2Disabled, setCalibBtn2Disabled] = React.useState(false);
+
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
     let res = "";
@@ -40,15 +40,14 @@ const IrrigationCard = ({
     return timeString;
   };
 
-  // Helper function to determine display status
   const getDisplayStatus = (startStatus, endStatus) => {
     if (startStatus === 3 && endStatus === 3) {
-      return 'tick';
+      return "tick";
     }
     if (startStatus === 4 || endStatus === 4) {
-      return 'cross';
+      return "cross";
     }
-    return 'blank';
+    return "blank";
   };
 
   const chartOptions = React.useMemo(() => {
@@ -59,23 +58,23 @@ const IrrigationCard = ({
     let min = 0;
     if (validValues.length > 0) {
       const dataMin = Math.min(...validValues);
-      const buffer = (dataMin) * 0.2 || 1; 
+      const buffer = dataMin * 0.2 || 1;
       min = Math.max(0, dataMin - buffer);
     }
 
     return {
-    data: chartData,
-    padding: { top: 5, right: 15, bottom: 5, left: 5 },
-    series: [
-      {
-        type: "line",
-        xKey: "time",
-        yKey: "filled_volume",
-        stroke: "#0077FF",
-        strokeWidth: 2,
-        marker: { enabled: false },
-        connectMissingValues: false,
-        tooltip: {
+      data: chartData,
+      padding: { top: 5, right: 15, bottom: 5, left: 5 },
+      series: [
+        {
+          type: "line",
+          xKey: "time",
+          yKey: "filled_volume",
+          stroke: "#0077FF",
+          strokeWidth: 2,
+          marker: { enabled: false },
+          connectMissingValues: false,
+          tooltip: {
             renderer: ({ datum, xKey, yKey }) => {
               if (datum[yKey] === undefined || datum[yKey] === null)
                 return { content: "No Data" };
@@ -88,51 +87,56 @@ const IrrigationCard = ({
                 content: `Volume: ${datum[yKey]}`,
               };
             },
-        }
-      },
-    ],
-    axes: [
-      {
-        type: "time",
-        position: "bottom",
-        nice: true,
-        label: { enabled: false },
-        line: { enabled: false, width: 1, color: "#ccc" },
-        tick: {
+          },
+        },
+      ],
+      axes: [
+        {
+          type: "time",
+          position: "bottom",
+          nice: true,
+          label: { enabled: false },
+          line: { enabled: false, width: 1, color: "#ccc" },
+          tick: {
             enabled: true,
             color: "transparent",
             width: 1,
             size: 6,
           },
-        gridStyle: [
+          gridStyle: [
             {
               stroke: "#000000",
               lineDash: [0],
               opacity: 0.3,
               width: 1,
             },
-        ],
-        crosshair: {
+          ],
+          crosshair: {
             enabled: true,
             stroke: "#999999",
             strokeWidth: 1,
           },
-      },
-      {
-        type: "number",
-        position: "left",
-        min,
-        max: maxStorageCapacity || 100,
-        label: { enabled: true, fontSize: 9, color: "#333" },
-        tick: { count: 3, enabled: true },
-        gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
-        crosshair: { enabled: false },
-      },
-    ],
-    legend: { enabled: false },
-    background: { visible: false },
+        },
+        {
+          type: "number",
+          position: "left",
+          min,
+          max: maxStorageCapacity || 100,
+          label: { enabled: true, fontSize: 9, color: "#333" },
+          tick: { count: 3, enabled: true },
+          gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
+          crosshair: { enabled: false },
+        },
+      ],
+      legend: { enabled: false },
+      background: { visible: false },
     };
   }, [chartData, maxStorageCapacity]);
+
+  const fillPercentage = Math.max(
+    0,
+    Math.min(100, (storageCapacity / (maxStorageCapacity || 100)) * 100),
+  );
 
   return (
     <Paper
@@ -144,12 +148,13 @@ const IrrigationCard = ({
         borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-around",
+        justifyContent: "flex-start", // رفع باگِ حاشیه‌های اضافی و باد کردن از بالا
         alignItems: "center",
+        gap: 1.5, // ایجاد فاصله‌ی منطقی بین تمام آیتم‌ها
         cursor: onClick ? "pointer" : "default",
         transition: "transform 0.2s",
-        p:2,
-        transform:"scale(0.9)",
+        p: 2,
+        transform: "scale(0.9)",
         "&:hover": onClick ? { transform: "scale(1.02)" } : {},
       }}
     >
@@ -161,6 +166,7 @@ const IrrigationCard = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexShrink: 0,
         }}
       >
         <Box
@@ -208,7 +214,8 @@ const IrrigationCard = ({
           لیتر
         </Typography>
       </Box>
-      <Box>
+
+      <Box sx={{ flexShrink: 0 }}>
         <Typography
           color="initial"
           fontFamily={"IRANSANS"}
@@ -219,6 +226,7 @@ const IrrigationCard = ({
           نمودار سطح مخزن در طول روز
         </Typography>
       </Box>
+
       <Box
         sx={{
           width: "259px",
@@ -228,6 +236,7 @@ const IrrigationCard = ({
           alignItems: "center",
           justifyContent: "space-around",
           marginRight: "10px",
+          flexShrink: 0,
         }}
       >
         <Box
@@ -242,10 +251,10 @@ const IrrigationCard = ({
             alignItems: "center",
           }}
         >
-           <AgCharts
-             options={chartOptions}
-             style={{ width: "90%", height: "85%" }}
-           />
+          <AgCharts
+            options={chartOptions}
+            style={{ width: "90%", height: "85%" }}
+          />
         </Box>
         <div
           style={{
@@ -286,7 +295,8 @@ const IrrigationCard = ({
           ></div>
         </div>
       </Box>
-      <Box>
+
+      <Box sx={{ flexShrink: 0 }}>
         <Typography
           color="initial"
           fontFamily={"IRANSANS"}
@@ -296,205 +306,534 @@ const IrrigationCard = ({
           جدول آبیاری
         </Typography>
       </Box>
+
       <Box
         className="irrigation-card-table"
         sx={{
           width: "280px",
-          height: "283px",
+          flexGrow: 1, // پر کردن فضای باقیمانده بدون نیاز به ارتفاع ثابت
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
+          overflow: "hidden",
         }}
       >
-        <Box sx={{ flexGrow: 1, overflowY: "auto", display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {irrigationScheduleItems.length > 0 ? (
-          irrigationScheduleItems.map((item, index) => {
-            const displayStatus = getDisplayStatus(item.start_status, item.end_status);
-            
-            return (
-            <React.Fragment key={index}>
-              <Box
-                sx={{
-                  width: "280px",
-                  height: "79",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexShrink: 0,
-                }}
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+          }}
+        >
+          {irrigationScheduleItems.length > 0 ? (
+            irrigationScheduleItems.map((item, index) => {
+              const displayStatus = getDisplayStatus(
+                item.start_status,
+                item.end_status,
+              );
+
+              return (
+                <React.Fragment key={index}>
+                  <Box
+                    sx={{
+                      width: "280px",
+                      height: "60px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexShrink: 0,
+                      scale: "0.9",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Typography
+                        color="initial"
+                        fontFamily={"IRANSANS"}
+                        fontSize={14}
+                      >
+                        زمان شروع
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: "65px",
+                          height: "35px",
+                          border: "0.5px solid #9F9F9F",
+                          borderRadius: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontFamily: "IRANSANS",
+                        }}
+                      >
+                        {convert(formatTime(item.start_time))}
+                      </Box>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Typography
+                        color="initial"
+                        fontFamily={"IRANSANS"}
+                        fontSize={14}
+                      >
+                        زمان پایان
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: "65px",
+                          height: "35px",
+                          border: "0.5px solid #9F9F9F",
+                          borderRadius: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontFamily: "IRANSANS",
+                        }}
+                      >
+                        {convert(formatTime(item.end_time))}
+                      </Box>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Typography
+                        color="initial"
+                        fontFamily={"IRANSANS"}
+                        fontSize={14}
+                      >
+                        زون
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: "35px",
+                          height: "35px",
+                          border: "0.5px solid #9F9F9F",
+                          borderRadius: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontFamily: "IRANSANS",
+                        }}
+                      >
+                        {convert(item.zone)}
+                      </Box>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Typography
+                        color="initial"
+                        fontFamily={"IRANSANS"}
+                        fontSize={14}
+                      >
+                        حجم
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: "35px",
+                          height: "35px",
+                          border: "0.5px solid #9F9F9F",
+                          borderRadius: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontFamily: "IRANSANS",
+                        }}
+                      >
+                        {convert(item.volume)}
+                      </Box>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Typography
+                        color="initial"
+                        fontFamily={"IRANSANS"}
+                        fontSize={14}
+                      >
+                        وضعیت
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: "35px",
+                          height: "35px",
+                          border:
+                            displayStatus === "tick"
+                              ? "1px solid #4CAF50"
+                              : displayStatus === "cross"
+                                ? "1px solid #F44336"
+                                : "0.5px solid #9F9F9F",
+                          borderRadius: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor:
+                            displayStatus === "tick"
+                              ? "#E8F5E9"
+                              : displayStatus === "cross"
+                                ? "#FFEBEE"
+                                : "transparent",
+                        }}
+                      >
+                        {displayStatus === "tick" && (
+                          <img
+                            src={assets.svg.tike}
+                            alt="Success"
+                            style={{ width: "16px", height: "16px" }}
+                          />
+                        )}
+                        {displayStatus === "cross" && (
+                          <img
+                            src={assets.svg.cross}
+                            alt="Error"
+                            style={{ width: "16px", height: "16px" }}
+                          />
+                        )}
+                      </Box>
+                    </div>
+                  </Box>
+                  {index < irrigationScheduleItems.length - 1 && (
+                    <Divider
+                      sx={{ width: "100%", backgroundColor: "#9F9F9F" }}
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })
+          ) : (
+            <Box
+              sx={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Typography
+                fontFamily="IRANSANS"
+                fontSize={14}
+                color="text.secondary"
               >
-                <div
-                  style={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <Typography color="initial" fontFamily={"IRANSANS"} fontSize={14}>
-                    زمان شروع
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: "65px",
-                      height: "35px",
-                      border: "0.5px solid #9F9F9F",
-                      borderRadius: "10px",
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      fontFamily: 'IRANSANS'
-                    }}
-                  >
-                    {convert(formatTime(item.start_time))}
-                  </Box>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography color="initial" fontFamily={"IRANSANS"} fontSize={14}>
-                    زمان پایان
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: "65px",
-                      height: "35px",
-                      border: "0.5px solid #9F9F9F",
-                      borderRadius: "10px",
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      fontFamily: 'IRANSANS'
-                    }}
-                  >
-                     {convert(formatTime(item.end_time))}
-                  </Box>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography color="initial" fontFamily={"IRANSANS"} fontSize={14}>
-                    زون
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: "35px",
-                      height: "35px",
-                      border: "0.5px solid #9F9F9F",
-                      borderRadius: "10px",
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      fontFamily: 'IRANSANS'
-                    }}
-                  >
-                    {convert(item.zone)}
-                  </Box>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography color="initial" fontFamily={"IRANSANS"} fontSize={14}>
-                    حجم
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: "35px",
-                      height: "35px",
-                      border: "0.5px solid #9F9F9F",
-                      borderRadius: "10px",
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      fontFamily: 'IRANSANS'
-                    }}
-                  >
-                    {convert(item.volume)}
-                  </Box>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography color="initial" fontFamily={"IRANSANS"} fontSize={14}>
-                    وضعیت
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: "35px",
-                      height: "35px",
-                      border: displayStatus === 'tick' ? "1px solid #4CAF50" : displayStatus === 'cross' ? "1px solid #F44336" : "0.5px solid #9F9F9F",
-                      borderRadius: "10px",
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: displayStatus === 'tick' ? "#E8F5E9" : displayStatus === 'cross' ? "#FFEBEE" : "transparent",
-                    }}
-                  >
-                     {displayStatus === 'tick' && (
-                        <img src={assets.svg.tike} alt="Success" style={{ width: '16px', height: '16px' }} />
-                      )}
-                      {displayStatus === 'cross' && (
-                        <img src={assets.svg.cross} alt="Error" style={{ width: '16px', height: '16px' }} />
-                      )}
-                  </Box>
-                </div>
-              </Box>
-              {index < irrigationScheduleItems.length - 1 && (
-                <Divider sx={{ width: "100%", backgroundColor: "#9F9F9F" }} />
-              )}
-            </React.Fragment>
-          )})
-        ) : (
-             <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography fontFamily="IRANSANS" fontSize={14} color="text.secondary">
-                   برنامه‌ای موجود نیست
-                </Typography>
-             </Box>
-        )}
+                برنامه‌ای موجود نیست
+              </Typography>
+            </Box>
+          )}
         </Box>
-        
-        {/* Settings Button */}
-        <Box sx={{ width: "246px", marginLeft:"17px" , display: "flex", justifyContent: "center" , mb:1 }}>
-          <IconTextButton
-            text="تغییر تنظیمات"
-            icon={assets.svg.setting2}
-            iconPosition="left"
-            bgColor="#FFCB82"
-            textColor="#000000"
-            width="246px"
-            height="30px"
-            borderColor="#FFCB82"
-            onClick={onClickSettings}
-            sx={{
-              justifyContent: "center",
-              gap: 2,
-              '& .MuiTypography-root': {
-                fontSize: '18px',
-                marginLeft: '20px'
-              }
+
+        {/* ===================== قسمت دکمه‌های پایین با ارتفاع بیشتر ===================== */}
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 1,
+            mt: "auto",
+            pt: 1,
+          }}
+        >
+          <Button
+            variant="contained"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsModalAOpen(true);
             }}
-          />
+            sx={{
+              flex: 1,
+              height: "55px", // افزایش ارتفاع به درستی
+              backgroundColor: "#6CCDB0",
+              color: "#000",
+              fontFamily: "IRANSANS",
+              fontSize: "14px", // فونت کمی بزرگتر برای تناسب با ارتفاع
+              fontWeight: "bold",
+              borderRadius: "8px",
+              boxShadow: "none",
+              "&:hover": { backgroundColor: "#5bbd9e", boxShadow: "none" },
+            }}
+          >
+            کالیبره مخزن
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClickSettings) onClickSettings(e);
+            }}
+            sx={{
+              flex: 1,
+              height: "55px", // افزایش ارتفاع به درستی
+              backgroundColor: "#FFCB82",
+              color: "#000",
+              fontFamily: "IRANSANS",
+              fontSize: "14px", // فونت کمی بزرگتر برای تناسب با ارتفاع
+              fontWeight: "bold",
+              borderRadius: "8px",
+              boxShadow: "none",
+              display: "flex",
+              gap: 1,
+              "&:hover": { backgroundColor: "#eeb569", boxShadow: "none" },
+            }}
+          >
+            <img
+              src={assets.svg.setting2}
+              alt="settings"
+              style={{ width: "18px", height: "18px" }}
+            />
+            تنظیمات
+          </Button>
         </Box>
       </Box>
+
+      {/* ===================== پیاده‌سازی مودال A ===================== */}
+      <Modal
+        disableAutoFocus
+        open={isModalAOpen}
+        onClose={(e) => {
+          if (e) e.stopPropagation();
+          setIsModalAOpen(false);
+          setCalibBtn1Disabled(false);
+          setCalibBtn2Disabled(false);
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            border: "0.5px solid #9F9F9F",
+            borderRadius: "10px",
+            backgroundColor: "#FFFFFF",
+            width: "550px", // عرض ثابت ۵۵۰
+            height: "auto",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            boxShadow: 24,
+            p: 3,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
+          }}
+        >
+          {/* هدر مودال A */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              width: "100%",
+              alignItems: "center",
+            }}
+          >
+            <Typography fontFamily={"IRANSANS"} fontSize={18} fontWeight="bold">
+              کالیبراسیون سطح مخزن {convert(storageNumber)}
+            </Typography>
+            <img
+              src={assets.svg.close}
+              alt="close"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsModalAOpen(false);
+              }}
+              style={{ cursor: "pointer", width: "20px", height: "20px" }}
+            />
+          </Box>
+
+          {/* گرافیک سطح مخزن */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+              mt: 1,
+            }}
+          >
+            <Box
+              sx={{
+                width: "280px", // عرض بیشتر از ارتفاع شد
+                height: "140px", // ارتفاع به شدت کاهش یافت
+                borderRadius: "10px",
+                border: "2px solid #9F9F9F",
+                position: "relative",
+                display: "flex",
+                justifyContent: "center",
+                overflow: "visible",
+              }}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  width: "100%",
+                  height: `${fillPercentage}%`,
+                  backgroundColor: "#2196F3",
+                  borderRadius: fillPercentage > 95 ? "8px" : "0 0 8px 8px",
+                  transition: "height 0.5s ease-in-out",
+                  opacity: 0.8,
+                }}
+              />
+              <Typography
+                fontFamily={"IRANSANS"}
+                sx={{
+                  position: "absolute",
+                  top: "10px",
+                  fontSize: "16px",
+                  zIndex: 2,
+                  color: fillPercentage > 80 ? "#fff" : "#333",
+                }}
+              >
+                مخزن
+              </Typography>
+
+              {/* فلوترهای کنار مخزن */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  justifyContent: "space-around",
+                  position: "absolute",
+                  right: "-26px",
+                  top: "-10px",
+                  py: 1.5, // پدینگ کمتر شد تا توی این ارتفاع کم جا بشوند
+                  zIndex: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: "14px",
+                    height: "14px",
+                    borderRadius: "50%",
+                    border: "1px solid #9F9F9F",
+                    backgroundColor: float3 ? "#00FF85" : "white",
+                    boxShadow: "0 0 4px rgba(0,0,0,0.2)",
+                  }}
+                />
+                <Box
+                  sx={{
+                    width: "14px",
+                    height: "14px",
+                    borderRadius: "50%",
+                    border: "1px solid #9F9F9F",
+                    backgroundColor: float2 ? "#00FF85" : "white",
+                    boxShadow: "0 0 4px rgba(0,0,0,0.2)",
+                  }}
+                />
+                <Box
+                  sx={{
+                    width: "14px",
+                    height: "14px",
+                    borderRadius: "50%",
+                    border: "1px solid #9F9F9F",
+                    backgroundColor: float1 ? "#00FF85" : "white",
+                    boxShadow: "0 0 4px rgba(0,0,0,0.2)",
+                  }}
+                />
+              </Box>
+            </Box>
+
+            {/* <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+              <Box
+                sx={{
+                  width: "70px",
+                  height: "30px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "4px",
+                  border: "0.5px solid #9F9F9F",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Typography fontSize={"15px"} fontFamily={"IRANSANS"}>
+                  {convert(storageCapacity)}
+                </Typography>
+              </Box>
+              <Typography fontSize={15} pl={"8px"}>
+                L
+              </Typography>
+            </Box> */}
+          </Box>
+
+          {/* دکمه‌های عملیات مودال A */}
+          <Box sx={{ display: "flex", width: "80%", gap: 2, mt: 1 }}>
+            <Button
+              variant="contained"
+              disabled={calibBtn1Disabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCalibBtn1Disabled(true);
+              }}
+              sx={{
+                flex: 1,
+                height: "40px",
+                fontSize: "15px",
+                color: "#004323",
+                backgroundColor: "#B8FFDD",
+                borderRadius: "10px",
+                border: "0.5px solid #004323",
+                fontFamily: "IRANSANS",
+                boxShadow: "none",
+                "&:hover": { backgroundColor: "#a0eed0", boxShadow: "none" },
+              }}
+            >
+              تایید حجم بالای مخزن
+            </Button>
+            <Button
+              variant="contained"
+              disabled={calibBtn2Disabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCalibBtn2Disabled(true);
+              }}
+              sx={{
+                flex: 1,
+                height: "40px",
+                fontSize: "15px",
+                color: "#004323",
+                backgroundColor: "#B8FFDD",
+                borderRadius: "10px",
+                border: "0.5px solid #004323",
+                fontFamily: "IRANSANS",
+                boxShadow: "none",
+                "&:hover": { backgroundColor: "#a0eed0", boxShadow: "none" },
+              }}
+            >
+              تایید حجم پایین مخزن
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </Paper>
   );
 };
