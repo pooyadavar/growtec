@@ -14,9 +14,12 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { AgCharts } from "ag-charts-react";
 import assets from "../../assets";
 import IconTextButton from "../../card/IconTextButton";
-import { calibrationEc, calibrationPh, getSolubleEcPhTemperature } from "../../api/solubleApi";
+import {
+  calibrationEc,
+  calibrationPh,
+  getSolubleEcPhTemperature,
+} from "../../api/solubleApi";
 import toast from "react-hot-toast";
-import { Scale } from "@mui/icons-material";
 import apiClient from "../../api/apiClient";
 
 const SENSORS = [
@@ -27,7 +30,44 @@ const SENSORS = [
   { id: 5, name: "سنسور شماره ۵" },
 ];
 
-// --- کامپوننت مودال کالیبراسیون ---
+const numbers = `۰۱۲۳۴۵۶۷۸۹`;
+const convert = (num) => {
+  if (num === null || num === undefined || num === "") return "";
+  let res = "";
+  const str = num.toString();
+  for (let c of str) {
+    if (c >= "0" && c <= "9") {
+      res += numbers.charAt(c);
+    } else {
+      res += c;
+    }
+  }
+  return res;
+};
+
+// تابع تبدیل اعداد فارسی به انگلیسی (برای گرفتن مقدار درست از کاربر)
+const toEnglishNumber = (str) => {
+  if (!str) return "";
+  const persianDigits = [
+    /۰/g,
+    /۱/g,
+    /۲/g,
+    /۳/g,
+    /۴/g,
+    /۵/g,
+    /۶/g,
+    /۷/g,
+    /۸/g,
+    /۹/g,
+  ];
+  let result = str.toString();
+  for (let i = 0; i < 10; i++) {
+    result = result.replace(persianDigits[i], i);
+  }
+  return result;
+};
+
+// --- کامپوننت مودال کالیبراسیون سنسورهای EC و pH ---
 const CalibrationModalContent = ({
   open,
   onClose,
@@ -42,7 +82,6 @@ const CalibrationModalContent = ({
   const [phStep, setPhStep] = useState(1);
   const [realTimeData, setRealTimeData] = useState([]);
 
-  // Reset step and data when modal opens or tab changes
   useEffect(() => {
     if (open) {
       setEcStep(1);
@@ -51,14 +90,12 @@ const CalibrationModalContent = ({
     }
   }, [open, calibrateTab]);
 
-  // Fetch real-time data
   useEffect(() => {
     if (!open) return;
 
     const fetchData = async () => {
       try {
         const response = await getSolubleEcPhTemperature();
-        // response structure: { "1": { ec, ph, temperature }, ... }
         const sensorData = response[String(sensorId)];
 
         if (sensorData) {
@@ -66,8 +103,8 @@ const CalibrationModalContent = ({
           const value = calibrateTab === "ec" ? sensorData.ec : sensorData.ph;
 
           setRealTimeData((prev) => {
-            const newData = [...prev, { time: now, value: value }];
-            if (newData.length > 50) newData.shift(); // Keep last 50 points
+            const newData = [...prev, { time: now, value: Number(value) || 0 }];
+            if (newData.length > 50) newData.shift();
             return newData;
           });
         }
@@ -95,7 +132,7 @@ const CalibrationModalContent = ({
           renderer: ({ datum, xKey, yKey }) => {
             return {
               title: datum[xKey].toLocaleTimeString(),
-              content: `${datum[yKey]}`,
+              content: convert(datum[yKey]),
             };
           },
         },
@@ -105,16 +142,16 @@ const CalibrationModalContent = ({
       {
         type: "time",
         position: "bottom",
-        label: {
-          format: "%H:%M:%S",
-          fontSize: 10,
-        },
+        label: { format: "%H:%M:%S", fontSize: 10 },
         tick: { count: 5 },
       },
       {
         type: "number",
         position: "left",
-        label: { fontSize: 10 },
+        label: {
+          fontSize: 10,
+          formatter: (params) => convert(params.value.toFixed(1)), // فارسی‌سازی مقادیر محور چارت
+        },
       },
     ],
     legend: { enabled: false },
@@ -126,7 +163,6 @@ const CalibrationModalContent = ({
       toast.error("لطفا هر دو مقدار EC را وارد کنید");
       return;
     }
-
     try {
       const payload = {
         step: 1,
@@ -138,118 +174,77 @@ const CalibrationModalContent = ({
       toast.success("مرحله اول کالیبراسیون EC با موفقیت انجام شد");
       setEcStep(2);
     } catch (error) {
-      console.error("Calibration Step 1 Error:", error);
       toast.error("خطا در مرحله اول کالیبراسیون");
     }
   };
 
   const handleEcLowConfirm = async () => {
     try {
-      const payload = {
-        step: 2,
-        ec_number: sensorId,
-      };
-      await calibrationEc(payload);
-      toast.success("کالیبراسیون حد پایین (Step 2) انجام شد");
+      await calibrationEc({ step: 2, ec_number: sensorId });
+      toast.success("کالیبراسیون حد پایین انجام شد");
       setEcStep(3);
     } catch (error) {
-      console.error("Calibration Step 2 Error:", error);
       toast.error("خطا در کالیبراسیون حد پایین");
     }
   };
 
-const handleEcHighConfirm = async () => {
-  try {
-    // Step 3
-    const payloadStep3 = {
-      step: 3,
-      ec_number: sensorId,
-    };
-    await calibrationEc(payloadStep3);
-    toast.success("کالیبراسیون حد بالا (Step 3) انجام شد");
+  const handleEcHighConfirm = async () => {
+    try {
+      await calibrationEc({ step: 3, ec_number: sensorId });
+      await calibrationEc({ step: 4, ec_number: sensorId });
+      toast.success("کالیبراسیون EC با موفقیت به پایان رسید");
+      setEcStep(1);
+      onClose();
+    } catch (error) {
+      toast.error("خطا در تکمیل کالیبراسیون");
+    }
+  };
 
-    // Step 4 (Finalization) - Triggered immediately after Step 3 success
-    const payloadStep4 = {
-      step: 4,
-      ec_number: sensorId,
-    };
-    await calibrationEc(payloadStep4);
-    toast.success("کالیبراسیون با موفقیت به پایان رسید (Step 4)");
-    
-    // Reset and Close Modal
-    setEcStep(1); 
-    onClose(); 
+  const handlePhCalibrationStep1 = async () => {
+    if (!calibrateValues.phLow || !calibrateValues.phHigh) {
+      toast.error("لطفا هر دو مقدار pH را وارد کنید");
+      return;
+    }
+    try {
+      const payload = {
+        step: 1,
+        ph_number: sensorId,
+        buffer_ph_low: Number(calibrateValues.phLow),
+        buffer_ph_high: Number(calibrateValues.phHigh),
+      };
+      await calibrationPh(payload);
+      toast.success("مرحله اول کالیبراسیون pH با موفقیت انجام شد");
+      setPhStep(2);
+    } catch (error) {
+      toast.error("خطا در مرحله اول کالیبراسیون pH");
+    }
+  };
 
-  } catch (error) {
-    console.error("Calibration Step 3/4 Error:", error);
-    toast.error("خطا در تکمیل کالیبراسیون");
-  }
-};
+  const handlePhLowConfirm = async () => {
+    try {
+      await calibrationPh({ step: 2, ph_number: sensorId });
+      toast.success("کالیبراسیون حد پایین pH انجام شد");
+      setPhStep(3);
+    } catch (error) {
+      toast.error("خطا در کالیبراسیون حد پایین pH");
+    }
+  };
 
-const handlePhCalibrationStep1 = async () => {
-  if (!calibrateValues.phLow || !calibrateValues.phHigh) {
-    toast.error("لطفا هر دو مقدار pH را وارد کنید");
-    return;
-  }
+  const handlePhHighConfirm = async () => {
+    try {
+      await calibrationPh({ step: 3, ph_number: sensorId });
+      await calibrationPh({ step: 4, ph_number: sensorId });
+      toast.success("کالیبراسیون pH با موفقیت به پایان رسید");
+      setPhStep(1);
+      onClose();
+    } catch (error) {
+      toast.error("خطا در تکمیل کالیبراسیون pH");
+    }
+  };
 
-  try {
-    const payload = {
-      step: 1,
-      ph_number: sensorId,
-      buffer_ph_low: Number(calibrateValues.phLow),
-      buffer_ph_high: Number(calibrateValues.phHigh),
-    };
-    await calibrationPh(payload);
-    toast.success("مرحله اول کالیبراسیون pH با موفقیت انجام شد");
-    setPhStep(2);
-  } catch (error) {
-    console.error("Calibration pH Step 1 Error:", error);
-    toast.error("خطا در مرحله اول کالیبراسیون pH");
-  }
-};
-
-const handlePhLowConfirm = async () => {
-  try {
-    const payload = {
-      step: 2,
-      ph_number: sensorId,
-    };
-    await calibrationPh(payload);
-    toast.success("کالیبراسیون حد پایین pH (Step 2) انجام شد");
-    setPhStep(3);
-  } catch (error) {
-    console.error("Calibration pH Step 2 Error:", error);
-    toast.error("خطا در کالیبراسیون حد پایین pH");
-  }
-};
-
-const handlePhHighConfirm = async () => {
-  try {
-    // Step 3
-    const payloadStep3 = {
-      step: 3,
-      ph_number: sensorId,
-    };
-    await calibrationPh(payloadStep3);
-    toast.success("کالیبراسیون حد بالا pH (Step 3) انجام شد");
-
-    // Step 4 (Finalization)
-    const payloadStep4 = {
-      step: 4,
-      ph_number: sensorId,
-    };
-    await calibrationPh(payloadStep4);
-    toast.success("کالیبراسیون pH با موفقیت به پایان رسید (Step 4)");
-    
-    setPhStep(1); 
-    onClose(); 
-
-  } catch (error) {
-    console.error("Calibration pH Step 3/4 Error:", error);
-    toast.error("خطا در تکمیل کالیبراسیون pH");
-  }
-};
-
+  const isStep1Active = calibrateTab === "ec" ? ecStep === 1 : phStep === 1;
+  const isStep2Active = calibrateTab === "ec" ? ecStep === 2 : phStep === 2;
+  const isStep3Active = calibrateTab === "ec" ? ecStep === 3 : phStep === 3;
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -292,9 +287,11 @@ const handlePhHighConfirm = async () => {
             <CloseIcon sx={{ fontSize: "18px" }} />
           </IconButton>
         </Box>
-        <Box sx={{ display: "flex" , justifyContent:"left", gap: 1, mb: 0 }}>
+
+        <Box sx={{ display: "flex", justifyContent: "left", gap: 1, mb: 0 }}>
           <Button
             onClick={() => setCalibrateTab("ec")}
+            disabled={ecStep !== 1 || phStep !== 1}
             sx={{
               bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
               color: "#000",
@@ -302,15 +299,13 @@ const handlePhHighConfirm = async () => {
               px: 3,
               py: 0.5,
               fontWeight: "bold",
-              "&:hover": {
-                bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
-              },
             }}
           >
             EC
           </Button>
           <Button
             onClick={() => setCalibrateTab("ph")}
+            disabled={ecStep !== 1 || phStep !== 1}
             sx={{
               bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
               color: "#000",
@@ -318,14 +313,12 @@ const handlePhHighConfirm = async () => {
               px: 3,
               py: 0.5,
               fontWeight: "bold",
-              "&:hover": {
-                bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
-              },
             }}
           >
             pH
           </Button>
         </Box>
+
         <Box
           sx={{
             bgcolor: "#FFFFFF",
@@ -343,30 +336,31 @@ const handlePhHighConfirm = async () => {
               mb: 4,
               bgcolor: "#fff",
               overflow: "hidden",
-              position: "relative", 
+              position: "relative",
             }}
           >
-             {realTimeData.length > 0 ? (
-                <AgCharts
-                  options={chartOptions}
-                  style={{ width: "100%", height: "100%" }}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography fontFamily="IRANSANS" fontSize={12} color="#999">
-                    در حال دریافت داده...
-                  </Typography>
-                </Box>
-              )}
+            {realTimeData.length > 0 ? (
+              <AgCharts
+                options={chartOptions}
+                style={{ width: "100%", height: "100%" }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Typography fontFamily="IRANSANS" fontSize={12} color="#999">
+                  در حال دریافت داده...
+                </Typography>
+              </Box>
+            )}
           </Box>
+
           <Box
             sx={{
               display: "flex",
@@ -392,16 +386,17 @@ const handlePhHighConfirm = async () => {
               <TextField
                 variant="outlined"
                 size="small"
-                value={
+                disabled={!isStep1Active}
+                value={convert(
                   calibrateTab === "ec"
                     ? calibrateValues.ecHigh
-                    : calibrateValues.phHigh
-                }
+                    : calibrateValues.phHigh,
+                )}
                 onChange={(e) =>
                   setCalibrateValues((prev) => ({
                     ...prev,
                     [calibrateTab === "ec" ? "ecHigh" : "phHigh"]:
-                      e.target.value,
+                      toEnglishNumber(e.target.value),
                   }))
                 }
                 sx={{
@@ -410,17 +405,13 @@ const handlePhHighConfirm = async () => {
                   "& .MuiOutlinedInput-root": { borderRadius: "10px" },
                 }}
               />
-              {/* دکمه تایید تکی برای pH یا برای EC مرحله ۲ */}
-              {((calibrateTab === "ec" && (ecStep === 2 || ecStep === 3)) ||
-                (calibrateTab === "ph" && (phStep === 2 || phStep === 3))) && (
+              {isStep3Active && (
                 <Button
                   variant="contained"
-                  disabled={
-                    (calibrateTab === "ec" && ecStep === 2) ||
-                    (calibrateTab === "ph" && phStep === 2)
-                  }
                   onClick={
-                    calibrateTab === "ec" ? handleEcHighConfirm : handlePhHighConfirm
+                    calibrateTab === "ec"
+                      ? handleEcHighConfirm
+                      : handlePhHighConfirm
                   }
                   sx={{
                     bgcolor: "#FFCB82",
@@ -428,16 +419,15 @@ const handlePhHighConfirm = async () => {
                     fontFamily: "IRANSANS",
                     borderRadius: "10px",
                     "&:hover": { bgcolor: "#ffb74d" },
-                    "&:disabled": { bgcolor: "#ccc", color: "#666" },
                   }}
                 >
-                  تایید
+                  تایید حد بالا
                 </Button>
               )}
             </Box>
 
-            {/* دکمه وسط برای EC یا pH - فقط در مرحله ۱ */}
-            {((calibrateTab === "ec" && ecStep === 1) || (calibrateTab === "ph" && phStep === 1)) && (
+            {/* دکمه وسط برای شروع */}
+            {isStep1Active && (
               <Box
                 sx={{
                   display: "flex",
@@ -450,11 +440,10 @@ const handlePhHighConfirm = async () => {
               >
                 <Button
                   variant="contained"
-                  onClick={calibrateTab === "ec" ? handleEcCalibrationStep1 : handlePhCalibrationStep1}
-                  disabled={
+                  onClick={
                     calibrateTab === "ec"
-                      ? (!calibrateValues.ecLow || !calibrateValues.ecHigh)
-                      : (!calibrateValues.phLow || !calibrateValues.phHigh)
+                      ? handleEcCalibrationStep1
+                      : handlePhCalibrationStep1
                   }
                   sx={{
                     bgcolor: "#4CAF50",
@@ -462,8 +451,6 @@ const handlePhHighConfirm = async () => {
                     fontFamily: "IRANSANS",
                     borderRadius: "10px",
                     px: 3,
-                    "&:hover": { bgcolor: "#45a049" },
-                    "&:disabled": { bgcolor: "#ccc" },
                     width: "150px",
                   }}
                 >
@@ -488,15 +475,17 @@ const handlePhHighConfirm = async () => {
               <TextField
                 variant="outlined"
                 size="small"
-                value={
+                disabled={!isStep1Active}
+                value={convert(
                   calibrateTab === "ec"
                     ? calibrateValues.ecLow
-                    : calibrateValues.phLow
-                }
+                    : calibrateValues.phLow,
+                )}
                 onChange={(e) =>
                   setCalibrateValues((prev) => ({
                     ...prev,
-                    [calibrateTab === "ec" ? "ecLow" : "phLow"]: e.target.value,
+                    [calibrateTab === "ec" ? "ecLow" : "phLow"]:
+                      toEnglishNumber(e.target.value),
                   }))
                 }
                 sx={{
@@ -505,13 +494,13 @@ const handlePhHighConfirm = async () => {
                   "& .MuiOutlinedInput-root": { borderRadius: "10px" },
                 }}
               />
-              {/* دکمه تایید تکی برای pH یا برای EC مرحله ۲ */}
-              {((calibrateTab === "ec" && ecStep === 2) ||
-                (calibrateTab === "ph" && phStep === 2)) && (
+              {isStep2Active && (
                 <Button
                   variant="contained"
                   onClick={
-                    calibrateTab === "ec" ? handleEcLowConfirm : handlePhLowConfirm
+                    calibrateTab === "ec"
+                      ? handleEcLowConfirm
+                      : handlePhLowConfirm
                   }
                   sx={{
                     bgcolor: "#FFCB82",
@@ -521,7 +510,7 @@ const handlePhHighConfirm = async () => {
                     "&:hover": { bgcolor: "#ffb74d" },
                   }}
                 >
-                  تایید
+                  تایید حد پایین
                 </Button>
               )}
             </Box>
@@ -532,25 +521,9 @@ const handlePhHighConfirm = async () => {
   );
 };
 
-// --- آیتم تکی نمودار ---
+// --- آیتم تکی نمودار سه‌گانه ---
 const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
   const [data, setData] = useState([]);
-
-  // تنظیمات استایل باکس نمودار
-  const chartBoxStyle = {
-    width: "98%",
-    height: "100px",
-    backgroundColor: "#fff",
-    borderRadius: "12px",
-    border: "0.5px solid #9F9F9F",
-    boxShadow: "rgba(15, 28, 36, 0.05) 0px 6px 15px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    px: 1.5,
-    overflow: "hidden",
-    pt: 1,
-  };
 
   const fetchLatest = useCallback(async () => {
     try {
@@ -558,48 +531,30 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
         sensor_number: sensor.id,
         limit: 1000,
       });
-
       const array = Array.isArray(response) ? response : response.results || [];
       if (!array.length) return;
 
-      setData((prev) => {
-        const sortedArray = [...array].sort(
-          (a, b) => new Date(a.log_date_time) - new Date(b.log_date_time)
-        );
+      const sortedArray = [...array]
+        .sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time))
+        .filter((item) => item.log_data.sensot_number === sensor.id);
 
-        const newPoints = sortedArray
-          .filter((item) => {
-            if (item.log_data.sensot_number !== sensor.id) return false;
-            if (!item.log_date_time) return false;
-            // if (!lastPointTime) return true; // Removed filtering by time
-            // return new Date(item.log_date_time) > new Date(lastPointTime); // Removed filtering by time
-            return true;
-          })
-          .map((latest) => {
-            const rawTime = latest.log_date_time;
-            const timeObj = new Date(rawTime);
-            return {
-              fullTime: rawTime,
-              dateObj: timeObj,
-              time: rawTime.split(" ")[1],
-              ec: latest.log_data.ec,
-              pc: latest.log_data.ph,
-              temp: latest.log_data.temperature,
-            };
-          });
-
-        // if (newPoints.length === 0) return prev; // Removed early return
-        // const combinedData = [...prev, ...newPoints]; // Replaced with full replacement
-        const combinedData = newPoints; // Replace previous data with new fetched data completely
-
-        if (isActive && combinedData.length > 0) {
-          onTimeUpdate(combinedData[combinedData.length - 1].time);
-        }
-
-        return combinedData;
+      const newPoints = sortedArray.map((latest) => {
+        const rawTime = latest.log_date_time;
+        return {
+          dateObj: new Date(rawTime),
+          time: rawTime.split(" ")[1],
+          ec: Number(latest.log_data.ec) || 0,
+          pc: Number(latest.log_data.ph) || 0,
+          temp: Number(latest.log_data.temperature) || 0,
+        };
       });
+
+      setData(newPoints);
+      if (isActive && newPoints.length > 0) {
+        onTimeUpdate(newPoints[newPoints.length - 1].time);
+      }
     } catch (err) {
-      console.error(`Fetch Error Sensor ${sensor.id}:`, err);
+      console.error(err);
     }
   }, [sensor.id, isActive, onTimeUpdate]);
 
@@ -614,12 +569,10 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
     };
   }, [isActive, fetchLatest, isModalOpen]);
 
-  const getChartOptions = (key, title, color, shape, showXAxis) => {
-    // 1. محاسبه مقادیر معتبر فقط برای پیدا کردن Min/Max محور Y
+  const getChartOptions = (key, title, color, showXAxis) => {
     const validValues = data
       .map((d) => d[key])
       .filter((v) => typeof v === "number");
-
     let min = 0,
       max = 10;
     if (validValues.length > 0) {
@@ -630,9 +583,7 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
       max = dataMax + buffer;
     }
 
-    // 2. تنظیمات چارت
     return {
-      // نکته: کل دیتا را پاس می‌دهیم تا محور زمان در تمام چارت‌ها یکسان باشد
       data: data,
       padding: { top: 5, right: 15, bottom: 5, left: 5 },
       series: [
@@ -640,25 +591,9 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
           type: "line",
           xKey: "dateObj",
           yKey: key,
-          yName: title,
           stroke: color,
           strokeWidth: 2,
           marker: { enabled: false },
-          connectMissingValues: false,
-          tooltip: {
-            renderer: ({ datum, xKey, yKey }) => {
-              if (datum[yKey] === undefined || datum[yKey] === null)
-                return { content: "No Data" };
-              const date = datum[xKey];
-              const timeString = date
-                ? date.toLocaleTimeString("en-GB", { hour12: false })
-                : "";
-              return {
-                title: timeString,
-                content: `${title}: ${datum[yKey]}`,
-              };
-            },
-          },
         },
       ],
       axes: [
@@ -666,50 +601,29 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
           type: "time",
           position: "bottom",
           nice: true,
-          // فقط اگر showXAxis true باشد، اعداد را نشان بده
           label: {
             enabled: showXAxis,
             fontSize: 10,
             color: "#666",
             format: "%H:%M",
-            autoRotate: false,
-            rotation: 0,
           },
-          // خط افقی پایین نمودار
           line: { enabled: showXAxis, width: 1, color: "#ccc" },
-
-          // *** تنظیمات مهم برای خطوط عمودی ***
-          // 1. Tick باید همیشه enabled باشد تا گرید رسم شود
-          // 2. اگر showXAxis=false باشد، رنگ Tick را transparent می‌کنیم تا دیده نشود
-          tick: {
-            enabled: true,
-            color: showXAxis ? "#666" : "transparent",
-            width: 1,
-            size: 6, // اندازه تیک‌ها
-          },
-
-          // *** استایل خطوط عمودی (شبیه به عکس) ***
+          tick: { enabled: true, color: showXAxis ? "#666" : "transparent" },
           gridStyle: [
-            {
-              stroke: "#000000", // رنگ مشکی (یا خاکستری خیلی تیره)
-              lineDash: [0],     // [0] یعنی خط ممتد (بدون خط‌چین)
-              opacity: 0.3,      // کمی شفافیت تا خیلی توی ذوق نزند
-              width: 1,          // ضخامت خط
-            },
+            { stroke: "#000000", lineDash: [0], opacity: 0.15, width: 1 },
           ],
-          
-          crosshair: {
-            enabled: true,
-            stroke: "#999999",
-            strokeWidth: 1,
-          },
+          crosshair: { enabled: true, stroke: "#999999" },
         },
         {
           type: "number",
           position: "left",
           min,
           max,
-          label: { fontSize: 9, color: "#333" },
+          label: {
+            fontSize: 9,
+            color: "#333",
+            formatter: (p) => convert(p.value.toFixed(1)),
+          },
           tick: { count: 3 },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
         },
@@ -717,6 +631,21 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
       legend: { enabled: false },
       background: { visible: false },
     };
+  };
+
+  const chartBoxStyle = {
+    width: "98%",
+    height: "100px",
+    bgcolor: "#fff",
+    borderRadius: "12px",
+    border: "0.5px solid #9F9F9F",
+    boxShadow: "rgba(15, 28, 36, 0.05) 0px 6px 15px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    px: 1.5,
+    overflow: "hidden",
+    pt: 1,
   };
 
   return (
@@ -746,12 +675,10 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
             EC
           </Typography>
         </Box>
-        <Box sx={{ height: "100%", width: "100%" }}>
-          <AgCharts
-            options={getChartOptions("ec", "EC", "#0077FF", "circle", false)}
-            style={{ height: "80%" }}
-          />
-        </Box>
+        <AgCharts
+          options={getChartOptions("ec", "EC", "#0077FF", false)}
+          style={{ height: "80%" }}
+        />
       </Box>
       <Box sx={chartBoxStyle}>
         <Box
@@ -767,15 +694,13 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
             variant="caption"
             sx={{ fontWeight: "bold", color: "#FF5E57" }}
           >
-            PC (pH)
+            pH
           </Typography>
         </Box>
-        <Box sx={{ height: "100%", width: "100%" }}>
-          <AgCharts
-            options={getChartOptions("pc", "PC", "#FF5E57", "square", false)}
-            style={{ height: "80%" }}
-          />
-        </Box>
+        <AgCharts
+          options={getChartOptions("pc", "PC", "#FF5E57", false)}
+          style={{ height: "80%" }}
+        />
       </Box>
       <Box sx={chartBoxStyle}>
         <Box
@@ -794,22 +719,18 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
             Temp
           </Typography>
         </Box>
-        <Box sx={{ height: "100%", width: "100%" }}>
-          {/* فقط اینجا showXAxis = true است */}
-          <AgCharts
-            options={getChartOptions("temp", "Temp", "#2ECC71", "triangle", true)}
-            style={{ height: "80%" }}
-          />
-        </Box>
+        <AgCharts
+          options={getChartOptions("temp", "Temp", "#2ECC71", true)}
+          style={{ height: "80%" }}
+        />
       </Box>
     </Box>
   );
 };
 
-// --- کامپوننت اصلی با اسلایدر Native ---
+// --- کامپوننت اصلی ---
 const SlidingWindowChart = () => {
   const scrollRef = useRef(null);
-
   const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
   const [calibrateTab, setCalibrateTab] = useState("ec");
   const [calibrateValues, setCalibrateValues] = useState({
@@ -818,10 +739,8 @@ const SlidingWindowChart = () => {
     phLow: "",
     phHigh: "",
   });
-
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastUpdateTime, setLastUpdateTime] = useState("---");
-
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
@@ -830,10 +749,8 @@ const SlidingWindowChart = () => {
     if (el) {
       const isAtStart = el.scrollLeft <= 5;
       const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 5;
-
       setCanScrollLeft(!isAtStart);
       setCanScrollRight(!isAtEnd);
-
       const index = Math.round(el.scrollLeft / el.clientWidth);
       if (index !== activeIndex && index >= 0 && index < SENSORS.length) {
         setActiveIndex(index);
@@ -846,9 +763,7 @@ const SlidingWindowChart = () => {
     if (el) {
       el.addEventListener("scroll", handleScrollEvents);
       window.addEventListener("resize", handleScrollEvents);
-
       setTimeout(handleScrollEvents, 100);
-
       return () => {
         el.removeEventListener("scroll", handleScrollEvents);
         window.removeEventListener("resize", handleScrollEvents);
@@ -866,10 +781,6 @@ const SlidingWindowChart = () => {
       });
     }
   };
-
-  const handleTimeUpdate = useCallback((time) => {
-    setLastUpdateTime(time);
-  }, []);
 
   const currentSensor = SENSORS[activeIndex] || SENSORS[0];
 
@@ -898,23 +809,18 @@ const SlidingWindowChart = () => {
           mb: 1,
         }}
       >
-        <Box sx={{display:"flex" , gap:"2rem"}}>
+        <Box sx={{ display: "flex", gap: "2rem" }}>
           <Typography fontFamily={"IRANSANS"} fontWeight="bold" fontSize={12}>
             نمودار وضعیت مخزن - {currentSensor.name}
           </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={12}
-            color="#666"
-            mt={0}
-          >
-           -- آخرین داده:{" "}
+          <Typography fontFamily={"IRANSANS"} fontSize={12} color="#666">
+            -- آخرین داده:{" "}
             <span style={{ direction: "ltr", display: "inline-block" }}>
-              {lastUpdateTime}
+              {convert(lastUpdateTime)}
             </span>
           </Typography>
         </Box>
-        <Box sx={{scale:"0.85"}}>
+        <Box sx={{ scale: "0.85" }}>
           <IconTextButton
             icon={assets.svg.calibrationsvg}
             text={`کالیبراسیون ${currentSensor.name}`}
@@ -949,7 +855,6 @@ const SlidingWindowChart = () => {
             borderRadius: "5px",
             backgroundColor: "#E3E3E3",
             border: "0.5px solid #9F9F9F",
-            "&:hover": { backgroundColor: "#d0d0d0" },
             opacity: canScrollRight ? 1 : 0.5,
           }}
         >
@@ -963,11 +868,8 @@ const SlidingWindowChart = () => {
             height: "280px",
             display: "flex",
             overflowX: "auto",
-            scrollBehavior: "smooth",
             scrollSnapType: "x mandatory",
-            direction: "ltr",
             "&::-webkit-scrollbar": { display: "none" },
-            msOverflowStyle: "none",
             scrollbarWidth: "none",
           }}
         >
@@ -985,7 +887,7 @@ const SlidingWindowChart = () => {
               <SensorChartItem
                 sensor={sensor}
                 isActive={index === activeIndex}
-                onTimeUpdate={handleTimeUpdate}
+                onTimeUpdate={(t) => setLastUpdateTime(t)}
                 isModalOpen={isCalibrateOpen}
               />
             </Box>
@@ -1001,7 +903,6 @@ const SlidingWindowChart = () => {
             borderRadius: "5px",
             backgroundColor: "#E3E3E3",
             border: "0.5px solid #9F9F9F",
-            "&:hover": { backgroundColor: "#d0d0d0" },
             opacity: canScrollLeft ? 1 : 0.5,
           }}
         >
