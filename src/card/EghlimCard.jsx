@@ -1,5 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import assets from "../assets";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "../api/apiClient";
 
 const EghlimCard = ({
   zone,
@@ -12,7 +14,29 @@ const EghlimCard = ({
   parde,
   dariche,
   mehpash,
+  isAuto: parentIsAuto = false,
 }) => {
+  // دریافت وضعیت اتوماتیک/دستی برای هر زون
+  const { data: modeData } = useQuery({
+    queryKey: ["operatorModeEghlim", zone],
+    queryFn: async () => {
+      const res = await apiClient.get(`/climate/operators-mode/?zone=${zone}`);
+      return res;
+    },
+    refetchInterval: 5000,
+  });
+
+  // استخراج وضعیت is_auto از ریسپانس API (مانند چیزی که در کامپوننت پایش انجام شده)
+  const fetchedIsAuto =
+    typeof modeData === "object" && modeData !== null && "is_auto" in modeData
+      ? modeData.is_auto
+      : typeof modeData === "boolean"
+      ? modeData
+      : null;
+
+  // اگر دیتا فچ شد از آن استفاده می‌کنیم، در غیر این صورت از پراپ والد
+  const isAuto = fetchedIsAuto !== null ? fetchedIsAuto : parentIsAuto;
+
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
     let res = "";
@@ -72,38 +96,66 @@ const EghlimCard = ({
           }}
         >
           <img
-            src={fan1 ? assets.img.fan1An : assets.img.fan1}
-            alt=""
+            src={
+              isAuto
+                ? (fan1 ? assets.img.fan1GreenAn : assets.img.fan1RedAn)
+                : (fan1 ? assets.img.fan1An : assets.img.fan1)
+            }
+            alt="fan1"
             width={"24px"}
           />
           <img
-            src={pad ? assets.img.padAN : assets.img.pad}
-            alt=""
+            src={
+              isAuto
+                ? (pad ? assets.img.padGreenAn : assets.img.padRedAn)
+                : (pad ? assets.img.padAN : assets.img.pad)
+            }
+            alt="pad"
             width={"24px"}
           />
           <img
-            src={fan2 ? assets.img.fan2An : assets.img.fan2}
-            alt=""
+            src={
+              isAuto
+                ? (fan2 ? assets.img.fan2GreenAn : assets.img.fan2RedAn)
+                : (fan2 ? assets.img.fan2An : assets.img.fan2)
+            }
+            alt="fan2"
             width={"24px"}
           />
           <img
-            src={dariche ? assets.img.daricheAn : assets.img.dariche}
-            alt=""
+            src={
+              isAuto
+                ? (dariche ? assets.img.daricheGreenAn : assets.img.daricheRedAn)
+                : (dariche ? assets.img.daricheAn : assets.img.dariche)
+            }
+            alt="dariche"
             width={"24px"}
           />
           <img
-            src={mehpash ? assets.img.mehPashAn : assets.img.mehPash}
-            alt=""
+            src={
+              isAuto
+                ? (mehpash ? assets.img.mehPashGreenAn : assets.img.mehPashRedAn)
+                : (mehpash ? assets.img.mehPashAn : assets.img.mehPash)
+            }
+            alt="mehpash"
             width={"24px"}
           />
           <img
-            src={bokhari ? assets.img.bokhariAn : assets.img.bokhari}
-            alt=""
+            src={
+              isAuto
+                ? (bokhari ? assets.img.bokhariGreenAn : assets.img.bokhariRedAn)
+                : (bokhari ? assets.img.bokhariAn : assets.img.bokhari)
+            }
+            alt="bokhari"
             width={"24px"}
           />
           <img
-            src={parde ? assets.img.pardeAn : assets.img.parde}
-            alt=""
+            src={
+              isAuto
+                ? (parde ? assets.img.pardeGreenAn : assets.img.pardeRedAn)
+                : (parde ? assets.img.pardeAn : assets.img.parde)
+            }
+            alt="parde"
             width={"24px"}
           />
         </Box>

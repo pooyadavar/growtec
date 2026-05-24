@@ -148,6 +148,8 @@ const Eghlim = () => {
                 dariche={card.hatch_opening || false}
                 // طبق JSON: "fogger"
                 mehpash={card.fogger || false}
+                // بررسی وضعیت حالت اتوماتیک
+                isAuto={card.is_auto || false}
               />
             </StyledGridItem>
           ))}

@@ -25,6 +25,7 @@ import {
   controlStocksMixer,
   emergencyStop,
 } from "../../api/solubleApi";
+import apiClient from "../../api/apiClient"; // اضافه شدن برای کالیبراسیون
 import toast from "react-hot-toast";
 
 const Control = () => {
@@ -38,10 +39,11 @@ const Control = () => {
     return res;
   };
 
+  // استیت‌های بخش تزریق دستی
   const [pomp, setPomp] = React.useState(1);
   const [injectionType, setInjectionType] = React.useState("stock");
   const [selectedPomp, setSelectedPomp] = React.useState(0);
-  const [injectionVolume, setInjectionVolume] = React.useState(1);
+  const [injectionVolume, setInjectionVolume] = React.useState();
 
   const handleInjectionVolumeChange = (event) => {
     setInjectionVolume(parseInt(event.target.value, 10));
@@ -81,6 +83,7 @@ const Control = () => {
     setVolume(parseInt(event.target.value, 10));
   };
 
+  // استیت‌های مودال‌ها
   const [createOpen, setCreateOpen] = React.useState(false);
   const handleCreateClose = () => setCreateOpen(false);
   const handleCreateOpen = () => setCreateOpen(true);
@@ -93,20 +96,27 @@ const Control = () => {
   const handleInjectionClose = () => setInjectionOpen(false);
   const handleInjectionOpen = () => setInjectionOpen(true);
 
-  // --- استیت‌های مربوط به مودال کالیبراسیون جدید ---
+  // --- استیت‌های مربوط به مودال کالیبراسیون جدید دوزینگ پمپ ---
   const [calibrationOpen, setCalibrationOpen] = React.useState(false);
+  const [calibType, setCalibType] = React.useState("stock"); // اسید یا استوک
   const [calibSelectedPump, setCalibSelectedPump] = React.useState(1);
   const [calibInjectedVolume, setCalibInjectedVolume] = React.useState("");
+  const [calibCurrentStep, setCalibCurrentStep] = React.useState(1); // 1 یا 2
 
   const handleCalibrationClose = () => {
     setCalibrationOpen(false);
+    setCalibInjectedVolume(""); // ریست فیلد حجم
+    setCalibCurrentStep(1); // بازگشت به مرحله ۱
   };
+
   const handleCalibrationOpen = () => {
     setCalibrationOpen(true);
+    setCalibCurrentStep(1);
   };
 
   const [emptyStatusText, setEmptyStatusText] = React.useState("");
 
+  // --- API Mutations ---
   const { mutate: emptyTankMutation } = useMutation({
     mutationFn: emptyingTank,
     onSuccess: (data, variables) => {
@@ -183,6 +193,51 @@ const Control = () => {
       toast.error("خطا در توقف اضطراری");
     },
   });
+
+  // --- API کالیبراسیون دوزینگ پمپ ---
+  const { mutate: calibratePumpMutation } = useMutation({
+    mutationFn: async (data) => {
+      return await apiClient.post(
+        "/calibration/calibration-dosing-pump/",
+        data,
+      );
+    },
+    onSuccess: (data, variables) => {
+      toast.success("عملیات با موفقیت انجام شد");
+      // مدیریت مراحل بعد از موفقیت آمیز بودن درخواست
+      if (variables.step === 1) {
+        setCalibCurrentStep(2);
+      } else if (variables.step === 2) {
+        handleCalibrationClose();
+      }
+    },
+    onError: (error) => {
+      console.error("Calibration error:", error);
+      toast.error("خطا در ارتباط با سرور");
+    },
+  });
+
+  const handleCalibrationStep = (step) => {
+    const payload = {
+      dosing_pump: calibType, // 'acid' or 'stock'
+      step: step,
+      work_duration: 10, // فعلاً ثابت
+    };
+
+    if (calibType === "stock") {
+      payload.dosing_pump_number = calibSelectedPump;
+    }
+
+    if (step === 2) {
+      if (!calibInjectedVolume) {
+        toast.error("لطفاً حجم تزریق شده را وارد کنید");
+        return;
+      }
+      payload.filled_value = Number(calibInjectedVolume);
+    }
+
+    calibratePumpMutation(payload);
+  };
 
   const handleEmptyingSubmit = () => {
     let status = "";
@@ -276,13 +331,12 @@ const Control = () => {
         />
       </Stack>
 
-      {/* مودال تزریق دستی */}
+      {/* ===================== مودال تزریق دستی ===================== */}
       <Modal
         className="injection-modal"
         disableAutoFocus
         open={injectionOpen}
         onClose={handleInjectionClose}
-        aria-labelledby="modal-modal-title"
       >
         <Box
           sx={{
@@ -342,7 +396,6 @@ const Control = () => {
               }}
             >
               <InputLabel
-                id="select-type-label-id"
                 sx={{
                   color: "#004323",
                   fontFamily: "IRANSANS",
@@ -360,9 +413,7 @@ const Control = () => {
                 }}
                 value={injectionType}
                 onChange={handleInjectionTypeChange}
-                labelId="select-type-label-id"
                 label="نوع"
-                id="select-type"
               >
                 <MenuItem value="stock" sx={{ fontFamily: "IRANSANS" }}>
                   استوک
@@ -384,7 +435,6 @@ const Control = () => {
                 }}
               >
                 <InputLabel
-                  id="select-pomp-label-id"
                   sx={{
                     color: "#004323",
                     fontFamily: "IRANSANS",
@@ -402,7 +452,6 @@ const Control = () => {
                   }}
                   value={selectedPomp}
                   onChange={handlePompChange}
-                  labelId="select-pomp-label-id"
                   label="شماره دوزینگ پمپ"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((num) => (
@@ -437,7 +486,7 @@ const Control = () => {
                 fontFamily: "IRANSANS",
                 boxSizing: "border-box",
               }}
-            ></input>
+            />
 
             <Button
               variant="contained"
@@ -475,7 +524,6 @@ const Control = () => {
               }}
             />
 
-            {/* دکمه باز کردن مودال کالیبراسیون */}
             <Button
               variant="contained"
               onClick={handleCalibrationOpen}
@@ -498,9 +546,8 @@ const Control = () => {
         </Box>
       </Modal>
 
-      {/* مودال ساخت دستی */}
+      {/* ===================== مودال ساخت دستی ===================== */}
       <Modal open={createOpen} onClose={handleCreateClose}>
-        {/* این بخش همانطور که قبلا بود دست نخورده باقی ماند، برای جلوگیری از شلوغی اینجا کوتاه شده ولی شما کد قبلی را دارید */}
         <Box
           sx={{
             position: "absolute",
@@ -664,7 +711,7 @@ const Control = () => {
         </Box>
       </Modal>
 
-      {/* مودال تخلیه مخزن */}
+      {/* ===================== مودال تخلیه مخزن ===================== */}
       <Modal open={clearOpen} onClose={handleClearClose}>
         <Box
           sx={{
@@ -807,7 +854,7 @@ const Control = () => {
         </Box>
       </Modal>
 
-      {/* ========= مودال جدید کالیبراسیون دوزینگ پمپ بر اساس عکس ========= */}
+      {/* ===================== مودال کالیبراسیون دوزینگ پمپ ===================== */}
       <Modal
         disableAutoFocus
         open={calibrationOpen}
@@ -831,7 +878,7 @@ const Control = () => {
             gap: 2.5,
           }}
         >
-          {/* Header - مشابه عکس */}
+          {/* Header */}
           <Box
             sx={{
               display: "flex",
@@ -853,50 +900,82 @@ const Control = () => {
           </Box>
 
           {/* Select: دوزینگ پمپ‌ها */}
-          <FormControl sx={{ width: "70%" }}>
+          <FormControl sx={{ width: "85%" }}>
             <Select
-              value={calibSelectedPump}
-              onChange={(e) => setCalibSelectedPump(e.target.value)}
-              displayEmpty
+              value={calibType}
+              onChange={(e) => setCalibType(e.target.value)}
+              disabled={calibCurrentStep === 2} // در مرحله ۲ نمی‌تواند نوع را عوض کند
               sx={{
                 fontFamily: "IRANSANS",
                 borderRadius: "10px",
                 textAlign: "center",
-                "& .MuiSelect-select": { py: 1.5 },
+                height: "45px",
               }}
             >
-              <MenuItem disabled value="">
-                <Typography fontFamily={"IRANSANS"}>دوزینگ پمپ‌ها</Typography>
+              <MenuItem
+                value="stock"
+                sx={{ fontFamily: "IRANSANS", justifyContent: "center" }}
+              >
+                استوک
               </MenuItem>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((num) => (
-                <MenuItem
-                  key={num}
-                  value={num}
-                  sx={{ fontFamily: "IRANSANS", justifyContent: "center" }}
-                >
-                  {convert(num)}
-                </MenuItem>
-              ))}
+              <MenuItem
+                value="acid"
+                sx={{ fontFamily: "IRANSANS", justifyContent: "center" }}
+              >
+                اسید
+              </MenuItem>
             </Select>
           </FormControl>
 
-          {/* Button: تزریق */}
+          {/* Select: شماره پمپ (فقط برای استوک) */}
+          {calibType === "stock" && (
+            <FormControl sx={{ width: "85%" }}>
+              <Select
+                value={calibSelectedPump}
+                onChange={(e) => setCalibSelectedPump(e.target.value)}
+                displayEmpty
+                disabled={calibCurrentStep === 2}
+                sx={{
+                  fontFamily: "IRANSANS",
+                  borderRadius: "10px",
+                  textAlign: "center",
+                  height: "45px",
+                }}
+              >
+                <MenuItem disabled value="">
+                  <Typography fontFamily={"IRANSANS"}>شماره پمپ</Typography>
+                </MenuItem>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((num) => (
+                  <MenuItem
+                    key={num}
+                    value={num}
+                    sx={{ fontFamily: "IRANSANS", justifyContent: "center" }}
+                  >
+                    {convert(num)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {/* Button: استپ 1 (تزریق) */}
           <Button
             variant="contained"
-            onClick={() =>
-              console.log("Inject Clicked for pump", calibSelectedPump)
-            }
+            disabled={calibCurrentStep !== 1}
+            onClick={() => handleCalibrationStep(1)}
             sx={{
-              width: "70%",
-              backgroundColor: "#B8FFDD",
-              color: "#3c3c3c",
+              width: "85%",
+              backgroundColor: calibCurrentStep === 1 ? "#7BCC9F" : "#E0E0E0",
+              color: calibCurrentStep === 1 ? "#FFFFFF" : "#9E9E9E",
               borderRadius: "10px",
               fontFamily: "IRANSANS",
               fontSize: "18px",
               py: 1,
               boxShadow: "none",
-              border: "1px solid #46735d",
-              "&:hover": { backgroundColor: "#6BAE8E", boxShadow: "none" },
+              "&:hover": {
+                backgroundColor: calibCurrentStep === 1 ? "#68B88C" : "#E0E0E0",
+                boxShadow: "none",
+              },
             }}
           >
             تزریق
@@ -907,36 +986,47 @@ const Control = () => {
             placeholder="حجم تزریق شده"
             value={calibInjectedVolume}
             onChange={(e) => setCalibInjectedVolume(e.target.value)}
+            type="number"
+            disabled={calibCurrentStep !== 2}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: "10px",
+                height: "45px",
                 fontFamily: "IRANSANS",
+                backgroundColor: calibCurrentStep === 2 ? "#FFFFFF" : "#F5F5F5",
                 "& input": {
                   textAlign: "center",
                   fontWeight: "bold",
                   fontSize: "16px",
                 },
               },
-              width: "70%",
+              width: "85%",
             }}
           />
 
-          {/* Button: تایید حجم تزریق شده */}
+          {/* Button: استپ 2 (تایید حجم) */}
           <Button
             variant="contained"
-            onClick={() => console.log("Confirm Clicked", calibInjectedVolume)}
+            disabled={calibCurrentStep !== 2}
+            onClick={() => handleCalibrationStep(2)}
             sx={{
-              width: "70%",
-              backgroundColor: "#B8FFDD",
-              color: "#3c3c3c",
+              width: "85%",
+              backgroundColor: calibCurrentStep === 2 ? "#7BCC9F" : "#E0E0E0",
+              color: calibCurrentStep === 2 ? "#000000" : "#9E9E9E",
               borderRadius: "10px",
               fontFamily: "IRANSANS",
               fontSize: "18px",
               fontWeight: "bold",
               py: 1,
               boxShadow: "none",
-              border: "1px solid #46735d",
-              "&:hover": { backgroundColor: "#6BAE8E", boxShadow: "none" },
+              border:
+                calibCurrentStep === 2
+                  ? "1px solid #46735d"
+                  : "1px solid transparent",
+              "&:hover": {
+                backgroundColor: calibCurrentStep === 2 ? "#68B88C" : "#E0E0E0",
+                boxShadow: "none",
+              },
             }}
           >
             تایید حجم تزریق شده
@@ -950,8 +1040,7 @@ const Control = () => {
 export default Control;
 
 // =========================================================================
-// Modal A: این همون مودال مخزن است که اشتباهی اینجا گذاشته بودی.
-// کشیدمش بیرون. کپی کن و در همون فایلی که واقعاً بهش نیاز داری استفاده کن.
+// Modal A: کامپوننت مخزن برای استفاده در جاهای دیگر (مثل IrrigationCard)
 // =========================================================================
 
 export const ModalA = ({ open, onClose }) => {

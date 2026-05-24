@@ -1,8 +1,12 @@
 import * as React from "react";
 import { Typography, Box, Paper, Divider, Button, Modal } from "@mui/material";
 import { AgCharts } from "ag-charts-react";
+import { useMutation, useQuery } from "@tanstack/react-query"; // اضافه شد
 import assets from "../assets/index";
 import IconTextButton from "./IconTextButton";
+import apiClient from "../api/apiClient" // اضافه شد (مسیر را در صورت نیاز چک کنید)
+import { getIrrigationTanksStatus } from "../api/dashboardApi"; // اضافه شد
+import toast from "react-hot-toast"; // اضافه شد
 
 const IrrigationCard = ({
   storageNumber,
@@ -16,10 +20,11 @@ const IrrigationCard = ({
   onClickSettings,
   irrigationScheduleItems = [],
 }) => {
-  // استیت برای باز و بسته کردن مودال A
+  // استیت‌های مودال
   const [isModalAOpen, setIsModalAOpen] = React.useState(false);
-  const [calibBtn1Disabled, setCalibBtn1Disabled] = React.useState(false);
-  const [calibBtn2Disabled, setCalibBtn2Disabled] = React.useState(false);
+
+  // استیت کنترل مراحل کالیبراسیون (۱ = حد پایین، ۲ = حد بالا)
+  const [calibStep, setCalibStep] = React.useState(1);
 
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
@@ -138,6 +143,71 @@ const IrrigationCard = ({
     Math.min(100, (storageCapacity / (maxStorageCapacity || 100)) * 100),
   );
 
+  // --- API دریافت داده‌های زنده مخازن ---
+  const { data: realTimeTanksData } = useQuery({
+    queryKey: ["irrigationTanksStatus_calib"],
+    queryFn: getIrrigationTanksStatus,
+    refetchInterval: 5000,
+    enabled: isModalAOpen, // فقط زمان باز بودن مودال فچ شود
+  });
+
+  const tankRealTimeData = realTimeTanksData ? realTimeTanksData[storageNumber]?.contents : null;
+  const realTimeVolume = tankRealTimeData?.filled_volume ?? storageCapacity;
+  const realTimeMax = tankRealTimeData?.max_volume ?? maxStorageCapacity;
+  
+  // محاسبه درصدی با داده‌های لایو
+  const realTimeFillPercentage = Math.max(
+    0,
+    Math.min(100, (realTimeVolume / (realTimeMax || 100)) * 100),
+  );
+
+  // محاسبه سطح بر اساس متغیرهای احتمالی (در صورت نبود متغیر صریح، از درصد استفاده می‌کنیم)
+  const realTimeLevel = tankRealTimeData?.level ?? tankRealTimeData?.water_level ?? `${realTimeFillPercentage.toFixed(0)} %`;
+
+  // --- API کالیبراسیون مخزن (سنسور فشار) ---
+  const { mutate: calibrateTankMutation } = useMutation({
+    mutationFn: async (data) => {
+      return await apiClient.post(
+        "/calibration/calibration-pressure-sensor/",
+        data,
+      );
+    },
+    onSuccess: (data, variables) => {
+      if (variables.status === "empty") {
+        toast.success(
+          "حجم پایین مخزن ثبت شد. لطفاً مخزن را پر کرده و مرحله بعد را انجام دهید.",
+        );
+        setCalibStep(2); // تغییر استیت به مرحله ۲
+      } else if (variables.status === "full") {
+        toast.success("کالیبراسیون مخزن با موفقیت انجام شد.");
+        setIsModalAOpen(false); // بستن مودال در پایان کار
+        setCalibStep(1); // ریست کردن مرحله
+      }
+    },
+    onError: (error) => {
+      console.error("Calibration Error:", error);
+      toast.error("خطا در کالیبراسیون مخزن");
+    },
+  });
+
+  const handleCalibrateStep1 = (e) => {
+    e.stopPropagation();
+    calibrateTankMutation({
+      tank: "irrigation",
+      tank_number: Number(storageNumber),
+      status: "empty",
+    });
+  };
+
+  const handleCalibrateStep2 = (e) => {
+    e.stopPropagation();
+    calibrateTankMutation({
+      tank: "irrigation",
+      tank_number: Number(storageNumber),
+      status: "full",
+    });
+  };
+
   return (
     <Paper
       onClick={onClick}
@@ -148,9 +218,9 @@ const IrrigationCard = ({
         borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "flex-start", // رفع باگِ حاشیه‌های اضافی و باد کردن از بالا
+        justifyContent: "flex-start",
         alignItems: "center",
-        gap: 1.5, // ایجاد فاصله‌ی منطقی بین تمام آیتم‌ها
+        gap: 1.5,
         cursor: onClick ? "pointer" : "default",
         transition: "transform 0.2s",
         p: 2,
@@ -311,7 +381,7 @@ const IrrigationCard = ({
         className="irrigation-card-table"
         sx={{
           width: "280px",
-          flexGrow: 1, // پر کردن فضای باقیمانده بدون نیاز به ارتفاع ثابت
+          flexGrow: 1,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -548,7 +618,6 @@ const IrrigationCard = ({
           )}
         </Box>
 
-        {/* ===================== قسمت دکمه‌های پایین با ارتفاع بیشتر ===================== */}
         <Box
           sx={{
             width: "100%",
@@ -567,11 +636,11 @@ const IrrigationCard = ({
             }}
             sx={{
               flex: 1,
-              height: "55px", // افزایش ارتفاع به درستی
+              height: "55px",
               backgroundColor: "#6CCDB0",
               color: "#000",
               fontFamily: "IRANSANS",
-              fontSize: "14px", // فونت کمی بزرگتر برای تناسب با ارتفاع
+              fontSize: "14px",
               fontWeight: "bold",
               borderRadius: "8px",
               boxShadow: "none",
@@ -589,11 +658,11 @@ const IrrigationCard = ({
             }}
             sx={{
               flex: 1,
-              height: "55px", // افزایش ارتفاع به درستی
+              height: "55px",
               backgroundColor: "#FFCB82",
               color: "#000",
               fontFamily: "IRANSANS",
-              fontSize: "14px", // فونت کمی بزرگتر برای تناسب با ارتفاع
+              fontSize: "14px",
               fontWeight: "bold",
               borderRadius: "8px",
               boxShadow: "none",
@@ -619,8 +688,7 @@ const IrrigationCard = ({
         onClose={(e) => {
           if (e) e.stopPropagation();
           setIsModalAOpen(false);
-          setCalibBtn1Disabled(false);
-          setCalibBtn2Disabled(false);
+          setCalibStep(1); // ریست کردن مرحله هنگام بستن
         }}
       >
         <Box
@@ -632,7 +700,7 @@ const IrrigationCard = ({
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
             backgroundColor: "#FFFFFF",
-            width: "550px", // عرض ثابت ۵۵۰
+            width: "550px",
             height: "auto",
             maxHeight: "90vh",
             overflowY: "auto",
@@ -662,9 +730,28 @@ const IrrigationCard = ({
               onClick={(e) => {
                 e.stopPropagation();
                 setIsModalAOpen(false);
+                setCalibStep(1);
               }}
               style={{ cursor: "pointer", width: "20px", height: "20px" }}
             />
+          </Box>
+
+          {/* نمایش حجم و سطح لحظه‌ای */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-around",
+              width: "100%",
+              mt: 1,
+              mb: 1,
+            }}
+          >
+            <Typography fontFamily={"IRANSANS"} fontSize={16}>
+              حجم مخزن: <strong style={{ color: "#004323" }}>{convert(realTimeVolume)}</strong> لیتر
+            </Typography>
+            <Typography fontFamily={"IRANSANS"} fontSize={16}>
+              سطح مخزن: <strong style={{ color: "#004323" }}>{convert(realTimeLevel)}</strong>
+            </Typography>
           </Box>
 
           {/* گرافیک سطح مخزن */}
@@ -679,8 +766,8 @@ const IrrigationCard = ({
           >
             <Box
               sx={{
-                width: "280px", // عرض بیشتر از ارتفاع شد
-                height: "140px", // ارتفاع به شدت کاهش یافت
+                width: "280px",
+                height: "140px",
                 borderRadius: "10px",
                 border: "2px solid #9F9F9F",
                 position: "relative",
@@ -695,9 +782,9 @@ const IrrigationCard = ({
                   bottom: 0,
                   left: 0,
                   width: "100%",
-                  height: `${fillPercentage}%`,
+                  height: `${realTimeFillPercentage}%`,
                   backgroundColor: "#2196F3",
-                  borderRadius: fillPercentage > 95 ? "8px" : "0 0 8px 8px",
+                  borderRadius: realTimeFillPercentage > 95 ? "8px" : "0 0 8px 8px",
                   transition: "height 0.5s ease-in-out",
                   opacity: 0.8,
                 }}
@@ -709,13 +796,12 @@ const IrrigationCard = ({
                   top: "10px",
                   fontSize: "16px",
                   zIndex: 2,
-                  color: fillPercentage > 80 ? "#fff" : "#333",
+                  color: realTimeFillPercentage > 80 ? "#fff" : "#333",
                 }}
               >
                 مخزن
               </Typography>
 
-              {/* فلوترهای کنار مخزن */}
               <Box
                 sx={{
                   display: "flex",
@@ -725,7 +811,7 @@ const IrrigationCard = ({
                   position: "absolute",
                   right: "-26px",
                   top: "-10px",
-                  py: 1.5, // پدینگ کمتر شد تا توی این ارتفاع کم جا بشوند
+                  py: 1.5,
                   zIndex: 3,
                 }}
               >
@@ -761,72 +847,56 @@ const IrrigationCard = ({
                 />
               </Box>
             </Box>
-
-            {/* <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-              <Box
-                sx={{
-                  width: "70px",
-                  height: "30px",
-                  backgroundColor: "#f5f5f5",
-                  borderRadius: "4px",
-                  border: "0.5px solid #9F9F9F",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Typography fontSize={"15px"} fontFamily={"IRANSANS"}>
-                  {convert(storageCapacity)}
-                </Typography>
-              </Box>
-              <Typography fontSize={15} pl={"8px"}>
-                L
-              </Typography>
-            </Box> */}
           </Box>
 
-          {/* دکمه‌های عملیات مودال A */}
+          {/* دکمه‌های عملیات کالیبراسیون با منطق استپ ۱ و ۲ */}
           <Box sx={{ display: "flex", width: "80%", gap: 2, mt: 1 }}>
             <Button
               variant="contained"
-              disabled={calibBtn1Disabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCalibBtn1Disabled(true);
-              }}
+              disabled={calibStep !== 2} // فقط در مرحله ۲ فعال است
+              onClick={handleCalibrateStep2}
               sx={{
                 flex: 1,
                 height: "40px",
                 fontSize: "15px",
-                color: "#004323",
-                backgroundColor: "#B8FFDD",
+                color: calibStep === 2 ? "#004323" : "#9E9E9E",
+                backgroundColor: calibStep === 2 ? "#B8FFDD" : "#E0E0E0",
                 borderRadius: "10px",
-                border: "0.5px solid #004323",
+                border:
+                  calibStep === 2
+                    ? "0.5px solid #004323"
+                    : "0.5px solid transparent",
                 fontFamily: "IRANSANS",
                 boxShadow: "none",
-                "&:hover": { backgroundColor: "#a0eed0", boxShadow: "none" },
+                "&:hover": {
+                  backgroundColor: calibStep === 2 ? "#a0eed0" : "#E0E0E0",
+                  boxShadow: "none",
+                },
               }}
             >
               تایید حجم بالای مخزن
             </Button>
             <Button
               variant="contained"
-              disabled={calibBtn2Disabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCalibBtn2Disabled(true);
-              }}
+              disabled={calibStep !== 1} // فقط در مرحله ۱ فعال است
+              onClick={handleCalibrateStep1}
               sx={{
                 flex: 1,
                 height: "40px",
                 fontSize: "15px",
-                color: "#004323",
-                backgroundColor: "#B8FFDD",
+                color: calibStep === 1 ? "#004323" : "#9E9E9E",
+                backgroundColor: calibStep === 1 ? "#B8FFDD" : "#E0E0E0",
                 borderRadius: "10px",
-                border: "0.5px solid #004323",
+                border:
+                  calibStep === 1
+                    ? "0.5px solid #004323"
+                    : "0.5px solid transparent",
                 fontFamily: "IRANSANS",
                 boxShadow: "none",
-                "&:hover": { backgroundColor: "#a0eed0", boxShadow: "none" },
+                "&:hover": {
+                  backgroundColor: calibStep === 1 ? "#a0eed0" : "#E0E0E0",
+                  boxShadow: "none",
+                },
               }}
             >
               تایید حجم پایین مخزن
