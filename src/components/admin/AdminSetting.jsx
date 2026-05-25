@@ -13,6 +13,8 @@ import {
 import React, { useState, useEffect } from "react";
 import assets from "../../assets";
 import apiClient from "../../api/apiClient";
+import toast from "react-hot-toast";
+
 
 // تابع تبدیل اعداد انگلیسی به فارسی (نمایش)
 const convert = (num) => {
@@ -30,7 +32,6 @@ const convert = (num) => {
   return res;
 };
 
-// تابع تبدیل اعداد فارسی به انگلیسی (برای ذخیره در استیت)
 const toEnglishNumber = (str) => {
   if (str === null || str === undefined) return "";
   const persianDigits = [
@@ -364,14 +365,14 @@ const AdminSetting = () => {
             Number(settings.number_of_sensors_zone_4) || 0,
         };
         await apiClient.put("/config/irrigation/", payload);
-        alert("تنظیمات آبیاری با موفقیت ذخیره شد");
+        toast.success("تنظیمات آبیاری با موفقیت ذخیره شد");
       } else if (activeTab === 1) {
         const payload = {
           number_of_sensors: Number(settings.number_of_sensors) || 0,
           number_of_dosing_pumps: Number(settings.number_of_dosing_pumps) || 0,
         };
         await apiClient.put("/config/soluble/", payload);
-        alert("تنظیمات تغذیه با موفقیت ذخیره شد");
+        toast.sec("تنظیمات تغذیه با موفقیت ذخیره شد");
       } else if (activeTab === 2) {
         const payload = { zones: {} };
         for (let i = 1; i <= 5; i++) {
@@ -390,11 +391,11 @@ const AdminSetting = () => {
           };
         }
         await apiClient.put("/config/climate/", payload);
-        alert("تنظیمات اقلیم با موفقیت ذخیره شد");
+        toast.success("تنظیمات اقلیم با موفقیت ذخیره شد");
       }
     } catch (error) {
       console.error("Error saving settings:", error);
-      alert("خطا در ذخیره تنظیمات");
+      toast.error("خطا در ذخیره تنظیمات");
     }
   };
 
