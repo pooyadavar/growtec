@@ -11,7 +11,6 @@ import {
   Typography,
   Container,
   Stack,
-  Grid,
   TextField,
   CircularProgress,
 } from "@mui/material";
@@ -388,39 +387,47 @@ const PayeshSetting = ({ zone }) => {
     [formatValue],
   );
 
+  const areOperatorsEqual = (op1, op2) => {
+    if (!op1 || !op2) return false;
+    const keys = Object.keys(op1);
+    for (let key of keys) {
+      if (op1[key] !== op2[key]) return false;
+    }
+    return true;
+  };
+
+  const humidityObject = useMemo(
+    () => ({
+      1: { minimum: humMin1, maximum: humMax1 },
+      2: { minimum: humMin2, maximum: humMax2 },
+      3: { minimum: humMin3, maximum: humMax3 },
+    }),
+    [humMin1, humMin2, humMin3, humMax1, humMax2, humMax3],
+  );
+
+  const tempObject = useMemo(
+    () => ({
+      1: { minimum: tempMin1, maximum: tempMax1 },
+      2: { minimum: tempMin2, maximum: tempMax2 },
+      3: { minimum: tempMin3, maximum: tempMax3 },
+    }),
+    [tempMax1, tempMax2, tempMax3, tempMin1, tempMin2, tempMin3],
+  );
+
+  // واکشی اطلاعات از APIهای اصلی
   const fetchClimateData = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return {
-      rangeRes: [6, 14, 22],
-      tempRes: {
-        1: { minimum: "18", maximum: "25" },
-        2: { minimum: "20", maximum: "28" },
-        3: { minimum: "15", maximum: "22" },
-      },
-      humRes: {
-        1: { minimum: "40.0", maximum: "60.0" },
-        2: { minimum: "45.0", maximum: "65.0" },
-        3: { minimum: "50.0", maximum: "70.0" },
-      },
-      opRes: {
-        circulating_fan_1: true,
-        circulating_fan_2: false,
-        exhaust_fan_1: true,
-        exhaust_fan_2: false,
-        exhaust_fan_3: false,
-        heater_1: false,
-        heater_2: true,
-        pump_pad: false,
-        roof_hatch: true,
-      },
-      humOpRes: {
-        exhaust_fan_1: false,
-        exhaust_fan_2: true,
-        fogger: true,
-        pump_pad_off: false,
-        roof_hatch: false,
-      },
-    };
+    const [rangeRes, tempRes, humRes, opRes, humOpRes] = await Promise.all([
+      apiClient.get(`/climate/range-start-time/`),
+      apiClient.get(`/climate/temperature-range/`, { params: { zone, part } }),
+      apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
+      apiClient.get(`/climate/temperature-range-operator/`, {
+        params: { zone, part },
+      }),
+      apiClient.get(`/climate/humidity-range-operator/`, {
+        params: { zone, part },
+      }),
+    ]);
+    return { rangeRes, tempRes, humRes, opRes, humOpRes };
   };
 
   const {
@@ -487,7 +494,101 @@ const PayeshSetting = ({ zone }) => {
   };
 
   const handleSave = async () => {
-    toast.success("داده‌ها به صورت فیک ذخیره شدند.");
+    const promises = [];
+
+    // 1. Check Range Start Times
+    const currentRange = normalizeRange([range1, range2, range3]);
+    if (
+      JSON.stringify(currentRange) !== JSON.stringify(initialRangeRef.current)
+    ) {
+      promises.push(
+        apiClient.post(`/climate/range-start-time/`, {
+          range_start_time: currentRange,
+        }),
+      );
+    }
+
+    // 2. Check Temperature Ranges
+    const currentTempRange = normalizeClimateRange(tempObject);
+    if (
+      JSON.stringify(currentTempRange) !==
+      JSON.stringify(initialTempRangeRef.current)
+    ) {
+      promises.push(
+        apiClient.post(`/climate/temperature-range/`, {
+          temperature_range: currentTempRange,
+          zone,
+          part,
+        }),
+      );
+    }
+
+    // 3. Check Humidity Ranges
+    const currentHumRange = normalizeClimateRange(humidityObject);
+    if (
+      JSON.stringify(currentHumRange) !==
+      JSON.stringify(initialHumRangeRef.current)
+    ) {
+      promises.push(
+        apiClient.post(`/climate/humidity-range/`, {
+          humidity_range: currentHumRange,
+          zone,
+          part,
+        }),
+      );
+    }
+
+    // 4. Check Temperature Operators
+    if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
+      promises.push(
+        apiClient.post(`/climate/temperature-range-operator/`, {
+          temperature_range_operator: tempControllers,
+          zone,
+          part,
+        }),
+      );
+    }
+
+    // 5. Check Humidity Operators
+    if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
+      promises.push(
+        apiClient.post(`/climate/humidity-range-operator/`, {
+          humidity_range_operator: humControllers,
+          zone,
+          part,
+        }),
+      );
+    }
+
+    if (promises.length === 0) {
+      if (selected === "ویژه") {
+        toast.success("تنظیمات تب ویژه به صورت ظاهری ذخیره شد.");
+        return;
+      }
+      toast.error("تغییری برای ذخیره وجود ندارد.");
+      return;
+    }
+
+    try {
+      await Promise.all(promises);
+      console.log("Data successfully saved!");
+
+      // Update refs
+      initialRangeRef.current = currentRange;
+      initialTempRangeRef.current = currentTempRange;
+      initialHumRangeRef.current = currentHumRange;
+      initialTempOpRef.current = { ...tempControllers };
+      initialHumOpRef.current = { ...humControllers };
+
+      if (selected === "ویژه") {
+        toast.success("تنظیمات تب ویژه و تغییرات API با موفقیت ذخیره شدند.");
+      } else {
+        toast.success("داده‌ها با موفقیت ذخیره شدند.");
+      }
+    } catch (error) {
+      console.error("Error saving data:", error);
+      toast.error("خطا در ذخیره داده‌ها.");
+    }
   };
 
   const toggleTempController = (key) =>
@@ -672,7 +773,7 @@ const PayeshSetting = ({ zone }) => {
             overflow: "hidden",
           }}
         >
-          {loading || error ? (
+          {loading && selected !== "ویژه" ? (
             <Box
               sx={{
                 position: "absolute",
@@ -688,7 +789,7 @@ const PayeshSetting = ({ zone }) => {
                 zIndex: 10,
               }}
             >
-              {loading && <CircularProgress color="primary" />}
+              <CircularProgress color="primary" />
             </Box>
           ) : (
             <>
@@ -989,6 +1090,13 @@ const PayeshSetting = ({ zone }) => {
               <Button
                 variant="contained"
                 onClick={handleSave}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                }}
+                tabIndex={0}
                 sx={{
                   width: "110px",
                   height: "56px",

@@ -124,7 +124,7 @@ const Eghlim = () => {
 
         "&::-webkit-scrollbar": {
           display: "block",
-          height: "30px",
+          height: "25px",
         },
         "&::-webkit-scrollbar-track": {
           background: "#EBEBEB",
