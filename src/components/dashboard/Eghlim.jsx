@@ -1,52 +1,62 @@
 import React from "react";
 import EghlimCard from "../../card/EghlimCard";
-import {
-  Container,
-  Box,
-  Grid,
-  CircularProgress,
-  Typography,
-} from "@mui/material";
+import { Container, Box, CircularProgress, Typography } from "@mui/material";
 import styled from "styled-components";
 
-import { useQuery } from "@tanstack/react-query"; // تغییر به useQuery
+import { useQuery } from "@tanstack/react-query";
 import { getInsideCliment } from "../../api/dashboardApi";
 
-const StyledGridItem = styled(Grid)({
+const StyledScrollItem = styled(Box)({
   transition: "transform 0.3s ease",
+  flexShrink: 0,
+  userSelect: "none",
+  WebkitUserSelect: "none",
+  MozUserSelect: "none",
+  msUserSelect: "none",
+  // scrollSnapAlign رو حذف کردیم تا اسکرول آزاد باشه
 });
 
-const containerStyles = {
-  width: "730px",
-  height: "210px",
-  borderRadius: "10px",
-  boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
-  backgroundColor: "#ffffff",
-  display: "flex",
-  overflow: "scroll",
-  direction: "ltr",
-  scrollBehavior: "smooth",
-  overflowY: "hidden",
-};
-
 const Eghlim = () => {
-  // یک درخواست واحد برای دریافت کل اطلاعات
+  const scrollContainerRef = React.useRef(null);
+
+  const isDown = React.useRef(false);
+  const startX = React.useRef(0);
+  const scrollLeftState = React.useRef(0);
+
+  const handleMouseDown = (e) => {
+    isDown.current = true;
+    startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeftState.current = scrollContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    isDown.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDown.current = false;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDown.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5;
+    scrollContainerRef.current.scrollLeft = scrollLeftState.current - walk;
+  };
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["insideClimentAll"], // کلید کوئری را تغییر دادیم
+    queryKey: ["insideClimentAll"],
     queryFn: getInsideCliment,
     refetchInterval: 5000,
   });
 
-  // تبدیل فرمت دیتای دریافتی به آرایه برای نمایش در کارت‌ها
-  // ریسپانس شامل کلیدهای "1", "2", "3", "4", "5" است.
   const zones = React.useMemo(() => {
     if (!data) return [];
-
     const zoneList = [];
-    const zoneIds = [1, 2, 3, 4, 5]; // تعداد زون‌های مورد نظر
+    const zoneIds = [1, 2, 3, 4, 5];
 
     zoneIds.forEach((id) => {
-      // دسترسی به کلید استرینگ در آبجکت ریسپانس (مثلا data["1"])
       const zoneData = data[String(id)];
       if (zoneData) {
         zoneList.push(zoneData);
@@ -55,17 +65,21 @@ const Eghlim = () => {
     return zoneList;
   }, [data]);
 
+  const baseStyles = {
+    width: "730px",
+    height: "210px",
+    borderRadius: "10px",
+    boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+    backgroundColor: "#ffffff",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  };
+
   if (isLoading) {
     return (
-      <Container
-        className="eghlim"
-        sx={{
-          ...containerStyles,
-          justifyContent: "center",
-          alignItems: "center",
-          overflow: "hidden",
-        }}
-      >
+      <Container className="eghlim" sx={baseStyles}>
         <CircularProgress />
       </Container>
     );
@@ -73,15 +87,7 @@ const Eghlim = () => {
 
   if (isError) {
     return (
-      <Container
-        className="eghlim"
-        sx={{
-          ...containerStyles,
-          justifyContent: "center",
-          alignItems: "center",
-          overflow: "hidden",
-        }}
-      >
+      <Container className="eghlim" sx={baseStyles}>
         <Typography fontFamily={"IRANSANS"} color="error">
           خطا: {error?.message || "خطا در دریافت اطلاعات اقلیم"}
         </Typography>
@@ -91,69 +97,75 @@ const Eghlim = () => {
 
   return (
     <Container
+      ref={scrollContainerRef}
       className="eghlim"
+      onMouseDown={handleMouseDown}
+      onMouseLeave={handleMouseLeave}
+      onMouseUp={handleMouseUp}
+      onMouseMove={handleMouseMove}
       sx={{
-        ...containerStyles,
+        width: "730px",
+        height: "210px",
+        backgroundColor: "#ffffff",
         display: "flex",
-        overflowX: "scroll",
-        overflowY: "hidden",
+        alignItems: "center",
         direction: "ltr",
-        scrollBehavior: "smooth",
+        boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
+        borderRadius: "10px",
+        p: "0 12px 14px 12px !important",
+        cursor: "grab",
+        "&:active": { cursor: "grabbing" },
+
+        overflowX: "auto",
+        scrollPaddingLeft: "12px",
+        userSelect: "none",
+        touchAction: "none",
+        // scrollSnapType رو حذف کردیم تا حرکت پله‌ای از بین بره
+
+        "&::-webkit-scrollbar": {
+          display: "block",
+          height: "30px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "#EBEBEB",
+          borderRadius: "8px",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "#6a6a6a",
+          borderRadius: "8px",
+          border: "4px solid #EBEBEB",
+          "&:hover": {
+            background: "#444444",
+          },
+        },
       }}
     >
       <Box
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        mx="auto"
-        width="100%"
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          gap: 2,
+          width: "max-content",
+          pointerEvents: "none",
+        }}
       >
-        <Grid
-          container
-          width="100%"
-          gap={1}
-          display="flex"
-          flexWrap="nowrap"
-          overflowX="auto"
-          flexDirection="row"
-        >
-          {zones.map((card, index) => (
-            <StyledGridItem
-              item
-              key={index}
-              sx={{
-                flexShrink: 0,
-                width: "auto",
-                "&:hover": {
-                  transform: "scale(1.05)", // Optional hover effect
-                },
-              }}
-            >
-              <EghlimCard
-                zone={index + 1}
-                // نگاشت فیلدهای جدید طبق JSON ارسالی شما:
-                temp={card.temperature?.toFixed(1) || 0}
-                hum={card.humidity?.toFixed(1) || 0}
-                // طبق JSON: "exhaust_fan"
-                fan1={card.exhaust_fan || false}
-                // طبق JSON: "circule_fan" (توجه: در قبلی circulating_fan بود، اینجا circule_fan است)
-                fan2={card.circule_fan || false}
-                // طبق JSON: "pump_pad"
-                pad={card.pump_pad || false}
-                // طبق JSON: "shade_opening" (قبلی shade_open بود)
-                parde={card.shade_opening || false}
-                // طبق JSON: "heater"
-                bokhari={card.heater || false}
-                // طبق JSON: "hatch_opening" (قبلی roof_hatch_opening بود)
-                dariche={card.hatch_opening || false}
-                // طبق JSON: "fogger"
-                mehpash={card.fogger || false}
-                // بررسی وضعیت حالت اتوماتیک
-                isAuto={card.is_auto || false}
-              />
-            </StyledGridItem>
-          ))}
-        </Grid>
+        {zones.map((card, index) => (
+          <StyledScrollItem key={index}>
+            <EghlimCard
+              zone={index + 1}
+              temp={card.temperature?.toFixed(1) || 0}
+              hum={card.humidity?.toFixed(1) || 0}
+              fan1={card.exhaust_fan || false}
+              fan2={card.circule_fan || false}
+              pad={card.pump_pad || false}
+              parde={card.shade_opening || false}
+              bokhari={card.heater || false}
+              dariche={card.hatch_opening || false}
+              mehpash={card.fogger || false}
+              isAuto={card.is_auto || false}
+            />
+          </StyledScrollItem>
+        ))}
       </Box>
     </Container>
   );

@@ -45,7 +45,6 @@ const convert = (num) => {
   return res;
 };
 
-// تابع تبدیل اعداد فارسی به انگلیسی (برای گرفتن مقدار درست از کاربر)
 const toEnglishNumber = (str) => {
   if (!str) return "";
   const persianDigits = [
@@ -150,7 +149,7 @@ const CalibrationModalContent = ({
         position: "left",
         label: {
           fontSize: 10,
-          formatter: (params) => convert(params.value.toFixed(1)), // فارسی‌سازی مقادیر محور چارت
+          formatter: (params) => convert(params.value.toFixed(1)),
         },
       },
     ],
@@ -370,7 +369,6 @@ const CalibrationModalContent = ({
               position: "relative",
             }}
           >
-            {/* ستون سمت راست (بالا) */}
             <Box
               sx={{
                 display: "flex",
@@ -426,7 +424,6 @@ const CalibrationModalContent = ({
               )}
             </Box>
 
-            {/* دکمه وسط برای شروع */}
             {isStep1Active && (
               <Box
                 sx={{
@@ -459,7 +456,6 @@ const CalibrationModalContent = ({
               </Box>
             )}
 
-            {/* ستون سمت چپ (پایین) */}
             <Box
               sx={{
                 display: "flex",
@@ -728,7 +724,7 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
   );
 };
 
-// --- کامپوننت اصلی ---
+// --- کامپوننت اصلی با کنترل اسکرول Declarative و فیکس باگ RTL ---
 const SlidingWindowChart = () => {
   const scrollRef = useRef(null);
   const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
@@ -739,46 +735,32 @@ const SlidingWindowChart = () => {
     phLow: "",
     phHigh: "",
   });
+
+  // مدیریت ایندکس سنسور فعال
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastUpdateTime, setLastUpdateTime] = useState("---");
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const handleScrollEvents = useCallback(() => {
-    const el = scrollRef.current;
-    if (el) {
-      const isAtStart = el.scrollLeft <= 5;
-      const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 5;
-      setCanScrollLeft(!isAtStart);
-      setCanScrollRight(!isAtEnd);
-      const index = Math.round(el.scrollLeft / el.clientWidth);
-      if (index !== activeIndex && index >= 0 && index < SENSORS.length) {
-        setActiveIndex(index);
-      }
-    }
-  }, [activeIndex]);
-
+  // با تغییر activeIndex، باکس اسکرول را به شکل دستی جابه‌جا می‌کنیم تا باگ کانتینرهای RTL برطرف شود
   useEffect(() => {
     const el = scrollRef.current;
     if (el) {
-      el.addEventListener("scroll", handleScrollEvents);
-      window.addEventListener("resize", handleScrollEvents);
-      setTimeout(handleScrollEvents, 100);
-      return () => {
-        el.removeEventListener("scroll", handleScrollEvents);
-        window.removeEventListener("resize", handleScrollEvents);
-      };
-    }
-  }, [handleScrollEvents]);
-
-  const slide = (direction) => {
-    const el = scrollRef.current;
-    if (el) {
-      const width = el.clientWidth;
-      el.scrollBy({
-        left: direction === "left" ? -width : width,
+      const targetScrollLeft = activeIndex * el.clientWidth;
+      el.scrollTo({
+        left: targetScrollLeft,
         behavior: "smooth",
       });
+    }
+  }, [activeIndex]);
+
+  const slideNext = () => {
+    if (activeIndex < SENSORS.length - 1) {
+      setActiveIndex((prev) => prev + 1);
+    }
+  };
+
+  const slidePrev = () => {
+    if (activeIndex > 0) {
+      setActiveIndex((prev) => prev - 1);
     }
   };
 
@@ -846,31 +828,31 @@ const SlidingWindowChart = () => {
           bottom: 9,
         }}
       >
+        {/* دکمه اسلاید بعدی (راست) */}
         <IconButton
-          onClick={() => slide("right")}
-          disabled={!canScrollRight}
+          onClick={slideNext}
+          disabled={activeIndex === SENSORS.length - 1}
           sx={{
             width: "30px",
             height: "40px",
             borderRadius: "5px",
             backgroundColor: "#E3E3E3",
             border: "0.5px solid #9F9F9F",
-            opacity: canScrollRight ? 1 : 0.5,
+            opacity: activeIndex === SENSORS.length - 1 ? 0.5 : 1,
           }}
         >
           <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
         </IconButton>
 
+        {/* کانتینر چارت‌ها با غیرفعال کردن شنونده اسکرول نیتیو مزاحم */}
         <Box
           ref={scrollRef}
           sx={{
             width: "860px",
             height: "280px",
             display: "flex",
-            overflowX: "auto",
-            scrollSnapType: "x mandatory",
-            "&::-webkit-scrollbar": { display: "none" },
-            scrollbarWidth: "none",
+            overflowX: "hidden", // مسدود کردن اسکرول دستی و فیکس باگ
+            direction: "ltr",
           }}
         >
           {SENSORS.map((sensor, index) => (
@@ -879,7 +861,6 @@ const SlidingWindowChart = () => {
               sx={{
                 minWidth: "100%",
                 flexShrink: 0,
-                scrollSnapAlign: "center",
                 display: "flex",
                 justifyContent: "center",
               }}
@@ -894,16 +875,17 @@ const SlidingWindowChart = () => {
           ))}
         </Box>
 
+        {/* دکمه اسلاید قبلی (چپ) */}
         <IconButton
-          onClick={() => slide("left")}
-          disabled={!canScrollLeft}
+          onClick={slidePrev}
+          disabled={activeIndex === 0}
           sx={{
             width: "30px",
             height: "40px",
             borderRadius: "5px",
             backgroundColor: "#E3E3E3",
             border: "0.5px solid #9F9F9F",
-            opacity: canScrollLeft ? 1 : 0.5,
+            opacity: activeIndex === 0 ? 0.5 : 1,
           }}
         >
           <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
