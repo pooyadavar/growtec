@@ -17,6 +17,7 @@ const IconTextButton = ({
   return (
     <ButtonBase
       onClick={onClick}
+      disableRipple // <--- این همون چیزیه که افکت موجی و دفرمه رو کلاً نابود می‌کنه
       sx={{
         // --- عرض و ارتفاع اینجا اعمال شد ---
         width: width,

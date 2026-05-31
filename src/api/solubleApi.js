@@ -21,7 +21,7 @@ export const controlStocksMixer = async (data) => {
 };
 
 export const emergencyStop = async () => {
-  return apiClient.post('/soluble/emergency-stop/', {});
+  return apiClient.post('/info/emergency-stop/', {});
 };
 
 export const getFoodstuffSchedule = async () => {

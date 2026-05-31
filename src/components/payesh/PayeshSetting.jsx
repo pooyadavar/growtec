@@ -22,12 +22,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // --- Utility Functions for Number Conversion ---
 const toPersianDigits = (str) => {
-  if (str === null || str === undefined) return "";
+  if (str === null || str === undefined || str === "") return "";
   return str.toString().replace(/\d/g, (x) => "۰۱۲۳۴۵۶۷۸۹"[x]);
 };
 
 const toEnglishDigits = (str) => {
-  if (str === null || str === undefined) return "";
+  if (str === null || str === undefined || str === "") return "";
   return str
     .toString()
     .replace(/[۰-۹]/g, (x) => "۰۱۲۳۴۵۶۷۸۹".indexOf(x))
@@ -36,7 +36,13 @@ const toEnglishDigits = (str) => {
 
 // --- Sub-components ---
 
-const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
+const TimeRangeInput = ({
+  label,
+  rangeValue,
+  setRangeValue,
+  displayRange,
+  isLoading,
+}) => {
   return (
     <Box
       sx={{
@@ -82,7 +88,7 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
           color="#000000"
           marginLeft={10}
         >
-          {displayRange}
+          {isLoading ? "..." : displayRange}
         </Typography>
       </Box>
 
@@ -90,7 +96,8 @@ const TimeRangeInput = ({ label, rangeValue, setRangeValue, displayRange }) => {
         type="text"
         inputMode="numeric"
         variant="outlined"
-        value={toPersianDigits(rangeValue)}
+        disabled={isLoading}
+        value={isLoading ? "" : toPersianDigits(rangeValue)}
         onChange={(e) => {
           const enValue = toEnglishDigits(e.target.value);
           if (
@@ -296,23 +303,23 @@ const PayeshSetting = ({ zone }) => {
   const [part, setPart] = useState(1);
   const buttons = ["A", "B", "C", "D", "ویژه"];
 
-  const [range1, setRange1] = useState(0);
-  const [range2, setRange2] = useState(0);
-  const [range3, setRange3] = useState(0);
+  const [range1, setRange1] = useState("");
+  const [range2, setRange2] = useState("");
+  const [range3, setRange3] = useState("");
 
-  const [tempMax1, setTempMax1] = useState(0);
-  const [tempMax2, setTempMax2] = useState(0);
-  const [tempMax3, setTempMax3] = useState(0);
-  const [tempMin1, setTempMin1] = useState(0);
-  const [tempMin2, setTempMin2] = useState(0);
-  const [tempMin3, setTempMin3] = useState(0);
+  const [tempMax1, setTempMax1] = useState("");
+  const [tempMax2, setTempMax2] = useState("");
+  const [tempMax3, setTempMax3] = useState("");
+  const [tempMin1, setTempMin1] = useState("");
+  const [tempMin2, setTempMin2] = useState("");
+  const [tempMin3, setTempMin3] = useState("");
 
-  const [humMax1, sethumMax1] = useState("0.0");
-  const [humMax2, sethumMax2] = useState("0.0");
-  const [humMax3, sethumMax3] = useState("0.0");
-  const [humMin1, setHumMin1] = useState("0.0");
-  const [humMin2, setHumMin2] = useState("0.0");
-  const [humMin3, setHumMin3] = useState("0.0");
+  const [humMax1, sethumMax1] = useState("");
+  const [humMax2, sethumMax2] = useState("");
+  const [humMax3, sethumMax3] = useState("");
+  const [humMin1, setHumMin1] = useState("");
+  const [humMin2, setHumMin2] = useState("");
+  const [humMin3, setHumMin3] = useState("");
 
   const [humControllers, setHumControllers] = useState({
     exhaust_fan_1: false,
@@ -417,10 +424,28 @@ const PayeshSetting = ({ zone }) => {
     [tempMax1, tempMax2, tempMax3, tempMin1, tempMin2, tempMin3],
   );
 
-  // واکشی اطلاعات از APIهای اصلی
+  // واکشی مجزای بازه‌های زمانی (فقط یک بار انجام می‌شود)
+  const { data: rangeData, isLoading: isRangeLoading } = useQuery({
+    queryKey: ["climateRangeStartTime", zone],
+    queryFn: async () => {
+      const res = await apiClient.get(`/climate/range-start-time/`);
+      return Array.isArray(res) ? res : [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (rangeData && rangeData.length >= 3) {
+      setRange1(rangeData[0] ?? "");
+      setRange2(rangeData[1] ?? "");
+      setRange3(rangeData[2] ?? "");
+      initialRangeRef.current = normalizeRange(rangeData);
+    }
+  }, [rangeData]);
+
+  // واکشی مجزای اطلاعات اختصاصی هر تب
   const fetchClimateData = async () => {
-    const [rangeRes, tempRes, humRes, opRes, humOpRes] = await Promise.all([
-      apiClient.get(`/climate/range-start-time/`),
+    const [tempRes, humRes, opRes, humOpRes] = await Promise.all([
       apiClient.get(`/climate/temperature-range/`, { params: { zone, part } }),
       apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
       apiClient.get(`/climate/temperature-range-operator/`, {
@@ -430,12 +455,12 @@ const PayeshSetting = ({ zone }) => {
         params: { zone, part },
       }),
     ]);
-    return { rangeRes, tempRes, humRes, opRes, humOpRes };
+    return { tempRes, humRes, opRes, humOpRes };
   };
 
   const {
     data: queryData,
-    isLoading: loading,
+    isLoading: isClimateLoading,
     error,
   } = useQuery({
     queryKey: ["climateSettings", zone, part],
@@ -445,14 +470,7 @@ const PayeshSetting = ({ zone }) => {
 
   useEffect(() => {
     if (queryData) {
-      const { rangeRes, tempRes, humRes, opRes, humOpRes } = queryData;
-
-      if (rangeRes) {
-        setRange1(rangeRes[0]);
-        setRange2(rangeRes[1]);
-        setRange3(rangeRes[2]);
-        initialRangeRef.current = normalizeRange(rangeRes);
-      }
+      const { tempRes, humRes, opRes, humOpRes } = queryData;
 
       if (tabStates[part]) {
         const cached = tabStates[part];
@@ -470,29 +488,32 @@ const PayeshSetting = ({ zone }) => {
         setHumMin3(cached.humMin3);
         setTempControllers(cached.tempControllers);
         setHumControllers(cached.humControllers);
-        
-        if (tempRes) initialTempRangeRef.current = normalizeClimateRange(tempRes);
+
+        if (tempRes)
+          initialTempRangeRef.current = normalizeClimateRange(tempRes);
         if (humRes) initialHumRangeRef.current = normalizeClimateRange(humRes);
-        if (opRes) initialTempOpRef.current = { ...cached.tempControllers, ...opRes };
-        if (humOpRes) initialHumOpRef.current = { ...cached.humControllers, ...humOpRes };
+        if (opRes)
+          initialTempOpRef.current = { ...cached.tempControllers, ...opRes };
+        if (humOpRes)
+          initialHumOpRef.current = { ...cached.humControllers, ...humOpRes };
       } else {
         if (tempRes) {
-          setTempMax1(tempRes["1"]?.maximum || 0);
-          setTempMin1(tempRes["1"]?.minimum || 0);
-          setTempMax2(tempRes["2"]?.maximum || 0);
-          setTempMin2(tempRes["2"]?.minimum || 0);
-          setTempMax3(tempRes["3"]?.maximum || 0);
-          setTempMin3(tempRes["3"]?.minimum || 0);
+          setTempMax1(tempRes["1"]?.maximum ?? "");
+          setTempMin1(tempRes["1"]?.minimum ?? "");
+          setTempMax2(tempRes["2"]?.maximum ?? "");
+          setTempMin2(tempRes["2"]?.minimum ?? "");
+          setTempMax3(tempRes["3"]?.maximum ?? "");
+          setTempMin3(tempRes["3"]?.minimum ?? "");
           initialTempRangeRef.current = normalizeClimateRange(tempRes);
         }
 
         if (humRes) {
-          sethumMax1(humRes["1"]?.maximum || 0);
-          setHumMin1(humRes["1"]?.minimum || 0);
-          sethumMax2(humRes["2"]?.maximum || 0);
-          setHumMin2(humRes["2"]?.minimum || 0);
-          sethumMax3(humRes["3"]?.maximum || 0);
-          setHumMin3(humRes["3"]?.minimum || 0);
+          sethumMax1(humRes["1"]?.maximum ?? "");
+          setHumMin1(humRes["1"]?.minimum ?? "");
+          sethumMax2(humRes["2"]?.maximum ?? "");
+          setHumMin2(humRes["2"]?.minimum ?? "");
+          sethumMax3(humRes["3"]?.maximum ?? "");
+          setHumMin3(humRes["3"]?.minimum ?? "");
           initialHumRangeRef.current = normalizeClimateRange(humRes);
         }
 
@@ -514,7 +535,7 @@ const PayeshSetting = ({ zone }) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryData, part]); // Excluded tabStates to avoid unnecessary re-runs when tabStates updates on tab click
+  }, [queryData, part]);
 
   const handleSpecialSettingChange = (code, value) => {
     setSpecialSettings((prev) => ({ ...prev, [code]: value }));
@@ -600,8 +621,11 @@ const PayeshSetting = ({ zone }) => {
       await Promise.all(promises);
       console.log("Data successfully saved!");
 
-      // Invalidate query cache so that switching tabs fetches fresh data
+      // Invalidate queries so that fetching fresh data occurs when needed
       queryClient.invalidateQueries({ queryKey: ["climateSettings", zone] });
+      queryClient.invalidateQueries({
+        queryKey: ["climateRangeStartTime", zone],
+      });
 
       // Update refs
       initialRangeRef.current = currentRange;
@@ -731,18 +755,21 @@ const PayeshSetting = ({ zone }) => {
           rangeValue={range1}
           setRangeValue={setRange1}
           displayRange={`${toPersianDigits(range2)} - ${toPersianDigits(range1)}`}
+          isLoading={isRangeLoading}
         />
         <TimeRangeInput
           label="بازه ۲"
           rangeValue={range2}
           setRangeValue={setRange2}
           displayRange={`${toPersianDigits(range3)} - ${toPersianDigits(range2)}`}
+          isLoading={isRangeLoading}
         />
         <TimeRangeInput
           label="بازه ۳"
           rangeValue={range3}
           setRangeValue={setRange3}
           displayRange={`${toPersianDigits(range1)} - ${toPersianDigits(range3)}`}
+          isLoading={isRangeLoading}
         />
       </Stack>
 
@@ -768,13 +795,24 @@ const PayeshSetting = ({ zone }) => {
               key={label}
               onClick={() => {
                 if (selected !== "ویژه") {
-                  setTabStates(prev => ({
+                  setTabStates((prev) => ({
                     ...prev,
                     [part]: {
-                      tempMax1, tempMin1, tempMax2, tempMin2, tempMax3, tempMin3,
-                      humMax1, humMin1, humMax2, humMin2, humMax3, humMin3,
-                      tempControllers, humControllers
-                    }
+                      tempMax1,
+                      tempMin1,
+                      tempMax2,
+                      tempMin2,
+                      tempMax3,
+                      tempMin3,
+                      humMax1,
+                      humMin1,
+                      humMax2,
+                      humMin2,
+                      humMax3,
+                      humMin3,
+                      tempControllers,
+                      humControllers,
+                    },
                   }));
                 }
                 setSelected(label);
@@ -820,9 +858,46 @@ const PayeshSetting = ({ zone }) => {
             overflow: "hidden",
           }}
         >
-          <>
-            {selected === "ویژه" ? (
-              <Box
+          {isClimateLoading && selected !== "ویژه" ? (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                zIndex: 10,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : error && selected !== "ویژه" ? (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                zIndex: 10,
+              }}
+            >
+              <Typography color="error" fontFamily="IRANSANS">
+                خطا در بارگذاری اطلاعات
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {selected === "ویژه" ? (
+                <Box
                   sx={{
                     width: "100%",
                     px: 4,
@@ -1149,6 +1224,7 @@ const PayeshSetting = ({ zone }) => {
                 ذخیره
               </Button>
             </>
+          )}
         </Box>
       </Box>
     </Container>

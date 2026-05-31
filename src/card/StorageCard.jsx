@@ -1,25 +1,23 @@
 import * as React from "react";
-import {
-  Typography,
-  Box,
-  Modal,
-} from "@mui/material";
+import { Typography, Box, Modal, CircularProgress } from "@mui/material";
 import assets from "../assets/index";
-
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "../api/apiClient";
 
 const style = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  border: "0.5px solid #9F9F9F",
-  borderRadius: "10px",
+  border: "0.5px solid #EBEBEB",
+  borderRadius: "15px",
   backgroundColor: "#FFFFFF",
-  width: "393px",
-  height: "auto", 
+  width: "440px",
+  height: "auto",
+  maxHeight: "80vh",
   minHeight: "250px",
-  boxShadow: 24,
-  p: "8px",
+  boxShadow: "rgba(149, 157, 165, 0.2) 0px 8px 24px",
+  p: "20px",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -33,25 +31,61 @@ const StorageCard = ({
   float2,
   float3,
 }) => {
-  let waterHeight = 95 - (capacity / maxCapacity *100)
+  let waterHeight = 95 - (capacity / maxCapacity) * 100;
   if (isNaN(waterHeight) || !isFinite(waterHeight)) {
     waterHeight = 100;
   }
+
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
+    if (num == null) return "";
     let res = "";
-    const str = String(num); 
+    const str = String(num);
     for (let c of str) {
-      res += numbers.charAt(c);
+      if (c >= "0" && c <= "9") {
+        res += numbers.charAt(parseInt(c));
+      } else {
+        res += c;
+      }
     }
     return res;
   };
 
+  const formattedCapacity = Number(capacity || 0).toFixed(2);
   const image = `url(${assets.img.mixerBGImage})`;
 
   const [open, setOpen] = React.useState(false);
   const handleClose = () => setOpen(false);
   const handleOpen = () => setOpen(true);
+
+  // --- واکشی دیتای جدول آبیاری ---
+  const { data: scheduleItems = [], isLoading } = useQuery({
+    queryKey: ["storageIrrigationSchedule", zone],
+    queryFn: async () => {
+      const response = await apiClient.get("/irrigation/irrigation-schedule/");
+      const data = Array.isArray(response) ? response : response.data || [];
+
+      return data.filter(
+        (item) => Number(item.zone) === Number(zone) && item.is_active === true,
+      );
+    },
+    enabled: open,
+  });
+
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    return timeString.length > 8 ? timeString.substring(0, 8) : timeString;
+  };
+
+  const getDisplayStatus = (startStatus, endStatus) => {
+    if (startStatus === 3 && endStatus === 3) {
+      return "tick";
+    }
+    if (startStatus === 4 || endStatus === 4) {
+      return "cross";
+    }
+    return "blank";
+  };
 
   return (
     <Box
@@ -103,6 +137,7 @@ const StorageCard = ({
             backgroundSize: "100%",
             backgroundRepeat: "no-repeat",
             backgroundPositionY: `${waterHeight}px`,
+            cursor: "pointer",
           }}
           onClick={handleOpen}
         >
@@ -150,7 +185,12 @@ const StorageCard = ({
         </Box>
       </Box>
       <Box
-        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          mt: "2px",
+        }}
       >
         <Box
           sx={{
@@ -165,33 +205,32 @@ const StorageCard = ({
           }}
         >
           <Typography color="initial" fontSize={"12px"} fontFamily={"IRANSANS"}>
-            {capacity}
+            {convert(formattedCapacity)}
           </Typography>
         </Box>
         <Typography color="initial" fontSize={14} pl={"6px"}>
-          {" "}
-          L{" "}
+          L
         </Typography>
       </Box>
 
-
+      {/* ===================== مودال ===================== */}
       <Modal
         disableAutoFocus
         open={open}
         onClose={handleClose}
         aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
       >
-        <Box
-          sx={style} 
-          className="modalBox"
-        >
+        <Box sx={style} className="modalBox">
+          {/* هدر مودال */}
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               width: "100%",
               alignItems: "center",
+              borderBottom: "1px solid #EBEBEB",
+              paddingBottom: "12px",
+              marginBottom: "16px",
             }}
           >
             <Typography
@@ -199,17 +238,236 @@ const StorageCard = ({
               component="h2"
               fontFamily={"IRANSANS"}
               fontSize={"16px"}
+              fontWeight="bold"
+              color="#333"
               mr={1}
             >
-              وضعیت مخزن زون {convert(zone)} 
+              جدول آبیاری - مخزن زون {convert(zone)}
             </Typography>
             <img
               src={assets.svg.close}
               alt="close"
               onClick={handleClose}
-              style={{ cursor: "pointer" }}
+              style={{
+                cursor: "pointer",
+                width: "20px",
+                height: "20px",
+                opacity: 0.7,
+              }}
             />
           </div>
+
+          {/* هدر جدول (با عرض منعطف) */}
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              direction: "rtl",
+              backgroundColor: "#E4E6EB", // پس‌زمینه هدر
+              borderRadius: "8px",
+              py: 1.5,
+              px: 1,
+              mb: 0.5,
+            }}
+          >
+            <Typography
+              fontFamily={"IRANSANS"}
+              fontSize={13}
+              color="#333"
+              fontWeight="bold"
+              sx={{ flex: 2, textAlign: "center" }}
+            >
+              زمان شروع
+            </Typography>
+            <Typography
+              fontFamily={"IRANSANS"}
+              fontSize={13}
+              color="#333"
+              fontWeight="bold"
+              sx={{ flex: 2, textAlign: "center" }}
+            >
+              زمان پایان
+            </Typography>
+            <Typography
+              fontFamily={"IRANSANS"}
+              fontSize={13}
+              color="#333"
+              fontWeight="bold"
+              sx={{ flex: 1, textAlign: "center" }}
+            >
+              زون
+            </Typography>
+            <Typography
+              fontFamily={"IRANSANS"}
+              fontSize={13}
+              color="#333"
+              fontWeight="bold"
+              sx={{ flex: 1.5, textAlign: "center" }}
+            >
+              حجم
+            </Typography>
+            <Typography
+              fontFamily={"IRANSANS"}
+              fontSize={13}
+              color="#333"
+              fontWeight="bold"
+              sx={{ flex: 1.5, textAlign: "center" }}
+            >
+              وضعیت
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              width: "100%",
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              overflowY: "auto",
+              overflowX: "hidden", // مسدود کردن اسکرول افقی
+              direction: "ltr",
+              "&::-webkit-scrollbar": { width: "6px" },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#ccc",
+                borderRadius: "4px",
+              },
+            }}
+          >
+            {isLoading ? (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CircularProgress size={30} />
+              </Box>
+            ) : scheduleItems.length > 0 ? (
+              scheduleItems.map((item, index) => {
+                const displayStatus = getDisplayStatus(
+                  item.start_status,
+                  item.end_status,
+                );
+
+                return (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: "100%",
+                      py: 1.5,
+                      px: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      direction: "rtl",
+                      borderRadius: "6px",
+                      // یک سطر در میان خاکستری روشن (Zebra Striping)
+                      backgroundColor: index % 2 === 0 ? "#FFFFFF" : "#F4F5F7",
+                      "&:hover": { backgroundColor: "#EAF0F6" }, // افکت هاور یکپارچه
+                    }}
+                  >
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize={13}
+                      color="#444"
+                      sx={{ flex: 2, textAlign: "center" }}
+                    >
+                      {convert(formatTime(item.start_time))}
+                    </Typography>
+
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize={13}
+                      color="#444"
+                      sx={{ flex: 2, textAlign: "center" }}
+                    >
+                      {convert(formatTime(item.end_time))}
+                    </Typography>
+
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize={13}
+                      color="#444"
+                      sx={{ flex: 1, textAlign: "center" }}
+                    >
+                      {convert(item.zone)}
+                    </Typography>
+
+                    <Typography
+                      fontFamily={"IRANSANS"}
+                      fontSize={13}
+                      color="#444"
+                      sx={{ flex: 1.5, textAlign: "center" }}
+                    >
+                      {convert(item.volume)}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        flex: 1.5,
+                        display: "flex",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "6px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor:
+                            displayStatus === "tick"
+                              ? "#E8F5E9"
+                              : displayStatus === "cross"
+                                ? "#FFEBEE"
+                                : "transparent",
+                        }}
+                      >
+                        {displayStatus === "tick" && (
+                          <img
+                            src={assets.svg.tike}
+                            alt="Success"
+                            style={{ width: "14px", height: "14px" }}
+                          />
+                        )}
+                        {displayStatus === "cross" && (
+                          <img
+                            src={assets.svg.cross}
+                            alt="Error"
+                            style={{ width: "14px", height: "14px" }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              })
+            ) : (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  direction: "rtl",
+                }}
+              >
+                <Typography
+                  fontFamily="IRANSANS"
+                  fontSize={14}
+                  color="text.secondary"
+                >
+                  برنامه فعالی موجود نیست
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Modal>
     </Box>

@@ -77,14 +77,12 @@ const CalibrationModalContent = ({
   sensorName,
   sensorId,
 }) => {
-  // استیت‌های کاملاً مستقل برای حذف اولویت‌بندی
   const [isStarted, setIsStarted] = useState(false);
   const [lowConfirmed, setLowConfirmed] = useState(false);
   const [highConfirmed, setHighConfirmed] = useState(false);
 
   const [realTimeData, setRealTimeData] = useState([]);
 
-  // ریست کردن استیت‌ها موقع باز شدن مودال یا تغییر تب
   useEffect(() => {
     if (open) {
       setIsStarted(false);
@@ -94,7 +92,6 @@ const CalibrationModalContent = ({
     }
   }, [open, calibrateTab, sensorId]);
 
-  // دریافت دیتای لحظه‌ای برای چارت
   useEffect(() => {
     if (!open) return;
 
@@ -163,7 +160,6 @@ const CalibrationModalContent = ({
     background: { visible: false },
   };
 
-  // ۱. تابع شروع کالیبراسیون (بدون اولویت برای پایین یا بالا)
   const handleStartCalibration = async () => {
     const isEc = calibrateTab === "ec";
     const valLow = isEc ? calibrateValues.ecLow : calibrateValues.phLow;
@@ -196,13 +192,12 @@ const CalibrationModalContent = ({
       }
 
       toast.success("مرحله اول کالیبراسیون با موفقیت انجام شد");
-      setIsStarted(true); // فعال شدن همزمان دکمه‌های تایید حد بالا و پایین
+      setIsStarted(true);
     } catch (error) {
       toast.error("خطا در مرحله اول کالیبراسیون");
     }
   };
 
-  // تابع بررسی اتمام کل پروسه
   const checkCompletion = async (newLowStatus, newHighStatus) => {
     if (newLowStatus && newHighStatus) {
       try {
@@ -219,7 +214,6 @@ const CalibrationModalContent = ({
     }
   };
 
-  // ۲. تایید حد پایین (در هر زمانی بعد از شروع قابل کلیک است)
   const handleLowConfirm = async () => {
     try {
       if (calibrateTab === "ec") {
@@ -228,14 +222,13 @@ const CalibrationModalContent = ({
         await calibrationPh({ step: 2, ph_number: sensorId });
       }
       toast.success("حد پایین تایید شد");
-      setLowConfirmed(true); // کمرنگ و غیرفعال شدن این دکمه
+      setLowConfirmed(true);
       checkCompletion(true, highConfirmed);
     } catch (error) {
       toast.error("خطا در تایید حد پایین");
     }
   };
 
-  // ۳. تایید حد بالا (در هر زمانی بعد از شروع قابل کلیک است)
   const handleHighConfirm = async () => {
     try {
       if (calibrateTab === "ec") {
@@ -244,7 +237,7 @@ const CalibrationModalContent = ({
         await calibrationPh({ step: 3, ph_number: sensorId });
       }
       toast.success("حد بالا تایید شد");
-      setHighConfirmed(true); // کمرنگ و غیرفعال شدن این دکمه
+      setHighConfirmed(true);
       checkCompletion(lowConfirmed, true);
     } catch (error) {
       toast.error("خطا در تایید حد بالا");
@@ -429,7 +422,7 @@ const CalibrationModalContent = ({
               )}
             </Box>
 
-            {/* وسط: دکمه استارت (فقط قبل از استارت نشون داده میشه) */}
+            {/* وسط: دکمه استارت */}
             {!isStarted && (
               <Box
                 sx={{
@@ -517,53 +510,43 @@ const CalibrationModalContent = ({
   );
 };
 
-// --- آیتم تکی نمودار سه‌گانه ---
-const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
-  const [data, setData] = useState([]);
-
-  const fetchLatest = useCallback(async () => {
-    try {
-      const response = await apiClient.post("/log/soluble/ec-ph-temperature/", {
-        sensor_number: sensor.id,
-        limit: 1000,
-      });
-      const array = Array.isArray(response) ? response : response.results || [];
-      if (!array.length) return;
-
-      const sortedArray = [...array]
-        .sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time))
-        .filter((item) => item.log_data.sensot_number === sensor.id);
-
-      const newPoints = sortedArray.map((latest) => {
-        const rawTime = latest.log_date_time;
-        return {
-          dateObj: new Date(rawTime),
-          time: rawTime.split(" ")[1],
-          ec: Number(latest.log_data.ec) || 0,
-          pc: Number(latest.log_data.ph) || 0,
-          temp: Number(latest.log_data.temperature) || 0,
-        };
-      });
-
-      setData(newPoints);
-      if (isActive && newPoints.length > 0) {
-        onTimeUpdate(newPoints[newPoints.length - 1].time);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }, [sensor.id, isActive, onTimeUpdate]);
+// --- آیتم تکی نمودار سه‌گانه با لاجیک بهینه‌شده ---
+const SensorChartItem = ({
+  sensor,
+  isActive,
+  onTimeUpdate,
+  isModalOpen,
+  initialData, // New prop
+  fetchSensorData, // New prop
+}) => {
+  const [data, setData] = useState(initialData || []);
 
   useEffect(() => {
-    fetchLatest();
+    setData(initialData || []); // Initialize data with initialData from props
+  }, [initialData]);
+
+  useEffect(() => {
     let interval = null;
+
+    const loadData = async () => {
+      const points = await fetchSensorData(sensor.id); // Use the passed fetch function
+      if (isActive && points && points.length > 0) {
+        onTimeUpdate(points[points.length - 1].time);
+      }
+      if (isActive) { // Only update data for the active sensor
+        setData(points || []);
+      }
+    };
+
+    // Set interval only for the active sensor and when modal is not open
     if (isActive && !isModalOpen) {
-      interval = setInterval(fetchLatest, 5000);
+      interval = setInterval(loadData, 5000);
     }
+
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, fetchLatest, isModalOpen]);
+  }, [isActive, isModalOpen, sensor.id, onTimeUpdate, fetchSensorData]); // Add fetchSensorData to dependencies
 
   const getChartOptions = (key, title, color, showXAxis) => {
     const validValues = data
@@ -724,11 +707,11 @@ const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
   );
 };
 
-// --- کامپوننت اصلی با کنترل اسکرول Declarative و فیکس باگ RTL ---
+// --- کامپوننت اصلی با رفع باگ لوپ رندر ---
 const SlidingWindowChart = () => {
   const scrollRef = useRef(null);
   const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
-  const [calibrateTab, setCalibrateTab] = useState("ec");
+  const [calibrateTab, setCalibrateTab] = useState("ph");
   const [calibrateValues, setCalibrateValues] = useState({
     ecLow: "",
     ecHigh: "",
@@ -736,32 +719,76 @@ const SlidingWindowChart = () => {
     phHigh: "",
   });
 
-  // مدیریت ایندکس سنسور فعال
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastUpdateTime, setLastUpdateTime] = useState("---");
+  const [allSensorsInitialData, setAllSensorsInitialData] = useState({});
 
-  // با تغییر activeIndex، باکس اسکرول را به شکل دستی جابه‌جا می‌کنیم تا باگ کانتینرهای RTL برطرف شود
+  const fetchSensorData = useCallback(async (sensorId) => {
+    try {
+      const response = await apiClient.post("/log/soluble/ec-ph-temperature/", {
+        sensor_number: sensorId,
+        limit: 1000,
+      });
+      const array = Array.isArray(response) ? response : response.results || [];
+      if (!array.length) return [];
+
+      const sortedArray = [...array]
+        .sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time))
+        .filter((item) => item.log_data.sensot_number === sensorId);
+
+      const newPoints = sortedArray.map((latest) => {
+        const rawTime = latest.log_date_time;
+        return {
+          dateObj: new Date(rawTime),
+          time: rawTime.split(" ")[1],
+          ec: Number(latest.log_data.ec) || 0,
+          pc: Number(latest.log_data.ph) || 0,
+          temp: Number(latest.log_data.temperature) || 0,
+        };
+      });
+      return newPoints;
+    } catch (err) {
+      console.error(`Error fetching data for sensor ${sensorId}:`, err);
+      return [];
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadAllInitialData = async () => {
+      const dataPromises = SENSORS.map(async (sensor) => {
+        const data = await fetchSensorData(sensor.id);
+        return { sensorId: sensor.id, data };
+      });
+      const results = await Promise.all(dataPromises);
+      const initialDataMap = results.reduce((acc, curr) => {
+        acc[curr.sensorId] = curr.data;
+        return acc;
+      }, {});
+      setAllSensorsInitialData(initialDataMap);
+    };
+
+    loadAllInitialData();
+  }, [fetchSensorData]);
+
+  // فیکس باگ اصلی: تابع آپدیت زمان رو با useCallback کش (Cache) کردیم که باعث رندر مجدد بچه‌ها نشه
+  const handleTimeUpdate = useCallback((t) => {
+    setLastUpdateTime(t);
+  }, []);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) {
       const targetScrollLeft = activeIndex * el.clientWidth;
-      el.scrollTo({
-        left: targetScrollLeft,
-        behavior: "smooth",
-      });
+      el.scrollTo({ left: targetScrollLeft, behavior: "smooth" });
     }
   }, [activeIndex]);
 
   const slideNext = () => {
-    if (activeIndex < SENSORS.length - 1) {
-      setActiveIndex((prev) => prev + 1);
-    }
+    if (activeIndex < SENSORS.length - 1) setActiveIndex((prev) => prev + 1);
   };
 
   const slidePrev = () => {
-    if (activeIndex > 0) {
-      setActiveIndex((prev) => prev - 1);
-    }
+    if (activeIndex > 0) setActiveIndex((prev) => prev - 1);
   };
 
   const currentSensor = SENSORS[activeIndex] || SENSORS[0];
@@ -828,7 +855,6 @@ const SlidingWindowChart = () => {
           bottom: 9,
         }}
       >
-        {/* دکمه اسلاید بعدی (راست) */}
         <IconButton
           onClick={slideNext}
           disabled={activeIndex === SENSORS.length - 1}
@@ -844,14 +870,13 @@ const SlidingWindowChart = () => {
           <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
         </IconButton>
 
-        {/* کانتینر چارت‌ها با غیرفعال کردن شنونده اسکرول نیتیو مزاحم */}
         <Box
           ref={scrollRef}
           sx={{
             width: "860px",
             height: "280px",
             display: "flex",
-            overflowX: "hidden", // مسدود کردن اسکرول دستی و فیکس باگ
+            overflowX: "hidden",
             direction: "ltr",
           }}
         >
@@ -868,14 +893,15 @@ const SlidingWindowChart = () => {
               <SensorChartItem
                 sensor={sensor}
                 isActive={index === activeIndex}
-                onTimeUpdate={(t) => setLastUpdateTime(t)}
+                onTimeUpdate={handleTimeUpdate}
                 isModalOpen={isCalibrateOpen}
+                initialData={allSensorsInitialData[sensor.id]}
+                fetchSensorData={fetchSensorData} // Pass the fetching function
               />
             </Box>
           ))}
         </Box>
 
-        {/* دکمه اسلاید قبلی (چپ) */}
         <IconButton
           onClick={slidePrev}
           disabled={activeIndex === 0}

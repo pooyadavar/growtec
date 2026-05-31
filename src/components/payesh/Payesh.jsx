@@ -57,13 +57,19 @@ const Payesh = () => {
   const navigate = useNavigate(); // Initialize useNavigate
   const [isChanging, setIsChanging] = React.useState(false);
   const [operatorMode, setOperatorMode] = React.useState(false); // New state for operator mode
-const [activity, setActivity] = React.useState(!operatorMode); // New state for operator mode
+  const [activity, setActivity] = React.useState(!operatorMode); // New state for operator mode
   const [zone, setZone] = useState(1);
   const sendOperatorModeUpdate = async (newMode) => {
     try {
       // Use apiClient for POST request
-      const data = await apiClient.post(`/climate/operators-mode/`, { is_auto: newMode, zone: zone });
-      console.log(`sendOperatorModeUpdate: newMode sent=${newMode}, API response:`, data); // Debug log
+      const data = await apiClient.post(`/climate/operators-mode/`, {
+        is_auto: newMode,
+        zone: zone,
+      });
+      console.log(
+        `sendOperatorModeUpdate: newMode sent=${newMode}, API response:`,
+        data,
+      ); // Debug log
       // We rely on optimistic update in changOnAndOff, so we don't update state here
       // to avoid race conditions or flickering if the API returns old data.
     } catch (error) {
@@ -76,17 +82,16 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
 
   const sendOperatorCommand = async (operatorName, isOn) => {
     try {
-      await apiClient.post('/climate/operator/', {
+      await apiClient.post("/climate/operator/", {
         operator: operatorName,
         zone: zone,
-        on_off: isOn ? 'on' : 'off'
+        on_off: isOn ? "on" : "off",
       });
     } catch (error) {
       console.error(`Error updating ${operatorName} status:`, error);
       // Handle error: perhaps revert UI change or show an error message
     }
   };
-
 
   const changOnAndOff = () => {
     setIsChanging(true);
@@ -104,11 +109,21 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
 
   const fetchOperatorMode = async (zoneNum) => {
     try {
-      const data = await apiClient.get(`/climate/operators-mode/?zone=${zoneNum}`);
-      const mode = (typeof data === 'object' && data !== null && 'is_auto' in data) ? data.is_auto : data;
+      const data = await apiClient.get(
+        `/climate/operators-mode/?zone=${zoneNum}`,
+      );
+      const mode =
+        typeof data === "object" && data !== null && "is_auto" in data
+          ? data.is_auto
+          : data;
       setOperatorMode(mode);
       setActivity(!mode); // activity is inverse of is_auto
-      console.log(`fetchOperatorMode: API raw data:`, data, `Parsed mode (is_auto):`, mode); // Debug log
+      console.log(
+        `fetchOperatorMode: API raw data:`,
+        data,
+        `Parsed mode (is_auto):`,
+        mode,
+      ); // Debug log
     } catch (error) {
       console.error("Error fetching operator mode:", error);
       // Optionally handle error, e.g., set operatorMode to a default or show an error message
@@ -151,7 +166,6 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
         hiter3: data.hiter_3 || false,
         hiter4: data.hiter_4 || false,
       });
-
     } catch (error) {
       console.error("Error fetching operator status:", error);
     }
@@ -174,7 +188,6 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
   const handleClose = () => setOpen(false);
   // Modal States --------
 
-
   // Exhaust Fan Modal States
   const [exhaustFanModalOpen, setExhaustFanModalOpen] = useState(false);
   const [exhaustFanStates, setExhaustFanStates] = useState({
@@ -194,7 +207,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
     setExhaustFanStates((prev) => {
       const newState = !prev[fanKey];
       // fanKey is like 'fan1', we want 'exhaust_fan_1'
-      const number = fanKey.replace('fan', '');
+      const number = fanKey.replace("fan", "");
       const operatorName = `exhaust_fan_${number}`;
       sendOperatorCommand(operatorName, newState);
       return {
@@ -221,7 +234,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
     setCirculationFanStates((prev) => {
       const newState = !prev[fanKey];
       // fanKey is like 'fan1', we want 'circule_fan_1'
-      const number = fanKey.replace('fan', '');
+      const number = fanKey.replace("fan", "");
       const operatorName = `circule_fan_${number}`;
       sendOperatorCommand(operatorName, newState);
       return {
@@ -244,7 +257,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
   const togglePadPump = () => {
     setPadPumpState((prev) => {
       const newState = !prev;
-      sendOperatorCommand('pad_pump', newState);
+      sendOperatorCommand("pad_pump", newState);
       return newState;
     });
   };
@@ -262,7 +275,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
   const toggleFogger = () => {
     setFoggerState((prev) => {
       const newState = !prev;
-      sendOperatorCommand('fogger', newState);
+      sendOperatorCommand("fogger", newState);
       return newState;
     });
   };
@@ -336,7 +349,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
     setHeaterStates((prev) => {
       const newState = !prev[hiterKey];
       // hiterKey is like 'hiter1', we want 'hiter_1'
-      const number = hiterKey.replace('hiter', '');
+      const number = hiterKey.replace("hiter", "");
       const operatorName = `hiter_${number}`;
       sendOperatorCommand(operatorName, newState);
       return {
@@ -544,7 +557,10 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
     refetchInterval: 20_000,
   });
 
-  const temp = useMemo(() => climateChartData?.tempData || [], [climateChartData]);
+  const temp = useMemo(
+    () => climateChartData?.tempData || [],
+    [climateChartData],
+  );
   const humidity = useMemo(
     () => climateChartData?.humData || [],
     [climateChartData],
@@ -873,6 +889,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
                     exhaustFanStates.fan2,
                     exhaustFanStates.fan3,
                     exhaustFanStates.fan4,
+                    exhaustFanStates.fan5,
                   ]}
                 />
                 <img
@@ -1175,7 +1192,7 @@ const [activity, setActivity] = React.useState(!operatorMode); // New state for 
             />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {[1, 2, 3, 4].map((num) => (
+            {[1, 2, 3, 4, 5].map((num) => (
               <Box
                 key={num}
                 sx={{

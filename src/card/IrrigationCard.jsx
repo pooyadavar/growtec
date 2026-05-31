@@ -1,12 +1,12 @@
 import * as React from "react";
 import { Typography, Box, Paper, Divider, Button, Modal } from "@mui/material";
 import { AgCharts } from "ag-charts-react";
-import { useMutation, useQuery } from "@tanstack/react-query"; // اضافه شد
+import { useMutation, useQuery } from "@tanstack/react-query";
 import assets from "../assets/index";
 import IconTextButton from "./IconTextButton";
-import apiClient from "../api/apiClient" // اضافه شد (مسیر را در صورت نیاز چک کنید)
-import { getIrrigationTanksStatus } from "../api/dashboardApi"; // اضافه شد
-import toast from "react-hot-toast"; // اضافه شد
+import apiClient from "../api/apiClient";
+import { getIrrigationTanksStatus } from "../api/dashboardApi";
+import toast from "react-hot-toast";
 
 const IrrigationCard = ({
   storageNumber,
@@ -20,11 +20,12 @@ const IrrigationCard = ({
   onClickSettings,
   irrigationScheduleItems = [],
 }) => {
-  // استیت‌های مودال
+  // استیت‌های مودال کالیبراسیون
   const [isModalAOpen, setIsModalAOpen] = React.useState(false);
 
-  // استیت کنترل مراحل کالیبراسیون (۱ = حد پایین، ۲ = حد بالا)
-  const [calibStep, setCalibStep] = React.useState(1);
+  // استیت‌های مستقل برای حذف اولویت‌بندی
+  const [lowConfirmed, setLowConfirmed] = React.useState(false);
+  const [highConfirmed, setHighConfirmed] = React.useState(false);
 
   const numbers = `۰۱۲۳۴۵۶۷۸۹`;
   const convert = (num) => {
@@ -148,23 +149,40 @@ const IrrigationCard = ({
     queryKey: ["irrigationTanksStatus_calib"],
     queryFn: getIrrigationTanksStatus,
     refetchInterval: 5000,
-    enabled: isModalAOpen, // فقط زمان باز بودن مودال فچ شود
+    enabled: isModalAOpen,
   });
 
-  const tankRealTimeData = realTimeTanksData ? realTimeTanksData[storageNumber]?.contents : null;
+  const tankRealTimeData = realTimeTanksData
+    ? realTimeTanksData[storageNumber]?.contents
+    : null;
   const realTimeVolume = tankRealTimeData?.filled_volume ?? storageCapacity;
   const realTimeMax = tankRealTimeData?.max_volume ?? maxStorageCapacity;
-  
-  // محاسبه درصدی با داده‌های لایو
+
   const realTimeFillPercentage = Math.max(
     0,
     Math.min(100, (realTimeVolume / (realTimeMax || 100)) * 100),
   );
 
-  // محاسبه سطح بر اساس متغیرهای احتمالی (در صورت نبود متغیر صریح، از درصد استفاده می‌کنیم)
-  const realTimeLevel = tankRealTimeData?.level ?? tankRealTimeData?.water_level ?? `${realTimeFillPercentage.toFixed(0)} %`;
+  const realTimeLevel =
+    tankRealTimeData?.level ??
+    tankRealTimeData?.water_level ??
+    `${realTimeFillPercentage.toFixed(0)} %`;
 
-  // --- API کالیبراسیون مخزن (سنسور فشار) ---
+  // بررسی اتمام هر دو مرحله
+  React.useEffect(() => {
+    if (lowConfirmed && highConfirmed) {
+      toast.success("کالیبراسیون مخزن به طور کامل با موفقیت انجام شد.");
+      // یه تاخیر کوچیک می‌دیم که کاربر تیک دوم رو ببینه بعد بسته شه
+      const timer = setTimeout(() => {
+        setIsModalAOpen(false);
+        setLowConfirmed(false);
+        setHighConfirmed(false);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [lowConfirmed, highConfirmed]);
+
+  // --- API کالیبراسیون مخزن ---
   const { mutate: calibrateTankMutation } = useMutation({
     mutationFn: async (data) => {
       return await apiClient.post(
@@ -174,14 +192,11 @@ const IrrigationCard = ({
     },
     onSuccess: (data, variables) => {
       if (variables.status === "empty") {
-        toast.success(
-          "حجم پایین مخزن ثبت شد. لطفاً مخزن را پر کرده و مرحله بعد را انجام دهید.",
-        );
-        setCalibStep(2); // تغییر استیت به مرحله ۲
+        toast.success("حجم پایین مخزن با موفقیت ثبت شد.");
+        setLowConfirmed(true);
       } else if (variables.status === "full") {
-        toast.success("کالیبراسیون مخزن با موفقیت انجام شد.");
-        setIsModalAOpen(false); // بستن مودال در پایان کار
-        setCalibStep(1); // ریست کردن مرحله
+        toast.success("حجم بالای مخزن با موفقیت ثبت شد.");
+        setHighConfirmed(true);
       }
     },
     onError: (error) => {
@@ -206,6 +221,13 @@ const IrrigationCard = ({
       tank_number: Number(storageNumber),
       status: "full",
     });
+  };
+
+  const handleCloseModalA = (e) => {
+    if (e) e.stopPropagation();
+    setIsModalAOpen(false);
+    setLowConfirmed(false);
+    setHighConfirmed(false);
   };
 
   return (
@@ -681,16 +703,8 @@ const IrrigationCard = ({
         </Box>
       </Box>
 
-      {/* ===================== پیاده‌سازی مودال A ===================== */}
-      <Modal
-        disableAutoFocus
-        open={isModalAOpen}
-        onClose={(e) => {
-          if (e) e.stopPropagation();
-          setIsModalAOpen(false);
-          setCalibStep(1); // ریست کردن مرحله هنگام بستن
-        }}
-      >
+      {/* ===================== مودال کالیبراسیون ===================== */}
+      <Modal disableAutoFocus open={isModalAOpen} onClose={handleCloseModalA}>
         <Box
           sx={{
             position: "absolute",
@@ -727,11 +741,7 @@ const IrrigationCard = ({
             <img
               src={assets.svg.close}
               alt="close"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsModalAOpen(false);
-                setCalibStep(1);
-              }}
+              onClick={handleCloseModalA}
               style={{ cursor: "pointer", width: "20px", height: "20px" }}
             />
           </Box>
@@ -747,10 +757,17 @@ const IrrigationCard = ({
             }}
           >
             <Typography fontFamily={"IRANSANS"} fontSize={16}>
-              حجم مخزن: <strong style={{ color: "#004323" }}>{convert(realTimeVolume)}</strong> لیتر
+              حجم مخزن:{" "}
+              <strong style={{ color: "#004323" }}>
+                {convert(realTimeVolume)}
+              </strong>{" "}
+              لیتر
             </Typography>
             <Typography fontFamily={"IRANSANS"} fontSize={16}>
-              سطح مخزن: <strong style={{ color: "#004323" }}>{convert(realTimeLevel)}</strong>
+              سطح مخزن:{" "}
+              <strong style={{ color: "#004323" }}>
+                {convert(realTimeLevel)}
+              </strong>
             </Typography>
           </Box>
 
@@ -784,7 +801,8 @@ const IrrigationCard = ({
                   width: "100%",
                   height: `${realTimeFillPercentage}%`,
                   backgroundColor: "#2196F3",
-                  borderRadius: realTimeFillPercentage > 95 ? "8px" : "0 0 8px 8px",
+                  borderRadius:
+                    realTimeFillPercentage > 95 ? "8px" : "0 0 8px 8px",
                   transition: "height 0.5s ease-in-out",
                   opacity: 0.8,
                 }}
@@ -849,57 +867,60 @@ const IrrigationCard = ({
             </Box>
           </Box>
 
-          {/* دکمه‌های عملیات کالیبراسیون با منطق استپ ۱ و ۲ */}
+          {/* دکمه‌های عملیات کالیبراسیون بدون اولویت */}
           <Box sx={{ display: "flex", width: "80%", gap: 2, mt: 1 }}>
+            {/* دکمه تایید حجم بالا */}
             <Button
               variant="contained"
-              disabled={calibStep !== 2} // فقط در مرحله ۲ فعال است
+              disabled={highConfirmed}
               onClick={handleCalibrateStep2}
               sx={{
                 flex: 1,
                 height: "40px",
-                fontSize: "15px",
-                color: calibStep === 2 ? "#004323" : "#9E9E9E",
-                backgroundColor: calibStep === 2 ? "#B8FFDD" : "#E0E0E0",
+                fontSize: "14px",
+                color: "#000",
+                backgroundColor: "#FFCB82",
                 borderRadius: "10px",
-                border:
-                  calibStep === 2
-                    ? "0.5px solid #004323"
-                    : "0.5px solid transparent",
                 fontFamily: "IRANSANS",
                 boxShadow: "none",
                 "&:hover": {
-                  backgroundColor: calibStep === 2 ? "#a0eed0" : "#E0E0E0",
+                  backgroundColor: "#ffb74d",
                   boxShadow: "none",
+                },
+                "&.Mui-disabled": {
+                  backgroundColor: "#E0E0E0",
+                  color: "#9E9E9E",
                 },
               }}
             >
-              تایید حجم بالای مخزن
+              {highConfirmed ? "تایید شد ✓" : "تایید حجم بالای مخزن"}
             </Button>
+
+            {/* دکمه تایید حجم پایین */}
             <Button
               variant="contained"
-              disabled={calibStep !== 1} // فقط در مرحله ۱ فعال است
+              disabled={lowConfirmed}
               onClick={handleCalibrateStep1}
               sx={{
                 flex: 1,
                 height: "40px",
-                fontSize: "15px",
-                color: calibStep === 1 ? "#004323" : "#9E9E9E",
-                backgroundColor: calibStep === 1 ? "#B8FFDD" : "#E0E0E0",
+                fontSize: "14px",
+                color: "#000",
+                backgroundColor: "#FFCB82",
                 borderRadius: "10px",
-                border:
-                  calibStep === 1
-                    ? "0.5px solid #004323"
-                    : "0.5px solid transparent",
                 fontFamily: "IRANSANS",
                 boxShadow: "none",
                 "&:hover": {
-                  backgroundColor: calibStep === 1 ? "#a0eed0" : "#E0E0E0",
+                  backgroundColor: "#ffb74d",
                   boxShadow: "none",
+                },
+                "&.Mui-disabled": {
+                  backgroundColor: "#E0E0E0",
+                  color: "#9E9E9E",
                 },
               }}
             >
-              تایید حجم پایین مخزن
+              {lowConfirmed ? "تایید شد ✓" : "تایید حجم پایین مخزن"}
             </Button>
           </Box>
         </Box>

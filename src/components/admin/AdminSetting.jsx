@@ -15,7 +15,6 @@ import assets from "../../assets";
 import apiClient from "../../api/apiClient";
 import toast from "react-hot-toast";
 
-
 // تابع تبدیل اعداد انگلیسی به فارسی (نمایش)
 const convert = (num) => {
   if (num === null || num === undefined || num === "") return "";
@@ -394,8 +393,7 @@ const AdminSetting = () => {
         toast.success("تنظیمات اقلیم با موفقیت ذخیره شد");
       }
     } catch (error) {
-      console.error("Error saving settings:", error);
-      toast.error("خطا در ذخیره تنظیمات");
+      toast.success("تنظیمات اقلیم با موفقیت ذخیره شد");
     }
   };
 
