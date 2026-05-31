@@ -18,7 +18,7 @@ import {
 import assets from "../../assets";
 import apiClient from "../../api/apiClient";
 import toast from "react-hot-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // --- Utility Functions for Number Conversion ---
 const toPersianDigits = (str) => {
@@ -291,6 +291,7 @@ const specialSettingsConfig = [
 ];
 
 const PayeshSetting = ({ zone }) => {
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState("A");
   const [part, setPart] = useState(1);
   const buttons = ["A", "B", "C", "D", "ویژه"];
@@ -331,6 +332,8 @@ const PayeshSetting = ({ zone }) => {
     pump_pad: false,
     roof_hatch: false,
   });
+
+  const [tabStates, setTabStates] = useState({});
 
   const [specialSettings, setSpecialSettings] = useState(() => {
     const mockSpecialData = {
@@ -451,43 +454,67 @@ const PayeshSetting = ({ zone }) => {
         initialRangeRef.current = normalizeRange(rangeRes);
       }
 
-      if (tempRes) {
-        setTempMax1(tempRes["1"]?.maximum || 0);
-        setTempMin1(tempRes["1"]?.minimum || 0);
-        setTempMax2(tempRes["2"]?.maximum || 0);
-        setTempMin2(tempRes["2"]?.minimum || 0);
-        setTempMax3(tempRes["3"]?.maximum || 0);
-        setTempMin3(tempRes["3"]?.minimum || 0);
-        initialTempRangeRef.current = normalizeClimateRange(tempRes);
-      }
+      if (tabStates[part]) {
+        const cached = tabStates[part];
+        setTempMax1(cached.tempMax1);
+        setTempMin1(cached.tempMin1);
+        setTempMax2(cached.tempMax2);
+        setTempMin2(cached.tempMin2);
+        setTempMax3(cached.tempMax3);
+        setTempMin3(cached.tempMin3);
+        sethumMax1(cached.humMax1);
+        setHumMin1(cached.humMin1);
+        sethumMax2(cached.humMax2);
+        setHumMin2(cached.humMin2);
+        sethumMax3(cached.humMax3);
+        setHumMin3(cached.humMin3);
+        setTempControllers(cached.tempControllers);
+        setHumControllers(cached.humControllers);
+        
+        if (tempRes) initialTempRangeRef.current = normalizeClimateRange(tempRes);
+        if (humRes) initialHumRangeRef.current = normalizeClimateRange(humRes);
+        if (opRes) initialTempOpRef.current = { ...cached.tempControllers, ...opRes };
+        if (humOpRes) initialHumOpRef.current = { ...cached.humControllers, ...humOpRes };
+      } else {
+        if (tempRes) {
+          setTempMax1(tempRes["1"]?.maximum || 0);
+          setTempMin1(tempRes["1"]?.minimum || 0);
+          setTempMax2(tempRes["2"]?.maximum || 0);
+          setTempMin2(tempRes["2"]?.minimum || 0);
+          setTempMax3(tempRes["3"]?.maximum || 0);
+          setTempMin3(tempRes["3"]?.minimum || 0);
+          initialTempRangeRef.current = normalizeClimateRange(tempRes);
+        }
 
-      if (humRes) {
-        sethumMax1(humRes["1"]?.maximum || 0);
-        setHumMin1(humRes["1"]?.minimum || 0);
-        sethumMax2(humRes["2"]?.maximum || 0);
-        setHumMin2(humRes["2"]?.minimum || 0);
-        sethumMax3(humRes["3"]?.maximum || 0);
-        setHumMin3(humRes["3"]?.minimum || 0);
-        initialHumRangeRef.current = normalizeClimateRange(humRes);
-      }
+        if (humRes) {
+          sethumMax1(humRes["1"]?.maximum || 0);
+          setHumMin1(humRes["1"]?.minimum || 0);
+          sethumMax2(humRes["2"]?.maximum || 0);
+          setHumMin2(humRes["2"]?.minimum || 0);
+          sethumMax3(humRes["3"]?.maximum || 0);
+          setHumMin3(humRes["3"]?.minimum || 0);
+          initialHumRangeRef.current = normalizeClimateRange(humRes);
+        }
 
-      if (opRes) {
-        setTempControllers((prev) => {
-          const newState = { ...prev, ...opRes };
-          initialTempOpRef.current = newState;
-          return newState;
-        });
-      }
+        if (opRes) {
+          setTempControllers((prev) => {
+            const newState = { ...prev, ...opRes };
+            initialTempOpRef.current = newState;
+            return newState;
+          });
+        }
 
-      if (humOpRes) {
-        setHumControllers((prev) => {
-          const newState = { ...prev, ...humOpRes };
-          initialHumOpRef.current = newState;
-          return newState;
-        });
+        if (humOpRes) {
+          setHumControllers((prev) => {
+            const newState = { ...prev, ...humOpRes };
+            initialHumOpRef.current = newState;
+            return newState;
+          });
+        }
       }
     }
-  }, [queryData, normalizeClimateRange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryData, part]); // Excluded tabStates to avoid unnecessary re-runs when tabStates updates on tab click
 
   const handleSpecialSettingChange = (code, value) => {
     setSpecialSettings((prev) => ({ ...prev, [code]: value }));
@@ -573,12 +600,22 @@ const PayeshSetting = ({ zone }) => {
       await Promise.all(promises);
       console.log("Data successfully saved!");
 
+      // Invalidate query cache so that switching tabs fetches fresh data
+      queryClient.invalidateQueries({ queryKey: ["climateSettings", zone] });
+
       // Update refs
       initialRangeRef.current = currentRange;
       initialTempRangeRef.current = currentTempRange;
       initialHumRangeRef.current = currentHumRange;
       initialTempOpRef.current = { ...tempControllers };
       initialHumOpRef.current = { ...humControllers };
+
+      // Clear the tabStates cache for this part so fresh data is loaded
+      setTabStates((prev) => {
+        const next = { ...prev };
+        delete next[part];
+        return next;
+      });
 
       if (selected === "ویژه") {
         toast.success("تنظیمات تب ویژه و تغییرات API با موفقیت ذخیره شدند.");
@@ -730,6 +767,16 @@ const PayeshSetting = ({ zone }) => {
             <Box
               key={label}
               onClick={() => {
+                if (selected !== "ویژه") {
+                  setTabStates(prev => ({
+                    ...prev,
+                    [part]: {
+                      tempMax1, tempMin1, tempMax2, tempMin2, tempMax3, tempMin3,
+                      humMax1, humMin1, humMax2, humMin2, humMax3, humMin3,
+                      tempControllers, humControllers
+                    }
+                  }));
+                }
                 setSelected(label);
                 if (label !== "ویژه") setPart(index + 1);
               }}
@@ -773,28 +820,9 @@ const PayeshSetting = ({ zone }) => {
             overflow: "hidden",
           }}
         >
-          {loading && selected !== "ویژه" ? (
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                zIndex: 10,
-              }}
-            >
-              <CircularProgress color="primary" />
-            </Box>
-          ) : (
-            <>
-              {selected === "ویژه" ? (
-                <Box
+          <>
+            {selected === "ویژه" ? (
+              <Box
                   sx={{
                     width: "100%",
                     px: 4,
@@ -1121,7 +1149,6 @@ const PayeshSetting = ({ zone }) => {
                 ذخیره
               </Button>
             </>
-          )}
         </Box>
       </Box>
     </Container>

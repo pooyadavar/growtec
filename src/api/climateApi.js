@@ -15,3 +15,11 @@ export const updateOperatorSchedule = async (id, data) => {
 export const deleteOperatorSchedule = async (id) => {
   return apiClient.delete(`/climate/operator-schedule/${id}/`);
 };
+
+export const getSpecialSettings = async () => {
+  return apiClient.get('/climate/special-settings/');
+};
+
+export const updateSpecialSettings = async (data) => {
+  return apiClient.post('/climate/special-settings/', data);
+};

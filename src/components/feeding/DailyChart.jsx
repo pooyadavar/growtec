@@ -77,18 +77,24 @@ const CalibrationModalContent = ({
   sensorName,
   sensorId,
 }) => {
-  const [ecStep, setEcStep] = useState(1);
-  const [phStep, setPhStep] = useState(1);
+  // استیت‌های کاملاً مستقل برای حذف اولویت‌بندی
+  const [isStarted, setIsStarted] = useState(false);
+  const [lowConfirmed, setLowConfirmed] = useState(false);
+  const [highConfirmed, setHighConfirmed] = useState(false);
+
   const [realTimeData, setRealTimeData] = useState([]);
 
+  // ریست کردن استیت‌ها موقع باز شدن مودال یا تغییر تب
   useEffect(() => {
     if (open) {
-      setEcStep(1);
-      setPhStep(1);
+      setIsStarted(false);
+      setLowConfirmed(false);
+      setHighConfirmed(false);
       setRealTimeData([]);
     }
-  }, [open, calibrateTab]);
+  }, [open, calibrateTab, sensorId]);
 
+  // دریافت دیتای لحظه‌ای برای چارت
   useEffect(() => {
     if (!open) return;
 
@@ -157,93 +163,93 @@ const CalibrationModalContent = ({
     background: { visible: false },
   };
 
-  const handleEcCalibrationStep1 = async () => {
-    if (!calibrateValues.ecLow || !calibrateValues.ecHigh) {
-      toast.error("لطفا هر دو مقدار EC را وارد کنید");
+  // ۱. تابع شروع کالیبراسیون (بدون اولویت برای پایین یا بالا)
+  const handleStartCalibration = async () => {
+    const isEc = calibrateTab === "ec";
+    const valLow = isEc ? calibrateValues.ecLow : calibrateValues.phLow;
+    const valHigh = isEc ? calibrateValues.ecHigh : calibrateValues.phHigh;
+
+    if (!valLow || !valHigh) {
+      toast.error(`لطفا هر دو مقدار ${isEc ? "EC" : "pH"} را وارد کنید`);
       return;
     }
+
     try {
-      const payload = {
-        step: 1,
-        ec_number: sensorId,
-        buffer_ec_low: Number(calibrateValues.ecLow),
-        buffer_ec_high: Number(calibrateValues.ecHigh),
-      };
-      await calibrationEc(payload);
-      toast.success("مرحله اول کالیبراسیون EC با موفقیت انجام شد");
-      setEcStep(2);
+      const payload = isEc
+        ? {
+            step: 1,
+            ec_number: sensorId,
+            buffer_ec_low: Number(valLow),
+            buffer_ec_high: Number(valHigh),
+          }
+        : {
+            step: 1,
+            ph_number: sensorId,
+            buffer_ph_low: Number(valLow),
+            buffer_ph_high: Number(valHigh),
+          };
+
+      if (isEc) {
+        await calibrationEc(payload);
+      } else {
+        await calibrationPh(payload);
+      }
+
+      toast.success("مرحله اول کالیبراسیون با موفقیت انجام شد");
+      setIsStarted(true); // فعال شدن همزمان دکمه‌های تایید حد بالا و پایین
     } catch (error) {
       toast.error("خطا در مرحله اول کالیبراسیون");
     }
   };
 
-  const handleEcLowConfirm = async () => {
-    try {
-      await calibrationEc({ step: 2, ec_number: sensorId });
-      toast.success("کالیبراسیون حد پایین انجام شد");
-      setEcStep(3);
-    } catch (error) {
-      toast.error("خطا در کالیبراسیون حد پایین");
+  // تابع بررسی اتمام کل پروسه
+  const checkCompletion = async (newLowStatus, newHighStatus) => {
+    if (newLowStatus && newHighStatus) {
+      try {
+        if (calibrateTab === "ec") {
+          await calibrationEc({ step: 4, ec_number: sensorId });
+        } else {
+          await calibrationPh({ step: 4, ph_number: sensorId });
+        }
+        toast.success("کالیبراسیون به طور کامل با موفقیت به پایان رسید");
+        onClose();
+      } catch (error) {
+        toast.error("خطا در تکمیل نهایی کالیبراسیون");
+      }
     }
   };
 
-  const handleEcHighConfirm = async () => {
+  // ۲. تایید حد پایین (در هر زمانی بعد از شروع قابل کلیک است)
+  const handleLowConfirm = async () => {
     try {
-      await calibrationEc({ step: 3, ec_number: sensorId });
-      await calibrationEc({ step: 4, ec_number: sensorId });
-      toast.success("کالیبراسیون EC با موفقیت به پایان رسید");
-      setEcStep(1);
-      onClose();
+      if (calibrateTab === "ec") {
+        await calibrationEc({ step: 2, ec_number: sensorId });
+      } else {
+        await calibrationPh({ step: 2, ph_number: sensorId });
+      }
+      toast.success("حد پایین تایید شد");
+      setLowConfirmed(true); // کمرنگ و غیرفعال شدن این دکمه
+      checkCompletion(true, highConfirmed);
     } catch (error) {
-      toast.error("خطا در تکمیل کالیبراسیون");
+      toast.error("خطا در تایید حد پایین");
     }
   };
 
-  const handlePhCalibrationStep1 = async () => {
-    if (!calibrateValues.phLow || !calibrateValues.phHigh) {
-      toast.error("لطفا هر دو مقدار pH را وارد کنید");
-      return;
-    }
+  // ۳. تایید حد بالا (در هر زمانی بعد از شروع قابل کلیک است)
+  const handleHighConfirm = async () => {
     try {
-      const payload = {
-        step: 1,
-        ph_number: sensorId,
-        buffer_ph_low: Number(calibrateValues.phLow),
-        buffer_ph_high: Number(calibrateValues.phHigh),
-      };
-      await calibrationPh(payload);
-      toast.success("مرحله اول کالیبراسیون pH با موفقیت انجام شد");
-      setPhStep(2);
+      if (calibrateTab === "ec") {
+        await calibrationEc({ step: 3, ec_number: sensorId });
+      } else {
+        await calibrationPh({ step: 3, ph_number: sensorId });
+      }
+      toast.success("حد بالا تایید شد");
+      setHighConfirmed(true); // کمرنگ و غیرفعال شدن این دکمه
+      checkCompletion(lowConfirmed, true);
     } catch (error) {
-      toast.error("خطا در مرحله اول کالیبراسیون pH");
+      toast.error("خطا در تایید حد بالا");
     }
   };
-
-  const handlePhLowConfirm = async () => {
-    try {
-      await calibrationPh({ step: 2, ph_number: sensorId });
-      toast.success("کالیبراسیون حد پایین pH انجام شد");
-      setPhStep(3);
-    } catch (error) {
-      toast.error("خطا در کالیبراسیون حد پایین pH");
-    }
-  };
-
-  const handlePhHighConfirm = async () => {
-    try {
-      await calibrationPh({ step: 3, ph_number: sensorId });
-      await calibrationPh({ step: 4, ph_number: sensorId });
-      toast.success("کالیبراسیون pH با موفقیت به پایان رسید");
-      setPhStep(1);
-      onClose();
-    } catch (error) {
-      toast.error("خطا در تکمیل کالیبراسیون pH");
-    }
-  };
-
-  const isStep1Active = calibrateTab === "ec" ? ecStep === 1 : phStep === 1;
-  const isStep2Active = calibrateTab === "ec" ? ecStep === 2 : phStep === 2;
-  const isStep3Active = calibrateTab === "ec" ? ecStep === 3 : phStep === 3;
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -290,7 +296,7 @@ const CalibrationModalContent = ({
         <Box sx={{ display: "flex", justifyContent: "left", gap: 1, mb: 0 }}>
           <Button
             onClick={() => setCalibrateTab("ec")}
-            disabled={ecStep !== 1 || phStep !== 1}
+            disabled={isStarted}
             sx={{
               bgcolor: calibrateTab === "ec" ? "#FFFFFF" : "#FFCB82",
               color: "#000",
@@ -304,7 +310,7 @@ const CalibrationModalContent = ({
           </Button>
           <Button
             onClick={() => setCalibrateTab("ph")}
-            disabled={ecStep !== 1 || phStep !== 1}
+            disabled={isStarted}
             sx={{
               bgcolor: calibrateTab === "ph" ? "#FFFFFF" : "#FFCB82",
               color: "#000",
@@ -363,19 +369,20 @@ const CalibrationModalContent = ({
           <Box
             sx={{
               display: "flex",
-              justifyContent: "space-around",
+              justifyContent: "space-between",
               alignItems: "flex-start",
               flexDirection: "row-reverse",
               position: "relative",
             }}
           >
+            {/* سمت راست: ورودی و دکمه حد بالا */}
             <Box
               sx={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 1.5,
-                width: "40%",
+                width: "35%",
               }}
             >
               <Typography fontFamily="IRANSANS" color="#555">
@@ -384,7 +391,7 @@ const CalibrationModalContent = ({
               <TextField
                 variant="outlined"
                 size="small"
-                disabled={!isStep1Active}
+                disabled={isStarted}
                 value={convert(
                   calibrateTab === "ec"
                     ? calibrateValues.ecHigh
@@ -403,28 +410,27 @@ const CalibrationModalContent = ({
                   "& .MuiOutlinedInput-root": { borderRadius: "10px" },
                 }}
               />
-              {isStep3Active && (
+              {isStarted && (
                 <Button
                   variant="contained"
-                  onClick={
-                    calibrateTab === "ec"
-                      ? handleEcHighConfirm
-                      : handlePhHighConfirm
-                  }
+                  onClick={handleHighConfirm}
+                  disabled={highConfirmed}
                   sx={{
                     bgcolor: "#FFCB82",
                     color: "#000",
                     fontFamily: "IRANSANS",
                     borderRadius: "10px",
+                    width: "100%",
                     "&:hover": { bgcolor: "#ffb74d" },
                   }}
                 >
-                  تایید حد بالا
+                  {highConfirmed ? "تایید شد ✓" : "تایید حد بالا"}
                 </Button>
               )}
             </Box>
 
-            {isStep1Active && (
+            {/* وسط: دکمه استارت (فقط قبل از استارت نشون داده میشه) */}
+            {!isStarted && (
               <Box
                 sx={{
                   display: "flex",
@@ -432,23 +438,18 @@ const CalibrationModalContent = ({
                   alignItems: "center",
                   height: "100%",
                   alignSelf: "flex-end",
-                  mt: 12,
+                  mt: "104px",
                 }}
               >
                 <Button
                   variant="contained"
-                  onClick={
-                    calibrateTab === "ec"
-                      ? handleEcCalibrationStep1
-                      : handlePhCalibrationStep1
-                  }
+                  onClick={handleStartCalibration}
                   sx={{
                     bgcolor: "#4CAF50",
                     color: "#fff",
                     fontFamily: "IRANSANS",
                     borderRadius: "10px",
-                    px: 3,
-                    width: "150px",
+                    px: 2,
                   }}
                 >
                   شروع کالیبراسیون
@@ -456,13 +457,14 @@ const CalibrationModalContent = ({
               </Box>
             )}
 
+            {/* سمت چپ: ورودی و دکمه حد پایین */}
             <Box
               sx={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 1.5,
-                width: "40%",
+                width: "35%",
               }}
             >
               <Typography fontFamily="IRANSANS" color="#555">
@@ -471,7 +473,7 @@ const CalibrationModalContent = ({
               <TextField
                 variant="outlined"
                 size="small"
-                disabled={!isStep1Active}
+                disabled={isStarted}
                 value={convert(
                   calibrateTab === "ec"
                     ? calibrateValues.ecLow
@@ -490,23 +492,21 @@ const CalibrationModalContent = ({
                   "& .MuiOutlinedInput-root": { borderRadius: "10px" },
                 }}
               />
-              {isStep2Active && (
+              {isStarted && (
                 <Button
                   variant="contained"
-                  onClick={
-                    calibrateTab === "ec"
-                      ? handleEcLowConfirm
-                      : handlePhLowConfirm
-                  }
+                  onClick={handleLowConfirm}
+                  disabled={lowConfirmed}
                   sx={{
                     bgcolor: "#FFCB82",
                     color: "#000",
                     fontFamily: "IRANSANS",
                     borderRadius: "10px",
+                    width: "100%",
                     "&:hover": { bgcolor: "#ffb74d" },
                   }}
                 >
-                  تایید حد پایین
+                  {lowConfirmed ? "تایید شد ✓" : "تایید حد پایین"}
                 </Button>
               )}
             </Box>
@@ -730,8 +730,8 @@ const SlidingWindowChart = () => {
   const [isCalibrateOpen, setIsCalibrateOpen] = useState(false);
   const [calibrateTab, setCalibrateTab] = useState("ec");
   const [calibrateValues, setCalibrateValues] = useState({
-    ecLow: "54",
-    ecHigh: "1500",
+    ecLow: "",
+    ecHigh: "",
     phLow: "",
     phHigh: "",
   });
