@@ -26,6 +26,12 @@ import {
 import { getClimateTemperatureHumidityLogs } from "../../api/logsApi";
 import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits } from "../../utils/persianDigits";
+import {
+  timeToMinutes,
+  downsampleSeriesByTime,
+  shouldShowAdaptiveTimeLabel,
+  payeshChartTheme,
+} from "../../utils/climateChart";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const StatusIndicators = ({ states }) => (
@@ -83,10 +89,11 @@ const Payesh = () => {
   });
 
   const updateModeMutation = useMutation({
-    mutationFn: (newMode) =>
-      updateOperatorMode({ is_auto: newMode, zone }),
+    mutationFn: (newMode) => updateOperatorMode({ is_auto: newMode, zone }),
     onMutate: async (newMode) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.operatorMode(zone) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.operatorMode(zone),
+      });
       const previous = queryClient.getQueryData(queryKeys.operatorMode(zone));
       queryClient.setQueryData(queryKeys.operatorMode(zone), {
         is_auto: newMode,
@@ -101,14 +108,18 @@ const Payesh = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.operatorMode(zone) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.operatorStatus(zone) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.operatorStatus(zone),
+      });
     },
   });
 
   const operatorCommandMutation = useMutation({
     mutationFn: (data) => sendOperatorCommandApi(data),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.operatorStatus(zone) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.operatorStatus(zone),
+      });
     },
   });
 
@@ -482,32 +493,15 @@ const Payesh = () => {
       tempData.sort((a, b) => a.time.localeCompare(b.time));
       humData.sort((a, b) => a.time.localeCompare(b.time));
 
-      let intervalMinutes = 180;
-      if (tempData.length > 0) {
-        const [firstTime, lastTime] = [
-          tempData[0].time,
-          tempData[tempData.length - 1].time,
-        ];
-        const timeToMinutes = (timeStr) => {
-          const [hours, minutes] = timeStr.split(":").map(Number);
-          return hours * 60 + minutes;
-        };
-        const timeRangeMinutes =
-          timeToMinutes(lastTime) - timeToMinutes(firstTime);
-
-        if (timeRangeMinutes > 12 * 60) {
-          intervalMinutes = 60;
-        } else if (timeRangeMinutes > 2 * 60) {
-          intervalMinutes = 30;
-        } else {
-          intervalMinutes = 15;
-        }
-      }
+      const lastTimeMinutes =
+        tempData.length > 0
+          ? timeToMinutes(tempData[tempData.length - 1].time)
+          : 0;
 
       return {
-        tempData,
-        humData,
-        xAxisInterval: intervalMinutes,
+        tempData: downsampleSeriesByTime(tempData, lastTimeMinutes),
+        humData: downsampleSeriesByTime(humData, lastTimeMinutes),
+        lastTimeMinutes,
       };
     },
     staleTime: 20_000,
@@ -523,7 +517,7 @@ const Payesh = () => {
     () => climateChartData?.humData || [],
     [climateChartData],
   );
-  const xAxisInterval = climateChartData?.xAxisInterval || 180;
+  const lastTimeMinutes = climateChartData?.lastTimeMinutes ?? 0;
 
   const lineSeriesBase = useMemo(
     () => [
@@ -537,29 +531,45 @@ const Payesh = () => {
     [],
   );
 
+  // توزیع کاملاً مساوی لیبل‌ها بر اساس ایندکس آرایه برای حل مشکل بصری
+  const visibleLabels = useMemo(() => {
+    const labels = new Set();
+    if (!temp || temp.length === 0) return labels;
+
+    // تعداد کل لیبل‌هایی که می‌خوای زیر نمودار ببینی (مثلاً ۸ تا برای این عرض مناسبه)
+    const labelCount = 8;
+
+    // محاسبه فاصله ایندکس‌ها برای توزیع برابر
+    const step = Math.max(1, Math.floor((temp.length - 1) / labelCount));
+
+    for (let i = 0; i < temp.length; i += step) {
+      labels.add(temp[i].time);
+    }
+
+    // همیشه نقطه آخر (زمان فعلی) رو هم برای دقت اضافه کن
+    labels.add(temp[temp.length - 1].time);
+
+    return labels;
+  }, [temp]);
+
+  // ۲. فرمتر حالا فقط چک می‌کنه که آیا زمانِ فعلی تو لیست مجازها هست یا نه
   const getXAxisFormatter = useMemo(() => {
     return (params) => {
-      const timeParts = params.value.split(":");
-      if (timeParts.length >= 2) {
-        const minute = parseInt(timeParts[1], 10);
-        let label = "";
-        if (xAxisInterval === 60) {
-          if (minute === 0) label = `${timeParts[0]}:${timeParts[1]}`;
-        } else if (xAxisInterval === 30) {
-          if (minute === 0 || minute === 30) {
-            label = `${timeParts[0]}:${timeParts[1]}`;
-          }
-        } else {
-          label = `${timeParts[0]}:${timeParts[1]}`;
+      if (visibleLabels.has(params.value)) {
+        const timeParts = params.value.split(":");
+        if (timeParts.length >= 2) {
+          // فرمت کردن به صورت 08:05 به جای 8:5
+          const formattedTime = `${String(timeParts[0]).padStart(2, "0")}:${String(timeParts[1]).padStart(2, "0")}`;
+          return toPersianDigits(formattedTime);
         }
-        return label ? toPersianDigits(label) : "";
       }
       return "";
     };
-  }, [xAxisInterval]);
+  }, [visibleLabels]);
 
   const tempOptions = useMemo(
     () => ({
+      theme: payeshChartTheme,
       title: { text: "دما", fontFamily: "IRANSANS" },
       data: temp,
       series: lineSeriesBase.map((series) => ({
@@ -573,23 +583,31 @@ const Payesh = () => {
           type: "category",
           position: "bottom",
           title: { text: "" },
-          label: { formatter: getXAxisFormatter },
-          tick: { interval: xAxisInterval },
+          label: {
+            formatter: getXAxisFormatter,
+            fontFamily: "IRANSANS",
+            fontSize: 10,
+          },
         },
         {
           type: "number",
           position: "left",
-          title: { text: "دما (°C)" },
-          label: { formatter: (p) => toPersianDigits(p.value) },
+          title: { text: "دما (°C)", fontFamily: "IRANSANS" },
+          label: {
+            formatter: (p) => toPersianDigits(p.value),
+            fontFamily: "IRANSANS",
+            fontSize: 10,
+          },
         },
       ],
       legend: { enabled: false },
     }),
-    [temp, lineSeriesBase, getXAxisFormatter, xAxisInterval],
+    [temp, lineSeriesBase, getXAxisFormatter],
   );
 
   const humOptions = useMemo(
     () => ({
+      theme: payeshChartTheme,
       title: { text: "رطوبت", fontFamily: "IRANSANS" },
       data: humidity,
       series: lineSeriesBase.map((series) => ({
@@ -603,14 +621,21 @@ const Payesh = () => {
           type: "category",
           position: "bottom",
           title: { text: "" },
-          label: { formatter: getXAxisFormatter },
-          tick: { interval: xAxisInterval },
+          label: {
+            formatter: getXAxisFormatter,
+            fontFamily: "IRANSANS",
+            fontSize: 10,
+          },
         },
         {
           type: "number",
           position: "left",
-          title: { text: "درصد" },
-          label: { formatter: (p) => toPersianDigits(p.value) },
+          title: { text: "درصد", fontFamily: "IRANSANS" },
+          label: {
+            formatter: (p) => toPersianDigits(p.value),
+            fontFamily: "IRANSANS",
+            fontSize: 10,
+          },
         },
       ],
       legend: {
@@ -630,7 +655,7 @@ const Payesh = () => {
         },
       },
     }),
-    [humidity, lineSeriesBase, getXAxisFormatter, xAxisInterval],
+    [humidity, lineSeriesBase, getXAxisFormatter],
   );
 
   // const sendBoolean = async () => {

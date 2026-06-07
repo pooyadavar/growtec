@@ -24,6 +24,7 @@ const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   border: selected ? "1px solid #FFCC80" : "1px solid #e0e0e0",
   fontSize: "0.8rem",
   fontWeight: "bold",
+  fontFamily: "IRANSANS", // اضافه شد
   "&:hover": {
     backgroundColor: selected ? "#FFEBCC" : "#f5f5f5",
   },
@@ -48,7 +49,6 @@ const PhEcControlCard = ({
   const [openStatusModal, setOpenStatusModal] = React.useState(false);
 
   const handleOpenStatusModal = () => {
-    console.log("Attempting to open status modal...");
     setOpenStatusModal(true);
   };
   const handleCloseStatusModal = () => setOpenStatusModal(false);
@@ -203,7 +203,7 @@ const PhEcControlCard = ({
           </Box>
         </Stack>
 
-        {/* --- Middle Section (Unchanged) --- */}
+        {/* --- Middle Section --- */}
         <Stack
           spacing={1}
           sx={{
@@ -221,7 +221,6 @@ const PhEcControlCard = ({
             fontFamily={"IRANSANS"}
             variant="body1"
             sx={{
-              textAlign: "right",
               fontWeight: "medium",
               mb: 1,
               fontSize: "12px",
@@ -284,6 +283,7 @@ const PhEcControlCard = ({
                 <Box>
                   <Typography
                     variant="body2"
+                    fontFamily="IRANSANS" // اضافه شد
                     sx={{ width: "30px", textAlign: "center" }}
                   >
                     {toPersianDigits(index + 1)}
@@ -301,6 +301,7 @@ const PhEcControlCard = ({
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
+                        fontFamily: "IRANSANS", // اضافه شد
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
@@ -312,7 +313,9 @@ const PhEcControlCard = ({
                     variant="outlined"
                     size="small"
                     value={toPersianDigits(
-                      column2Data[index] !== undefined ? column2Data[index] : "",
+                      column2Data[index] !== undefined
+                        ? column2Data[index]
+                        : "",
                     )}
                     InputProps={{
                       readOnly: true,
@@ -322,6 +325,7 @@ const PhEcControlCard = ({
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
+                        fontFamily: "IRANSANS", // اضافه شد
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
@@ -335,7 +339,7 @@ const PhEcControlCard = ({
           </Box>
         </Stack>
 
-        {/* --- Left Section (Unchanged) --- */}
+        {/* --- Left Section --- */}
         <Stack
           spacing={1}
           alignItems="center"
@@ -407,7 +411,11 @@ const PhEcControlCard = ({
               justifyContent: "space-between",
             }}
           >
-            <Typography fontSize="12px" sx={{ fontWeight: "700" }}>
+            <Typography
+              fontFamily="IRANSANS"
+              fontSize="12px"
+              sx={{ fontWeight: "700" }}
+            >
               EC هدف
             </Typography>
             <TextField
@@ -430,6 +438,7 @@ const PhEcControlCard = ({
                   backgroundColor: "white",
                 },
                 "& input": {
+                  fontFamily: "IRANSANS", // اضافه شد
                   textAlign: "center",
                   padding: "8px",
                   height: "unset",

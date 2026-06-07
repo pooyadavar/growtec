@@ -1,10 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   Box,
   Container,
   IconButton,
   CircularProgress,
-  Typography
+  Typography,
 } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
@@ -23,7 +29,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
   const resolvedZone = zone || 1;
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [canScrollRight, setCanScrollRight] = useState(false); // دیفالت رو تغییر دادم تا در افکت به درستی ست بشه
 
   const { data: schedules = {}, isLoading: schedulesLoading } = useQuery({
     queryKey: queryKeys.operatorSchedules(resolvedZone),
@@ -50,12 +56,20 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     const scheduleOps = sortOperators(Object.keys(schedules));
 
     if (logs.length === 0) {
-      return { logOperators: [], chartsData: {}, scheduleOperators: scheduleOps };
+      return {
+        logOperators: [],
+        chartsData: {},
+        scheduleOperators: scheduleOps,
+      };
     }
 
     const latestLog = logs[logs.length - 1];
     if (!latestLog?.log_data) {
-      return { logOperators: [], chartsData: {}, scheduleOperators: scheduleOps };
+      return {
+        logOperators: [],
+        chartsData: {},
+        scheduleOperators: scheduleOps,
+      };
     }
 
     const operators = sortOperators(
@@ -68,7 +82,8 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         let timePart = "00:00";
         if (log.log_date_time) {
           const parts = log.log_date_time.split(" ");
-          timePart = parts.length > 1 ? parts[1].substring(0, 8) : log.log_date_time;
+          timePart =
+            parts.length > 1 ? parts[1].substring(0, 8) : log.log_date_time;
         }
         return {
           time: timePart,
@@ -90,13 +105,22 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     );
   }, [logOperators, scheduleOperators]);
 
+  // ✅ لاجیک محاسبه اسکرول مخصوص RTL فیکس شد
   const handleScrollEvents = useCallback(() => {
     const el = scrollRef.current;
     if (el) {
-      const isAtStart = el.scrollLeft <= 10;
-      const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 10;
-      setCanScrollLeft(!isAtStart);
-      setCanScrollRight(!isAtEnd);
+      // استفاده از قدرمطلق برای هندل کردن مقادیر منفی در RTL
+      const currentScroll = Math.abs(el.scrollLeft);
+      const maxScroll = el.scrollWidth - el.clientWidth;
+
+      // چون المان‌ها از راست چیده می‌شن:
+      // وقتی اسکرول صفر باشه یعنی سمت راستِ راست هستیم (شروع)
+      // وقتی اسکرول مکس باشه یعنی سمت چپِ چپ هستیم (پایان)
+      const isAtStart = currentScroll <= 10;
+      const isAtEnd = currentScroll >= maxScroll - 10;
+
+      setCanScrollRight(!isAtStart); // دکمه راست ما رو به سمت شروع میبره
+      setCanScrollLeft(!isAtEnd); // دکمه چپ ما رو به سمت پایان میبره
     }
   }, []);
 
@@ -105,7 +129,8 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     if (el) {
       el.addEventListener("scroll", handleScrollEvents);
       window.addEventListener("resize", handleScrollEvents);
-      handleScrollEvents();
+      // یک تایم‌اوت کوتاه برای اطمینان از رندر شدن DOM
+      setTimeout(handleScrollEvents, 100);
       return () => {
         el.removeEventListener("scroll", handleScrollEvents);
         window.removeEventListener("resize", handleScrollEvents);
@@ -126,7 +151,14 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
 
   if (loading && cardsData.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "300px",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -164,7 +196,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
           height: "auto",
           display: "flex",
           flexDirection: "row",
-          direction: "rtl",
+          direction: "ltr",
           overflowX: "hidden",
           alignItems: "center",
           scrollSnapType: "x mandatory",
@@ -178,7 +210,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
               key={operatorKey}
               sx={{
                 flexShrink: 0,
-                scrollSnapAlign: "start",
+                scrollSnapAlign: "center", // ✅ این مقدار خالی بود که باعث باگ در اسکرول روان می‌شه
                 marginX: "10px",
               }}
             >
@@ -192,8 +224,10 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
             </Box>
           ))
         ) : (
-          <Box sx={{ width: '100%', textAlign: 'center' }}>
-            <Typography>داده‌ای برای این زون یافت نشد</Typography>
+          <Box sx={{ width: "100%", textAlign: "center" }}>
+            <Typography fontFamily="IRANSANS">
+              داده‌ای برای این زون یافت نشد
+            </Typography>
           </Box>
         )}
       </Box>

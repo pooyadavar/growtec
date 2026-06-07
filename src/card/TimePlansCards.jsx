@@ -336,6 +336,7 @@ const TimePlansCards = ({
             },
             fontSize: 10,
             fontFamily: "IRANSANS",
+            // مقادیر direction و textAlign برای جلوگیری از باگ AgCharts حذف شدند
           },
           gridStyle: [
             {
@@ -352,7 +353,7 @@ const TimePlansCards = ({
         top: 5,
         right: 10,
         bottom: 20,
-        left: 5,
+        left: 5, 
       },
     }),
     [data, fan],
@@ -361,8 +362,8 @@ const TimePlansCards = ({
   return (
     <Container
       sx={{
-        width: "400px", // Increased width in previous step
-        height: "580px", // Reduced height in previous step
+        width: "400px",
+        height: "580px", 
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         display: "flex",
@@ -437,12 +438,12 @@ const TimePlansCards = ({
             paddingRight: "15px",
           }}
         >
-          <Box sx={{ width: "100%", height: "calc(100% - 10px)" }}>
+          <Box sx={{ width: "100%", height: "calc(100% - 10px)" , direction:'rtl' }}>
             {" "}
             {/* Also fills its parent */}
             <AgCharts
               options={chartOptions}
-              style={{ width: "100%", height: "100%" }}
+              style={{ width: "95%", height: "100%" , direction:'rtl' }}
             />
           </Box>
         </Box>

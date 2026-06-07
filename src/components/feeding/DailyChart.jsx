@@ -96,8 +96,10 @@ const CalibrationModalContent = ({
         marker: { enabled: true, size: 4 },
         tooltip: {
           renderer: ({ datum, xKey, yKey }) => {
+            const d = new Date(datum[xKey]);
+            const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
             return {
-              title: datum[xKey].toLocaleTimeString(),
+              title: toPersianDigits(timeStr),
               content: toPersianDigits(datum[yKey]),
             };
           },
@@ -108,14 +110,26 @@ const CalibrationModalContent = ({
       {
         type: "time",
         position: "bottom",
-        label: { format: "%H:%M:%S", fontSize: 10 },
         tick: { count: 5 },
+        label: {
+          fontSize: 10,
+          fontFamily: "IRANSANS",
+          formatter: (params) => {
+            if (!params.value) return "";
+            const d = new Date(params.value);
+            const hours = String(d.getHours()).padStart(2, "0");
+            const minutes = String(d.getMinutes()).padStart(2, "0");
+            const seconds = String(d.getSeconds()).padStart(2, "0");
+            return toPersianDigits(`${hours}:${minutes}:${seconds}`);
+          },
+        },
       },
       {
         type: "number",
         position: "left",
         label: {
           fontSize: 10,
+          fontFamily: "IRANSANS",
           formatter: (params) => toPersianDigits(params.value.toFixed(1)),
         },
       },
@@ -475,12 +489,7 @@ const CalibrationModalContent = ({
 };
 
 // --- آیتم تکی نمودار سه‌گانه با لاجیک بهینه‌شده ---
-const SensorChartItem = ({
-  sensor,
-  isActive,
-  onTimeUpdate,
-  isModalOpen,
-}) => {
+const SensorChartItem = ({ sensor, isActive, onTimeUpdate, isModalOpen }) => {
   const { data = [] } = useQuery({
     queryKey: queryKeys.solubleEcPhLog(sensor.id),
     queryFn: async () => {
@@ -529,31 +538,39 @@ const SensorChartItem = ({
           type: "time",
           position: "bottom",
           nice: true,
-          label: {
-            enabled: showXAxis,
-            fontSize: 10,
-            color: "#666",
-            format: "%H:%M",
-          },
           line: { enabled: showXAxis, width: 1, color: "#ccc" },
           tick: { enabled: true, color: showXAxis ? "#666" : "transparent" },
           gridStyle: [
             { stroke: "#000000", lineDash: [0], opacity: 0.15, width: 1 },
           ],
           crosshair: { enabled: true, stroke: "#999999" },
+          label: {
+            enabled: showXAxis,
+            fontSize: 10,
+            color: "#666",
+            fontFamily: "IRANSANS",
+            formatter: (params) => {
+              if (!params.value) return "";
+              const d = new Date(params.value);
+              const hours = String(d.getHours()).padStart(2, "0");
+              const minutes = String(d.getMinutes()).padStart(2, "0");
+              return toPersianDigits(`${hours}:${minutes}`);
+            },
+          },
         },
         {
           type: "number",
           position: "left",
           min,
           max,
+          tick: { count: 3 },
+          gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
           label: {
             fontSize: 9,
             color: "#333",
+            fontFamily: "IRANSANS",
             formatter: (p) => toPersianDigits(p.value.toFixed(1)),
           },
-          tick: { count: 3 },
-          gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
         },
       ],
       legend: { enabled: false },

@@ -27,6 +27,7 @@ const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   border: selected ? "1px solid #FFCC80" : "1px solid #e0e0e0",
   fontSize: "0.8rem",
   fontWeight: "bold",
+  fontFamily: "IRANSANS",
   "&:hover": {
     backgroundColor: selected ? "#FFEBCC" : "#f5f5f5",
   },
@@ -105,7 +106,6 @@ const PhEcControlCardMixer = ({
   const [openStatusModal, setOpenStatusModal] = React.useState(false);
 
   const handleOpenStatusModal = () => {
-    console.log("Attempting to open status modal...");
     setOpenStatusModal(true);
   };
   const handleCloseStatusModal = () => setOpenStatusModal(false);
@@ -118,7 +118,7 @@ const PhEcControlCardMixer = ({
       elevation={3}
       sx={{
         padding: 2,
-        width: "560px", // اصلاح تایپوگرافی (450x -> 450px)
+        width: "560px",
         height: "320px",
         backgroundColor: "#ffff",
         display: "flex",
@@ -178,6 +178,7 @@ const PhEcControlCardMixer = ({
                   backgroundColor: "#f0f0f0",
                   "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                   "& input": {
+                    fontFamily: "IRANSANS", // اضافه شد
                     textAlign: "center",
                     padding: "8px",
                     height: "unset",
@@ -214,6 +215,7 @@ const PhEcControlCardMixer = ({
                   backgroundColor: "#f0f0f0",
                   "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                   "& input": {
+                    fontFamily: "IRANSANS", // اضافه شد
                     textAlign: "center",
                     padding: "8px",
                     height: "unset",
@@ -338,8 +340,8 @@ const PhEcControlCardMixer = ({
                 {type === "stock"
                   ? "استوک"
                   : type === "total"
-                  ? "مجموع"
-                  : "زمان"}
+                    ? "مجموع"
+                    : "زمان"}
               </CustomToggleButton>
             ))}
           </Stack>
@@ -369,6 +371,7 @@ const PhEcControlCardMixer = ({
                 <Box>
                   <Typography
                     variant="body2"
+                    fontFamily="IRANSANS" // اضافه شد
                     sx={{ width: "30px", textAlign: "center" }}
                   >
                     {toPersianDigits(index + 1)}
@@ -385,6 +388,7 @@ const PhEcControlCardMixer = ({
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
+                        fontFamily: "IRANSANS", // اضافه شد
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
@@ -396,7 +400,9 @@ const PhEcControlCardMixer = ({
                     variant="outlined"
                     size="small"
                     value={toPersianDigits(
-                      column2Data[index] !== undefined ? column2Data[index] : "",
+                      column2Data[index] !== undefined
+                        ? column2Data[index]
+                        : "",
                     )}
                     InputProps={{ readOnly: true }}
                     sx={{
@@ -404,6 +410,7 @@ const PhEcControlCardMixer = ({
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
+                        fontFamily: "IRANSANS", // اضافه شد
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
@@ -489,7 +496,11 @@ const PhEcControlCardMixer = ({
               justifyContent: "space-between",
             }}
           >
-            <Typography fontSize="12px" sx={{ fontWeight: "700" }}>
+            <Typography
+              fontFamily={"IRANSANS"}
+              fontSize="12px"
+              sx={{ fontWeight: "700" }}
+            >
               EC هدف
             </Typography>
             <TextField
@@ -512,6 +523,7 @@ const PhEcControlCardMixer = ({
                   backgroundColor: "white",
                 },
                 "& input": {
+                  fontFamily: "IRANSANS", // اضافه شد
                   textAlign: "center",
                   padding: "8px",
                   height: "unset",
