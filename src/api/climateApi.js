@@ -16,12 +16,19 @@ export const deleteOperatorSchedule = async (id) => {
   return apiClient.delete(`/climate/operator-schedule/${id}/`);
 };
 
-export const getSpecialSettings = async () => {
-  return apiClient.get("/climate/special-settings/");
+export const normalizeSpecialParameters = (response) => {
+  return response?.special_parameters ?? response ?? {};
 };
 
-export const updateSpecialSettings = async (data) => {
-  return apiClient.post("/climate/special-settings/", data);
+export const getSpecialParameters = async () => {
+  const response = await apiClient.get("/climate/special-parameters/");
+  return normalizeSpecialParameters(response);
+};
+
+export const updateSpecialParameters = async (parameters) => {
+  return apiClient.post("/climate/special-parameters/", {
+    special_parameters: parameters,
+  });
 };
 
 export const getOperatorMode = async (zone) => {

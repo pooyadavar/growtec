@@ -13,7 +13,6 @@ const StyledScrollItem = styled(Box)({
   WebkitUserSelect: "none",
   MozUserSelect: "none",
   msUserSelect: "none",
-  // scrollSnapAlign رو حذف کردیم تا اسکرول آزاد باشه
 });
 
 const Eghlim = () => {

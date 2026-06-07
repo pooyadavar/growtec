@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   Box,
   Paper,
@@ -46,7 +46,6 @@ const PhEcControlCardMixer = ({
 }) => {
   const [selectedStockType, setSelectedStockType] = React.useState("total");
 
-  // ✅ اصلاح شده: بررسی آرایه بودن داده‌ها برای جلوگیری از خطای .map
   const column1Data =
     Array.isArray(reportData) && Array.isArray(reportData[0])
       ? reportData[0]
@@ -60,6 +59,54 @@ const PhEcControlCardMixer = ({
     React.useState(false);
   const handleOpenBuildDetailsModal = () => setOpenBuildDetailsModal(true);
   const handleCloseBuildDetailsModal = () => setOpenBuildDetailsModal(false);
+
+  // === منطق اسکرول عمودی با درگ (Drag to Scroll) ===
+  const scrollRef = useRef(null);
+  const isDown = useRef(false);
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+  const scrollTopState = useRef(0);
+
+  // رویدادهای دسکتاپ (موس)
+  const handleMouseDown = (e) => {
+    isDown.current = true;
+    isDragging.current = false;
+    startY.current = e.pageY - scrollRef.current.offsetTop;
+    scrollTopState.current = scrollRef.current.scrollTop;
+  };
+  const handleMouseLeave = () => {
+    isDown.current = false;
+  };
+  const handleMouseUp = () => {
+    isDown.current = false;
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
+  };
+  const handleMouseMove = (e) => {
+    if (!isDown.current) return;
+    e.preventDefault();
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walk = (y - startY.current) * 1.5;
+    if (Math.abs(walk) > 5) isDragging.current = true;
+    scrollRef.current.scrollTop = scrollTopState.current - walk;
+  };
+
+  // رویدادهای موبایل (تاچ)
+  const handleTouchStart = (e) => {
+    isDragging.current = false;
+    startY.current = e.touches[0].pageY;
+  };
+  const handleTouchMove = (e) => {
+    const y = e.touches[0].pageY;
+    if (Math.abs(y - startY.current) > 5) isDragging.current = true;
+  };
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
+  };
+  // =================================================
 
   // محاسبه درصد پُر بودن مخزن
   let fillPercentage = 0;
@@ -126,6 +173,11 @@ const PhEcControlCardMixer = ({
         flexDirection: "column",
         alignItems: "center",
         borderRadius: "10px",
+        // ✅ جلوگیری کامل از انتخاب شدن متن
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none",
       }}
     >
       <Box
@@ -178,7 +230,7 @@ const PhEcControlCardMixer = ({
                   backgroundColor: "#f0f0f0",
                   "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                   "& input": {
-                    fontFamily: "IRANSANS", // اضافه شد
+                    fontFamily: "IRANSANS",
                     textAlign: "center",
                     padding: "8px",
                     height: "unset",
@@ -215,7 +267,7 @@ const PhEcControlCardMixer = ({
                   backgroundColor: "#f0f0f0",
                   "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                   "& input": {
-                    fontFamily: "IRANSANS", // اضافه شد
+                    fontFamily: "IRANSANS",
                     textAlign: "center",
                     padding: "8px",
                     height: "unset",
@@ -346,15 +398,32 @@ const PhEcControlCardMixer = ({
             ))}
           </Stack>
           <Box
+            ref={scrollRef}
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             sx={{
               maxHeight: 220,
-              overflowY: "scroll",
+              overflowY: "auto",
               pr: 1,
               pl: 1,
               display: "flex",
               flexDirection: "column",
               gap: 1,
               textAlign: "center",
+              cursor: "grab",
+              "&:active": { cursor: "grabbing" },
+              touchAction: "pan-y",
+              "&::-webkit-scrollbar": { width: "4px" },
+              "&::-webkit-scrollbar-track": { background: "transparent" },
+              "&::-webkit-scrollbar-thumb": {
+                background: "#888",
+                borderRadius: "4px",
+              },
             }}
           >
             {column1Data.map((item, index) => (
@@ -366,12 +435,13 @@ const PhEcControlCardMixer = ({
                   justifyContent: "space-between",
                   gap: 1,
                   flexShrink: 0,
+                  pointerEvents: "none", // جلوگیری از تداخل فیلدها با درگ
                 }}
               >
                 <Box>
                   <Typography
                     variant="body2"
-                    fontFamily="IRANSANS" // اضافه شد
+                    fontFamily="IRANSANS"
                     sx={{ width: "30px", textAlign: "center" }}
                   >
                     {toPersianDigits(index + 1)}
@@ -388,7 +458,7 @@ const PhEcControlCardMixer = ({
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
-                        fontFamily: "IRANSANS", // اضافه شد
+                        fontFamily: "IRANSANS",
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
@@ -410,7 +480,7 @@ const PhEcControlCardMixer = ({
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
-                        fontFamily: "IRANSANS", // اضافه شد
+                        fontFamily: "IRANSANS",
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
@@ -496,11 +566,7 @@ const PhEcControlCardMixer = ({
               justifyContent: "space-between",
             }}
           >
-            <Typography
-              fontFamily={"IRANSANS"}
-              fontSize="12px"
-              sx={{ fontWeight: "700" }}
-            >
+            <Typography fontSize="12px" sx={{ fontWeight: "700" }}>
               EC هدف
             </Typography>
             <TextField
@@ -523,7 +589,7 @@ const PhEcControlCardMixer = ({
                   backgroundColor: "white",
                 },
                 "& input": {
-                  fontFamily: "IRANSANS", // اضافه شد
+                  fontFamily: "IRANSANS",
                   textAlign: "center",
                   padding: "8px",
                   height: "unset",
@@ -551,7 +617,10 @@ const PhEcControlCardMixer = ({
               pl: 1,
             }}
           >
-            <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
+            <Typography
+              fontFamily={"IRANSANS"}
+              sx={{ fontSize: "12px", pointerEvents: "none" }}
+            >
               جزئیات ساخت
             </Typography>
           </Button>

@@ -17,21 +17,14 @@ const Storages = ({ storagesList = [] }) => {
   const scrollContainerRef = React.useRef(null);
 
   const isDown = React.useRef(false);
+  const isDragging = React.useRef(false);
   const startX = React.useRef(0);
   const scrollLeftState = React.useRef(0);
 
+  // --- رویدادهای دسکتاپ (موس) ---
   const handleMouseDown = (e) => {
-    const rect = scrollContainerRef.current.getBoundingClientRect();
-    const clickY = e.clientY - rect.top;
-
-    // فقط اگر روی ۳۵ پیکسل بالایی (سربرگ) کلیک شد، اسکرول متوقف میشه تا کلیک روی مودال عمل کنه
-    if (clickY < 35) {
-      isDown.current = false;
-      return;
-    }
-
-    // در بقیه قسمت‌ها اسکرول با درگ فعال میشه
     isDown.current = true;
+    isDragging.current = false;
     startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
     scrollLeftState.current = scrollContainerRef.current.scrollLeft;
   };
@@ -42,6 +35,9 @@ const Storages = ({ storagesList = [] }) => {
 
   const handleMouseUp = () => {
     isDown.current = false;
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
   };
 
   const handleMouseMove = (e) => {
@@ -49,7 +45,31 @@ const Storages = ({ storagesList = [] }) => {
     e.preventDefault();
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
     const walk = (x - startX.current) * 1.5;
+
+    if (Math.abs(walk) > 5) {
+      isDragging.current = true;
+    }
+
     scrollContainerRef.current.scrollLeft = scrollLeftState.current - walk;
+  };
+
+  // --- رویدادهای موبایل و صفحات لمسی (Touch) ---
+  const handleTouchStart = (e) => {
+    isDragging.current = false;
+    startX.current = e.touches[0].pageX;
+  };
+
+  const handleTouchMove = (e) => {
+    const x = e.touches[0].pageX;
+    if (Math.abs(x - startX.current) > 5) {
+      isDragging.current = true;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
   };
 
   if (!storagesList || storagesList.length === 0) {
@@ -82,6 +102,10 @@ const Storages = ({ storagesList = [] }) => {
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onDragStart={(e) => e.preventDefault()} // <--- جادوی اصلی برای جلوگیری از گیر کردن درگ روی کارت‌ها
       sx={{
         width: "340px",
         height: "184px",
@@ -97,8 +121,8 @@ const Storages = ({ storagesList = [] }) => {
         overflowX: "auto",
         scrollPaddingLeft: "12px",
         userSelect: "none",
-        touchAction: "none",
-
+        touchAction: "pan-x", // <--- برای اینکه اسکرول با انگشت به روان‌ترین شکل کار کند
+        
         "&::-webkit-scrollbar": {
           display: "block",
           height: "25px",
@@ -128,7 +152,17 @@ const Storages = ({ storagesList = [] }) => {
       >
         {storagesList.map((card) => (
           <StyledScrollItem key={card.id}>
-            <Box sx={{ position: "relative" }}>
+            <Box
+              onClickCapture={(e) => {
+                // اگر در حال درگ یا سوایپ بودیم، کلاً رویداد کلیک را باطل کن تا مودال الکی باز نشود
+                if (isDragging.current) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  return;
+                }
+              }}
+              sx={{ position: "relative" }}
+            >
               <StorageCard
                 maxCapacity={card.max_volume}
                 zone={card.id}
@@ -136,24 +170,6 @@ const Storages = ({ storagesList = [] }) => {
                 float1={card.buttom_float_switch}
                 float2={card.middle_float_switch}
                 float3={card.top_float_switch}
-              />
-
-              {/* سپر نامرئی با محاسبه پیکسلی به جای درصد */}
-              <Box
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-                onMouseDown={(e) => e.stopPropagation()} // جلوگیری از باگ درگ روی لایه
-                sx={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "calc(100% - 35px)", // فقط ۳۵ پیکسل بالا رو برای کلیک کردن هدر باز می‌ذاره
-                  zIndex: 10,
-                  backgroundColor: "transparent",
-                }}
               />
             </Box>
           </StyledScrollItem>

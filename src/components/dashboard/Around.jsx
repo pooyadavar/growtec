@@ -84,6 +84,7 @@ const Around = () => {
           display: "flex",
           flexDirection: "row-reverse",
           justifyContent: "start",
+          userSelect: "none",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between" }}>

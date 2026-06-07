@@ -836,6 +836,7 @@ const Payesh = () => {
                   fontSize={21}
                   color="#5B5B5B"
                   marginLeft={"40px"}
+                  fontFamily="IRANSANS"
                   alignContent={"center"}
                 >
                   {toPersianDigits(zone)}
@@ -1129,19 +1130,7 @@ const Payesh = () => {
             scale: "0.95",
           }}
         >
-          <img
-            src={assets.svg.unDone}
-            alt=""
-            className="button"
-            style={{
-              scale: "1",
-              position: "relative",
-              top: "50px",
-              right: "25px",
-            }}
-            onClick={handleClose}
-          />
-          <PayeshSetting zone={zone} />
+          <PayeshSetting zone={zone} onClose={handleClose} />
         </Box>
       </Modal>
 

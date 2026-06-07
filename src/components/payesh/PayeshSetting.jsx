@@ -13,17 +13,21 @@ import {
   Stack,
   TextField,
   CircularProgress,
+  Modal,
+  IconButton,
 } from "@mui/material";
 
 import assets from "../../assets";
 import {
   getRangeStartTime,
   getClimateSettings,
+  getSpecialParameters,
   updateRangeStartTime,
   updateTemperatureRange,
   updateHumidityRange,
   updateTemperatureRangeOperator,
   updateHumidityRangeOperator,
+  updateSpecialParameters,
 } from "../../api/climateApi";
 import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
@@ -272,31 +276,48 @@ const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
   );
 };
 
-// --- Constants for Special Settings ---
 const specialSettingsConfig = [
-  { code: "D2830", label: "ساعت شروع زون ۱ زمانی", isFloat: false },
-  { code: "D2831", label: "ساعت شروع زون ۲ زمانی", isFloat: false },
-  { code: "D2832", label: "ساعت شروع زون ۳ زمانی", isFloat: false },
-  { code: "D2833", label: "ساعت شروع مه پاش", isFloat: false },
-  { code: "D2834", label: "ساعت پایان مه پاش", isFloat: false },
-  { code: "D2835", label: "شروع پد", isFloat: false },
-  { code: "D2836", label: "پایان پد", isFloat: false },
-  { code: "D2837", label: "شروع اگزاست", isFloat: false },
-  { code: "D2838", label: "پایان اگزاست", isFloat: false },
-  { code: "D2839", label: "شروع دریچه باز", isFloat: false },
-  { code: "D2840", label: "پایان دریچه باز", isFloat: false },
-  { code: "D2841", label: "زمان مه پاش خاموش (دهم ثانیه)", isFloat: false },
-  { code: "D2842", label: "زمان مه پاش روشن (دهم ثانیه)", isFloat: false },
-  { code: "D2843", label: "مکث دریچه (دهم ثانیه)", isFloat: false },
-  { code: "D2844", label: "حرکت تو باز شدن (دهم ثانیه)", isFloat: false },
-  { code: "D2845", label: "حرکت تو بسته شدن (دهم ثانیه)", isFloat: false },
-  { code: "D2828", label: "حداقل دمای بیرون برای باز شدن", isFloat: true },
+  { key: "fogger_start_time", label: "ساعت شروع مه پاش", isFloat: false },
+  { key: "fogger_end_time", label: "ساعت پایان مه پاش", isFloat: false },
+  { key: "pad_pump_start_time", label: "شروع پد", isFloat: false },
+  { key: "pad_pump_end_time", label: "پایان پد", isFloat: false },
+  { key: "exhaust_fan_start_time", label: "شروع اگزاست", isFloat: false },
+  { key: "exhaust_fan_end_time", label: "پایان اگزاست", isFloat: false },
+  { key: "open_vent_start_time", label: "شروع دریچه باز", isFloat: false },
+  { key: "open_vent_end_time", label: "پایان دریچه باز", isFloat: false },
+  { key: "fogger_off", label: "زمان مه پاش خاموش (دهم ثانیه)", isFloat: false },
+  { key: "fogger_on", label: "زمان مه پاش روشن (دهم ثانیه)", isFloat: false },
+  { key: "vent_delay", label: "مکث دریچه (دهم ثانیه)", isFloat: false },
+  { key: "vent_open", label: "حرکت تو باز شدن (دهم ثانیه)", isFloat: false },
+  { key: "vent_close", label: "حرکت تو بسته شدن (دهم ثانیه)", isFloat: false },
+  { key: "min_temperature", label: "حداقل دمای بیرون برای باز شدن", isFloat: true },
 ];
 
-const PayeshSetting = ({ zone }) => {
+const buildSpecialParametersPayload = (form) =>
+  specialSettingsConfig.reduce((acc, field) => {
+    const raw = form[field.key];
+    acc[field.key] = field.isFloat
+      ? parseFloat(raw || 0)
+      : parseInt(raw || 0, 10);
+    return acc;
+  }, {});
+
+const mapSpecialParametersToForm = (data = {}) =>
+  specialSettingsConfig.reduce((acc, field) => {
+    const value = data[field.key];
+    acc[field.key] =
+      value !== undefined && value !== null ? String(value) : "";
+    return acc;
+  }, {});
+
+const PayeshSetting = ({ zone, onClose }) => {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState("A");
   const [part, setPart] = useState(1);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingTabSwitch, setPendingTabSwitch] = useState(null);
+  const [pendingClose, setPendingClose] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const buttons = ["A", "B", "C", "D", "ویژه"];
 
   const [range1, setRange1] = useState("");
@@ -338,36 +359,12 @@ const PayeshSetting = ({ zone }) => {
 
   const [tabStates, setTabStates] = useState({});
 
-  const [specialSettings, setSpecialSettings] = useState(() => {
-    const mockSpecialData = {
-      D2830: "6",
-      D2831: "14",
-      D2832: "22",
-      D2833: "8",
-      D2834: "18",
-      D2835: "10",
-      D2836: "16",
-      D2837: "9",
-      D2838: "17",
-      D2839: "7",
-      D2840: "19",
-      D2841: "50",
-      D2842: "100",
-      D2843: "30",
-      D2844: "20",
-      D2845: "25",
-      D2828: "12.5",
-    };
-    return specialSettingsConfig.reduce(
-      (acc, curr) => ({
-        ...acc,
-        [curr.code]: mockSpecialData[curr.code] || "",
-      }),
-      {},
-    );
-  });
+  const [specialSettings, setSpecialSettings] = useState(() =>
+    mapSpecialParametersToForm(),
+  );
 
   const initialRangeRef = useRef(null);
+  const initialSpecialRef = useRef(null);
   const initialTempRangeRef = useRef(null);
   const initialHumRangeRef = useRef(null);
   const initialTempOpRef = useRef(null);
@@ -428,6 +425,7 @@ const PayeshSetting = ({ zone }) => {
       return Array.isArray(res) ? res : [];
     },
     staleTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   useEffect(() => {
@@ -442,12 +440,33 @@ const PayeshSetting = ({ zone }) => {
   const {
     data: queryData,
     isLoading: isClimateLoading,
-    error,
+    isError: isClimateError,
   } = useQuery({
     queryKey: queryKeys.climateSettings(zone, part),
     queryFn: () => getClimateSettings(zone, part),
     staleTime: 5 * 60 * 1000,
+    enabled: selected !== "ویژه",
+    placeholderData: (previousData) => previousData,
   });
+
+  const {
+    data: specialParamsData,
+    isLoading: isSpecialLoading,
+    isError: isSpecialError,
+  } = useQuery({
+    queryKey: queryKeys.climateSpecialParameters(),
+    queryFn: getSpecialParameters,
+    staleTime: 5 * 60 * 1000,
+    enabled: selected === "ویژه",
+    placeholderData: (previousData) => previousData,
+  });
+
+  useEffect(() => {
+    if (!specialParamsData) return;
+    const formState = mapSpecialParametersToForm(specialParamsData);
+    setSpecialSettings(formState);
+    initialSpecialRef.current = buildSpecialParametersPayload(formState);
+  }, [specialParamsData]);
 
   useEffect(() => {
     if (queryData) {
@@ -522,11 +541,87 @@ const PayeshSetting = ({ zone }) => {
     setSpecialSettings((prev) => ({ ...prev, [code]: value }));
   };
 
-  const handleSave = async () => {
-    const promises = [];
+  const hasCurrentTabChanges = useCallback(() => {
+    if (selected === "ویژه") {
+      const payload = buildSpecialParametersPayload(specialSettings);
+      return (
+        JSON.stringify(payload) !== JSON.stringify(initialSpecialRef.current)
+      );
+    }
 
-    // 1. Check Range Start Times
     const currentRange = normalizeRange([range1, range2, range3]);
+    if (
+      JSON.stringify(currentRange) !== JSON.stringify(initialRangeRef.current)
+    ) {
+      return true;
+    }
+
+    const currentTempRange = normalizeClimateRange(tempObject);
+    if (
+      JSON.stringify(currentTempRange) !==
+      JSON.stringify(initialTempRangeRef.current)
+    ) {
+      return true;
+    }
+
+    const currentHumRange = normalizeClimateRange(humidityObject);
+    if (
+      JSON.stringify(currentHumRange) !==
+      JSON.stringify(initialHumRangeRef.current)
+    ) {
+      return true;
+    }
+
+    if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
+      return true;
+    }
+
+    if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
+      return true;
+    }
+
+    return false;
+  }, [
+    selected,
+    specialSettings,
+    range1,
+    range2,
+    range3,
+    tempObject,
+    humidityObject,
+    tempControllers,
+    humControllers,
+    normalizeClimateRange,
+  ]);
+
+  const saveCurrentTab = async ({ silent = false } = {}) => {
+    if (selected === "ویژه") {
+      const payload = buildSpecialParametersPayload(specialSettings);
+      if (
+        JSON.stringify(payload) === JSON.stringify(initialSpecialRef.current)
+      ) {
+        if (!silent) toast.error("تغییری برای ذخیره وجود ندارد.");
+        return { saved: false, hadChanges: false };
+      }
+
+      try {
+        await updateSpecialParameters(payload);
+        initialSpecialRef.current = { ...payload };
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.climateSpecialParameters(),
+        });
+        if (!silent) toast.success("تنظیمات ویژه با موفقیت ذخیره شد.");
+        return { saved: true, hadChanges: true };
+      } catch (saveError) {
+        console.error("Error saving special parameters:", saveError);
+        toast.error("خطا در ذخیره تنظیمات ویژه.");
+        return { saved: false, hadChanges: true, error: true };
+      }
+    }
+
+    const promises = [];
+    const currentRange = normalizeRange([range1, range2, range3]);
+
     if (
       JSON.stringify(currentRange) !== JSON.stringify(initialRangeRef.current)
     ) {
@@ -535,7 +630,6 @@ const PayeshSetting = ({ zone }) => {
       );
     }
 
-    // 2. Check Temperature Ranges
     const currentTempRange = normalizeClimateRange(tempObject);
     if (
       JSON.stringify(currentTempRange) !==
@@ -550,7 +644,6 @@ const PayeshSetting = ({ zone }) => {
       );
     }
 
-    // 3. Check Humidity Ranges
     const currentHumRange = normalizeClimateRange(humidityObject);
     if (
       JSON.stringify(currentHumRange) !==
@@ -565,7 +658,6 @@ const PayeshSetting = ({ zone }) => {
       );
     }
 
-    // 4. Check Temperature Operators
     if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
       promises.push(
         updateTemperatureRangeOperator({
@@ -576,7 +668,6 @@ const PayeshSetting = ({ zone }) => {
       );
     }
 
-    // 5. Check Humidity Operators
     if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
       promises.push(
         updateHumidityRangeOperator({
@@ -588,19 +679,13 @@ const PayeshSetting = ({ zone }) => {
     }
 
     if (promises.length === 0) {
-      if (selected === "ویژه") {
-        toast.success("تنظیمات تب ویژه به صورت ظاهری ذخیره شد.");
-        return;
-      }
-      toast.error("تغییری برای ذخیره وجود ندارد.");
-      return;
+      if (!silent) toast.error("تغییری برای ذخیره وجود ندارد.");
+      return { saved: false, hadChanges: false };
     }
 
     try {
       await Promise.all(promises);
-      console.log("Data successfully saved!");
 
-      // Invalidate queries so that fetching fresh data occurs when needed
       queryClient.invalidateQueries({
         queryKey: queryKeys.climateSettings(zone, part),
       });
@@ -608,28 +693,108 @@ const PayeshSetting = ({ zone }) => {
         queryKey: queryKeys.climateRangeStartTime(zone),
       });
 
-      // Update refs
       initialRangeRef.current = currentRange;
       initialTempRangeRef.current = currentTempRange;
       initialHumRangeRef.current = currentHumRange;
       initialTempOpRef.current = { ...tempControllers };
       initialHumOpRef.current = { ...humControllers };
 
-      // Clear the tabStates cache for this part so fresh data is loaded
       setTabStates((prev) => {
         const next = { ...prev };
         delete next[part];
         return next;
       });
 
-      if (selected === "ویژه") {
-        toast.success("تنظیمات تب ویژه و تغییرات API با موفقیت ذخیره شدند.");
-      } else {
-        toast.success("داده‌ها با موفقیت ذخیره شدند.");
-      }
+      if (!silent) toast.success("داده‌ها با موفقیت ذخیره شدند.");
+      return { saved: true, hadChanges: true };
     } catch (error) {
       console.error("Error saving data:", error);
       toast.error("خطا در ذخیره داده‌ها.");
+      return { saved: false, hadChanges: true, error: true };
+    }
+  };
+
+  const handleSave = () => saveCurrentTab({ silent: false });
+
+  const switchToTab = (label, index) => {
+    if (selected !== "ویژه") {
+      setTabStates((prev) => ({
+        ...prev,
+        [part]: {
+          tempMax1,
+          tempMin1,
+          tempMax2,
+          tempMin2,
+          tempMax3,
+          tempMin3,
+          humMax1,
+          humMin1,
+          humMax2,
+          humMin2,
+          humMax3,
+          humMin3,
+          tempControllers,
+          humControllers,
+        },
+      }));
+    }
+    setSelected(label);
+    if (label !== "ویژه") setPart(index + 1);
+  };
+
+  const closeUnsavedDialog = () => {
+    setUnsavedDialogOpen(false);
+    setPendingTabSwitch(null);
+    setPendingClose(false);
+  };
+
+  const completePendingAction = () => {
+    if (pendingClose) {
+      onClose?.();
+    } else if (pendingTabSwitch) {
+      switchToTab(pendingTabSwitch.label, pendingTabSwitch.index);
+    }
+    closeUnsavedDialog();
+  };
+
+  const handleTabSelect = (label, index) => {
+    if (label === selected || isSaving) return;
+
+    if (hasCurrentTabChanges()) {
+      setPendingClose(false);
+      setPendingTabSwitch({ label, index });
+      setUnsavedDialogOpen(true);
+      return;
+    }
+
+    switchToTab(label, index);
+  };
+
+  const handleCloseRequest = () => {
+    if (!onClose) return;
+
+    if (hasCurrentTabChanges()) {
+      setPendingTabSwitch(null);
+      setPendingClose(true);
+      setUnsavedDialogOpen(true);
+      return;
+    }
+
+    onClose();
+  };
+
+  const handleDiscardChanges = () => {
+    completePendingAction();
+  };
+
+  const handleSaveAndContinue = async () => {
+    setIsSaving(true);
+    try {
+      const result = await saveCurrentTab({ silent: false });
+      if (result.error) return;
+      completePendingAction();
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -714,7 +879,17 @@ const PayeshSetting = ({ zone }) => {
     },
   ];
 
+  const showClimateLoading =
+    isClimateLoading && !queryData && selected !== "ویژه";
+  const showSpecialLoading =
+    isSpecialLoading && !specialParamsData && selected === "ویژه";
+  const showClimateError =
+    isClimateError && !queryData && selected !== "ویژه";
+  const showSpecialError =
+    isSpecialError && !specialParamsData && selected === "ویژه";
+
   return (
+    <>
     <Container
       sx={{
         width: "820px",
@@ -728,29 +903,54 @@ const PayeshSetting = ({ zone }) => {
         transform: "scale(0.95)",
         transformOrigin: "center",
         paddingY: "2px",
+        position: "relative",
       }}
     >
+      {onClose && (
+        <IconButton
+          onClick={handleCloseRequest}
+          title="بستن"
+          size="small"
+          sx={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            zIndex: 20,
+            color: "#FFF",
+            backgroundColor: "inherit",
+            borderRadius: "8px",
+            "&:hover": { backgroundColor: "#D32F2F" },
+          }}
+        >
+          <img
+            src={assets.svg.close}
+            alt="close"
+            style={{ width: 25, height: 25 }}
+          />
+        </IconButton>
+      )}
+
       <Stack spacing={1.5} sx={{ width: "450px" }}>
         <TimeRangeInput
           label="بازه ۱"
           rangeValue={range1}
           setRangeValue={setRange1}
           displayRange={`${toPersianDigits(range2)} - ${toPersianDigits(range1)}`}
-          isLoading={isRangeLoading}
+          isLoading={isRangeLoading && !rangeData}
         />
         <TimeRangeInput
           label="بازه ۲"
           rangeValue={range2}
           setRangeValue={setRange2}
           displayRange={`${toPersianDigits(range3)} - ${toPersianDigits(range2)}`}
-          isLoading={isRangeLoading}
+          isLoading={isRangeLoading && !rangeData}
         />
         <TimeRangeInput
           label="بازه ۳"
           rangeValue={range3}
           setRangeValue={setRange3}
           displayRange={`${toPersianDigits(range1)} - ${toPersianDigits(range3)}`}
-          isLoading={isRangeLoading}
+          isLoading={isRangeLoading && !rangeData}
         />
       </Stack>
 
@@ -774,43 +974,21 @@ const PayeshSetting = ({ zone }) => {
           {buttons.map((label, index) => (
             <Box
               key={label}
-              onClick={() => {
-                if (selected !== "ویژه") {
-                  setTabStates((prev) => ({
-                    ...prev,
-                    [part]: {
-                      tempMax1,
-                      tempMin1,
-                      tempMax2,
-                      tempMin2,
-                      tempMax3,
-                      tempMin3,
-                      humMax1,
-                      humMin1,
-                      humMax2,
-                      humMin2,
-                      humMax3,
-                      humMin3,
-                      tempControllers,
-                      humControllers,
-                    },
-                  }));
-                }
-                setSelected(label);
-                if (label !== "ویژه") setPart(index + 1);
-              }}
+              onClick={() => handleTabSelect(label, index)}
               sx={{
                 paddingX: "14px",
                 marginRight: index !== buttons.length - 1 ? "10px" : 0,
                 height: "46px",
                 borderRadius: "10px 10px 0 0",
                 backgroundColor: selected === label ? "#ffffff" : "#FFCB82",
-                cursor: "pointer",
+                cursor: isSaving ? "wait" : "pointer",
+                opacity: isSaving ? 0.7 : 1,
                 transition: "background-color 0.3s",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 minWidth: "60px",
+                pointerEvents: isSaving ? "none" : "auto",
               }}
             >
               <Typography
@@ -839,7 +1017,7 @@ const PayeshSetting = ({ zone }) => {
             overflow: "hidden",
           }}
         >
-          {isClimateLoading && selected !== "ویژه" ? (
+          {(showClimateLoading || showSpecialLoading) ? (
             <Box
               sx={{
                 position: "absolute",
@@ -856,7 +1034,7 @@ const PayeshSetting = ({ zone }) => {
             >
               <CircularProgress />
             </Box>
-          ) : error && selected !== "ویژه" ? (
+          ) : (showClimateError || showSpecialError) ? (
             <Box
               sx={{
                 position: "absolute",
@@ -880,7 +1058,7 @@ const PayeshSetting = ({ zone }) => {
               {selected === "ویژه" ? (
                 <Box
                   sx={{
-                    width: "100%",
+                    width: "90%",
                     px: 4,
                     height: "390px",
                     overflow: "hidden",
@@ -890,9 +1068,9 @@ const PayeshSetting = ({ zone }) => {
                   }}
                 >
                   <Stack spacing={0.5} sx={{ width: "50%" }}>
-                    {specialSettingsConfig.slice(0, 9).map((field) => (
+                    {specialSettingsConfig.slice(0, 7).map((field) => (
                       <Box
-                        key={field.code}
+                        key={field.key}
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
@@ -916,7 +1094,7 @@ const PayeshSetting = ({ zone }) => {
                           variant="outlined"
                           type="text"
                           inputMode={field.isFloat ? "decimal" : "numeric"}
-                          value={toPersianDigits(specialSettings[field.code])}
+                          value={toPersianDigits(specialSettings[field.key])}
                           onChange={(e) => {
                             const val = toEnglishDigits(e.target.value);
                             if (
@@ -926,7 +1104,7 @@ const PayeshSetting = ({ zone }) => {
                                 ? /^-?\d*\.?\d*$/.test(val)
                                 : /^-?\d*$/.test(val))
                             ) {
-                              handleSpecialSettingChange(field.code, val);
+                              handleSpecialSettingChange(field.key, val);
                             }
                           }}
                           sx={{
@@ -944,9 +1122,9 @@ const PayeshSetting = ({ zone }) => {
                   </Stack>
 
                   <Stack spacing={0.5} sx={{ width: "50%" }}>
-                    {specialSettingsConfig.slice(9).map((field) => (
+                    {specialSettingsConfig.slice(7).map((field) => (
                       <Box
-                        key={field.code}
+                        key={field.key}
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
@@ -970,7 +1148,7 @@ const PayeshSetting = ({ zone }) => {
                           variant="outlined"
                           type="text"
                           inputMode={field.isFloat ? "decimal" : "numeric"}
-                          value={toPersianDigits(specialSettings[field.code])}
+                          value={toPersianDigits(specialSettings[field.key])}
                           onChange={(e) => {
                             const val = toEnglishDigits(e.target.value);
                             if (
@@ -980,7 +1158,7 @@ const PayeshSetting = ({ zone }) => {
                                 ? /^-?\d*\.?\d*$/.test(val)
                                 : /^-?\d*$/.test(val))
                             ) {
-                              handleSpecialSettingChange(field.code, val);
+                              handleSpecialSettingChange(field.key, val);
                             }
                           }}
                           sx={{
@@ -1209,6 +1387,90 @@ const PayeshSetting = ({ zone }) => {
         </Box>
       </Box>
     </Container>
+
+    <Modal
+      open={unsavedDialogOpen}
+      onClose={closeUnsavedDialog}
+      aria-labelledby="unsaved-changes-dialog"
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 380,
+          bgcolor: "#FFFFFF",
+          borderRadius: "12px",
+          border: "0.5px solid #9F9F9F",
+          boxShadow: 24,
+          p: 3,
+          pt: 4,
+          direction: "rtl",
+        }}
+      >
+        <IconButton
+          onClick={closeUnsavedDialog}
+          title="بستن"
+          size="small"
+          sx={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            color: "#FFF",
+            backgroundColor: "inherit",
+            borderRadius: "8px",
+            "&:hover": { backgroundColor: "#D32F2F" },
+          }}
+        >
+          <img
+            src={assets.svg.close}
+            alt="close"
+            style={{ width: 14, height: 14 }}
+          />
+        </IconButton>
+
+        <Typography
+          fontFamily="IRANSANS"
+          fontSize={16}
+          textAlign="center"
+          sx={{ mb: 3, px: 1 }}
+        >
+          تغییرات ذخیره نشده‌اند. می‌خواهید ذخیره کنید؟
+        </Typography>
+
+        <Stack direction="row" spacing={2} justifyContent="space-around">
+          <Button
+            variant="outlined"
+            onClick={handleDiscardChanges}
+            disabled={isSaving}
+            sx={{
+              fontFamily: "IRANSANS",
+              minWidth: 100,
+              borderColor: "#9F9F9F",
+              color: "#333",
+            }}
+          >
+            خیر
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveAndContinue}
+            disabled={isSaving}
+            sx={{
+              fontFamily: "IRANSANS",
+              minWidth: 120,
+              backgroundColor: "#FFCB82",
+              color: "#111",
+              "&:hover": { backgroundColor: "#E0B571" },
+            }}
+          >
+            {isSaving ? "..." : "بله، ذخیره کن"}
+          </Button>
+        </Stack>
+      </Box>
+    </Modal>
+    </>
   );
 };
 

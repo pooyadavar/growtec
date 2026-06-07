@@ -37,6 +37,7 @@ import {
   deleteIrrigationSchedule,
 } from "../../api/irrigationApi";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import TimeInput from "../common/TimeInput";
 
 // Styled components for the modal
 const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
@@ -169,22 +170,12 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
           overflow: "hidden",
         }}
       >
-        <input
-          type="text"
-          inputMode="numeric"
-          value={toPersianDigits(data.start_time || "")}
-          onChange={(e) =>
-            onChange(id, "start_time", toEnglishDigits(e.target.value))
-          }
-          style={{
-            border: "none",
-            outline: "none",
-            width: "100%",
-            height: "100%",
-            textAlign: "center",
-            fontFamily: "IRANSANS",
-            fontSize: "12px",
-          }}
+        <TimeInput
+          value={data.start_time || ""}
+          step="1"
+          onChange={(nextValue) => onChange(id, "start_time", nextValue)}
+          inputStyle={{ fontSize: "12px" }}
+          iconSize={14}
         />
       </Box>
 
@@ -201,22 +192,12 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
           overflow: "hidden",
         }}
       >
-        <input
-          type="text"
-          inputMode="numeric"
-          value={toPersianDigits(data.end_time || "")}
-          onChange={(e) =>
-            onChange(id, "end_time", toEnglishDigits(e.target.value))
-          }
-          style={{
-            border: "none",
-            outline: "none",
-            width: "100%",
-            height: "100%",
-            textAlign: "center",
-            fontFamily: "IRANSANS",
-            fontSize: "12px",
-          }}
+        <TimeInput
+          value={data.end_time || ""}
+          step="1"
+          onChange={(nextValue) => onChange(id, "end_time", nextValue)}
+          inputStyle={{ fontSize: "12px" }}
+          iconSize={14}
         />
       </Box>
 

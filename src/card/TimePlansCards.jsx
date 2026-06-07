@@ -3,9 +3,7 @@ import {
   Typography,
   Box,
   Container,
-  Divider,
   IconButton,
-  TextField,
   CircularProgress,
   Collapse,
 } from "@mui/material";
@@ -22,12 +20,33 @@ import {
 import { queryKeys } from "../api/queryKeys";
 import { useQueryClient } from "@tanstack/react-query";
 import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
+import TimeInput from "../components/common/TimeInput";
 import toast from "react-hot-toast";
 
-const inputFontSx = {
+const ROW_GRID = "36px 1fr 1fr 56px 56px 32px";
+
+const cellBoxSx = {
+  height: "35px",
+  border: "0.5px solid #9F9F9F",
+  borderRadius: "10px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  bgcolor: "#FFFFFF",
+  overflow: "hidden",
+  minWidth: 0,
+};
+
+const numericInputStyle = {
+  border: "none",
+  outline: "none",
+  width: "100%",
+  height: "100%",
+  textAlign: "center",
   fontFamily: "IRANSANS",
   fontSize: "12px",
-  textAlign: "center",
+  padding: "0 4px",
+  boxSizing: "border-box",
 };
 
 const chartFontTheme = {
@@ -290,23 +309,16 @@ const TimePlansCards = ({
           type: "line",
           xKey: "time",
           yKey: "value",
-          yName: fan,
           stroke: "#007bff",
-          strokeWidth: 3,
-          marker: {
-            enabled: true,
-            size: 5,
-            fill: "#007bff",
-          },
+          strokeWidth: 1,
+          marker: { enabled: true, size: 1.5, fill: "#007bff" },
         },
       ],
       axes: [
         {
           type: "category",
           position: "bottom",
-          label: {
-            enabled: false,
-          },
+          label: { enabled: false },
         },
         {
           type: "number",
@@ -314,36 +326,17 @@ const TimePlansCards = ({
           min: 0,
           max: 1,
           nice: false,
-          tick: {
-            values: [0, 1],
-            count: 2,
-          },
+          tick: { values: [0, 1], count: 2 },
+          thickness: 30,
           label: {
-            formatter: (params) => {
-              if (params.value === 1) return "روشن";
-              if (params.value === 0) return "خاموش";
-              return "";
-            },
-            fontSize: 10,
+            formatter: (params) => (params.value === 1 ? "روشن" : "خاموش"),
+            fontSize: 8,
             fontFamily: "IRANSANS",
           },
-          gridStyle: [
-            {
-              stroke: "#e2e2e2",
-              lineDash: [4, 2],
-            },
-          ],
         },
       ],
-      background: {
-        fill: "transparent",
-      },
-      padding: {
-        top: 5,
-        right: 10,
-        bottom: 20,
-        left: 45,
-      },
+      background: { fill: "transparent" },
+      padding: { top: 5, right: 10, bottom: 15, left: 40 },
     }),
     [data, fan],
   );
@@ -351,16 +344,17 @@ const TimePlansCards = ({
   return (
     <Container
       sx={{
-        width: "400px",
-        height: "580px",
+        width: "370px",
+        height: "530px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-around",
         alignItems: "center",
         transition: "transform 0.2s",
         p: 2,
+        gap: 1,
+        overflow: "hidden",
         transform: "scale(1)",
       }}
     >
@@ -377,7 +371,7 @@ const TimePlansCards = ({
         <Box
           sx={{
             width: "102px",
-            height: "37px",
+            height: "27px",
             borderRadius: "10px",
             border: "0.5px solid #9F9F9F",
             backgroundColor: "#FFCB82",
@@ -385,7 +379,7 @@ const TimePlansCards = ({
         >
           <Typography
             fontFamily={"IRANSANS"}
-            fontSize={16}
+            fontSize={14}
             textAlign={"center"}
           >
             {translatedFanName}
@@ -397,7 +391,7 @@ const TimePlansCards = ({
         <Typography
           color="initial"
           fontFamily={"IRANSANS"}
-          fontSize={14}
+          fontSize={12}
           textAlign={"center"}
           sx={{ wordSpacing: "4px" }}
         >
@@ -408,7 +402,7 @@ const TimePlansCards = ({
       <Box
         sx={{
           width: "350px",
-          height: "113px",
+          height: "90px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -417,7 +411,7 @@ const TimePlansCards = ({
         <Box
           sx={{
             width: "100%",
-            height: "113px",
+            height: "80px",
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
             overflow: "hidden",
@@ -436,122 +430,68 @@ const TimePlansCards = ({
           >
             <AgCharts
               options={chartOptions}
-              style={{ width: "95%", height: "100%", direction: "rtl" }}
+              style={{ width: "105%", height: "100%", direction: "rtl" }}
             />
           </Box>
         </Box>
       </Box>
 
-      <Box my={3}></Box>
-
       <Box
         className="irrigation-card-table"
         sx={{
-          width: "360px",
-          height: "260px",
-          minHeight: "275px",
+          width: "350px",
+          flex: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
         }}
       >
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-around",
-            width: "100%",
-            mb: 1,
+            display: "grid",
+            gridTemplateColumns: ROW_GRID,
+            gap: "10px",
+            width: "97%",
+            mb:1,
+            mt:2,
             backgroundColor: "#F3F4F6",
             borderRadius: "8px",
             padding: "8px 4px",
             alignItems: "center",
+            direction: "rtl",
+            justifyContent: "center",
           }}
         >
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={10}
-            sx={{
-              width: "30px",
-              textAlign: "center",
-              fontWeight: "bold",
-              color: "#555",
-            }}
-          >
-            وضعیت
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={10}
-            sx={{
-              width: "75px",
-              textAlign: "center",
-              fontWeight: "bold",
-              color: "#555",
-            }}
-          >
-            شروع
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={10}
-            sx={{
-              width: "75px",
-              textAlign: "center",
-              fontWeight: "bold",
-              color: "#555",
-            }}
-          >
-            پایان
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={10}
-            sx={{
-              width: "50px",
-              textAlign: "center",
-              fontWeight: "bold",
-              color: "#555",
-            }}
-          >
-            روشن
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={10}
-            sx={{
-              width: "50px",
-              textAlign: "center",
-              fontWeight: "bold",
-              color: "#555",
-            }}
-          >
-            خاموش
-          </Typography>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={10}
-            sx={{
-              width: "20px",
-              textAlign: "center",
-              fontWeight: "bold",
-              color: "#555",
-            }}
-          >
-            حذف
-          </Typography>
+          {["وضعیت", "شروع", "پایان", "روشن", "خاموش", "حذف"].map((label) => (
+            <Typography
+              key={label}
+              fontFamily="IRANSANS"
+              fontSize={10}
+              textAlign="center"
+              fontWeight="bold"
+              color="#555"
+            >
+              {label}
+            </Typography>
+          ))}
         </Box>
 
         <Box
           sx={{
-            width: "98%",
-            flexGrow: 1,
-            maxHeight: rows.length > 0 ? "220px" : "auto",
-            overflowY: rows.length > 0 ? "auto" : "hidden",
-            paddingRight: rows.length > 0 ? "4px" : "0",
+            width: "100%",
+            flex: 1,
+            minHeight: 0,
+            maxHeight: "200px",
+            overflowY: "auto",
+            overflowX: "hidden",
+            direction: "rtl",
+            pr: 0,
             mb: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
+            "&::-webkit-scrollbar": { width: "4px" },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#ccc",
+              borderRadius: "4px",
+            },
           }}
         >
           {loading && rows.length === 0 && (
@@ -560,17 +500,20 @@ const TimePlansCards = ({
             </Box>
           )}
           {rows.length > 0 ? (
-            <TransitionGroup style={{ width: "98%" }}>
+            <TransitionGroup style={{ width: "100%"}}>
               {rows.map((row) => (
                 <Collapse key={row.uiId}>
                   <Box
                     sx={{
-                      width: "100%",
-                      display: "flex",
-                      justifyContent: "space-around",
+                      display: "grid",
+                      gridTemplateColumns: ROW_GRID,
+                      gap: "6px",
+                      width: "95%",
                       alignItems: "center",
-                      py: 1,
-                      mb: 1,
+                      py: 0.75,
+                      px: 0.5,
+                      mb: 0.5,
+                      direction: "rtl",
                       border: row.isNew
                         ? "1px dashed #2196F3"
                         : "1px solid #F3F4F6",
@@ -585,9 +528,9 @@ const TimePlansCards = ({
                   >
                     <Box
                       sx={{
-                        width: "30px",
                         display: "flex",
                         justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
                       <img
@@ -607,136 +550,81 @@ const TimePlansCards = ({
                       />
                     </Box>
 
-                    <TextField
-                      variant="standard"
-                      size="small"
-                      inputMode="numeric"
-                      value={toPersianDigits(
-                        row.start_time?.substring(0, 5) || "00:00",
-                      )}
-                      onChange={(e) =>
-                        handleInputChange(
-                          row.uiId,
-                          "start_time",
-                          toEnglishDigits(e.target.value),
-                        )
-                      }
+                    <Box sx={cellBoxSx}>
+                      <TimeInput
+                        value={row.start_time?.substring(0, 5) || "00:00"}
+                        onChange={(nextValue) =>
+                          handleInputChange(row.uiId, "start_time", nextValue)
+                        }
+                        inputStyle={{ fontSize: "12px" }}
+                        iconSize={13}
+                      />
+                    </Box>
+                    <Box sx={cellBoxSx}>
+                      <TimeInput
+                        value={row.end_time?.substring(0, 5) || "00:00"}
+                        onChange={(nextValue) =>
+                          handleInputChange(row.uiId, "end_time", nextValue)
+                        }
+                        inputStyle={{ fontSize: "12px" }}
+                        iconSize={13}
+                      />
+                    </Box>
+                    <Box sx={cellBoxSx}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={toPersianDigits(row.on_time ?? "")}
+                        onChange={(e) =>
+                          handleInputChange(
+                            row.uiId,
+                            "on_time",
+                            toEnglishDigits(e.target.value),
+                          )
+                        }
+                        style={numericInputStyle}
+                      />
+                    </Box>
+                    <Box sx={cellBoxSx}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={toPersianDigits(row.off_time ?? "")}
+                        onChange={(e) =>
+                          handleInputChange(
+                            row.uiId,
+                            "off_time",
+                            toEnglishDigits(e.target.value),
+                          )
+                        }
+                        style={numericInputStyle}
+                      />
+                    </Box>
+                    <Box
                       sx={{
-                        width: "75px",
-                        "& .MuiInputBase-input": {
-                          p: 0.5,
-                          ...inputFontSx,
-                        },
-                        "& .MuiInput-underline:before": {
-                          borderBottom: "none",
-                        },
-                        "& .MuiInput-underline:after": {
-                          borderBottom: "2px solid #FFCB82",
-                        },
-                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
-                          { borderBottom: "1px solid #ddd" },
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
                       }}
-                    />
-                    <TextField
-                      variant="standard"
-                      size="small"
-                      inputMode="numeric"
-                      value={toPersianDigits(
-                        row.end_time?.substring(0, 5) || "00:00",
-                      )}
-                      onChange={(e) =>
-                        handleInputChange(
-                          row.uiId,
-                          "end_time",
-                          toEnglishDigits(e.target.value),
-                        )
-                      }
-                      sx={{
-                        width: "75px",
-                        "& .MuiInputBase-input": {
-                          p: 0.5,
-                          ...inputFontSx,
-                        },
-                        "& .MuiInput-underline:before": {
-                          borderBottom: "none",
-                        },
-                        "& .MuiInput-underline:after": {
-                          borderBottom: "2px solid #FFCB82",
-                        },
-                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
-                          { borderBottom: "1px solid #ddd" },
-                      }}
-                    />
-                    <TextField
-                      variant="standard"
-                      size="small"
-                      inputMode="numeric"
-                      value={toPersianDigits(row.on_time ?? "")}
-                      onChange={(e) =>
-                        handleInputChange(
-                          row.uiId,
-                          "on_time",
-                          toEnglishDigits(e.target.value),
-                        )
-                      }
-                      sx={{
-                        width: "50px",
-                        "& .MuiInputBase-input": {
-                          p: 0.5,
-                          ...inputFontSx,
-                        },
-                        "& .MuiInput-underline:before": {
-                          borderBottom: "none",
-                        },
-                        "& .MuiInput-underline:after": {
-                          borderBottom: "2px solid #FFCB82",
-                        },
-                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
-                          { borderBottom: "1px solid #ddd" },
-                      }}
-                    />
-                    <TextField
-                      variant="standard"
-                      size="small"
-                      inputMode="numeric"
-                      value={toPersianDigits(row.off_time ?? "")}
-                      onChange={(e) =>
-                        handleInputChange(
-                          row.uiId,
-                          "off_time",
-                          toEnglishDigits(e.target.value),
-                        )
-                      }
-                      sx={{
-                        width: "50px",
-                        "& .MuiInputBase-input": {
-                          p: 0.5,
-                          ...inputFontSx,
-                        },
-                        "& .MuiInput-underline:before": {
-                          borderBottom: "none",
-                        },
-                        "& .MuiInput-underline:after": {
-                          borderBottom: "2px solid #FFCB82",
-                        },
-                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
-                          { borderBottom: "1px solid #ddd" },
-                      }}
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteRow(row)}
-                      sx={{ p: 0.5, width: "20px", color: "#ef5350" }}
                     >
-                      <CloseIcon fontSize="small" sx={{ fontSize: "1.1rem" }} />
-                    </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteRow(row)}
+                        sx={{ p: 0.25, color: "#ef5350" }}
+                      >
+                        <CloseIcon
+                          fontSize="small"
+                          sx={{ fontSize: "1.1rem" }}
+                        />
+                      </IconButton>
+                    </Box>
                   </Box>
                 </Collapse>
               ))}
             </TransitionGroup>
           ) : (
             !loading && (
-              <Typography fontFamily={"IRANSANS"} color="text.secondary">
+              <Typography fontFamily={"IRANSANS"} color="text.secondary" textAlign="center" fontSize={14} mt={5}>
                 برنامه زمانی ای تنظیم نشده
               </Typography>
             )
@@ -745,12 +633,13 @@ const TimePlansCards = ({
 
         <Box
           sx={{
-            width: "100%",
+            width: "92%",
             display: "flex",
-            justifyContent: "right",
-            gap: 8,
-            mb: 3,
+            justifyContent: "center",
+            gap: 6,
+            mb: 1,
             mt: 2,
+
           }}
         >
           <IconTextButton
@@ -759,7 +648,7 @@ const TimePlansCards = ({
             iconPosition="left"
             bgColor="#FFCB82"
             textColor="#000000"
-            width="40%"
+            width="39%"
             height="20px"
             borderColor="#FFCB82"
             onClick={handleAddRow}
@@ -776,10 +665,10 @@ const TimePlansCards = ({
             icon={!loading ? assets?.svg?.Save : null}
             iconPosition="left"
             bgColor={!loading && hasChanges ? "#86CCB2" : "#dbf5eb"}
-            textColor="#000000"
-            width="30%"
+            textColor={hasChanges ? "black" : "gray"}
+            width="39%"
             height="20px"
-            borderColor={!loading && hasChanges ? "#86CCB2" : "#119162"}
+            borderColor={!loading && hasChanges ? "#86CCB2" : "#aaf2d8"}
             onClick={handleSave}
             disabled={loading || !hasChanges}
             sx={{

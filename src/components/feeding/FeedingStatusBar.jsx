@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Paper,
   Typography,
@@ -25,8 +25,9 @@ import {
 } from "../../api/solubleApi";
 import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import TimeInput from "../common/TimeInput";
 
-// کامپوننت سطر (الان یک کامپوننت کنترل‌شده است و استیت داخلی ندارد)
+// کامپوننت سطر
 const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, isNew }) => {
   const [isChanging, setIsChanging] = useState(false);
 
@@ -203,26 +204,26 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, isNew }) => {
         <Typography fontFamily={"IRANSANS"} textAlign="center" mb={0.5}>
           زمان
         </Typography>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={toPersianDigits(data.time)}
-          onChange={(e) =>
-            onChange(id, "time", toEnglishDigits(e.target.value))
-          }
-          style={{
+        <Box
+          sx={{
             width: "100px",
             height: "60px",
             color: "#1e1e1e",
             backgroundColor: "#FFFFFF",
             borderRadius: "10px",
             border: "0.5px solid #9F9F9F",
-            fontFamily: "IRANSANS",
-            textAlign: "center",
-            padding: "0 5px",
             boxSizing: "border-box",
+            overflow: "hidden",
+            px: 0.5,
           }}
-        />
+        >
+          <TimeInput
+            value={data.time}
+            onChange={(nextValue) => onChange(id, "time", nextValue)}
+            style={{ fontSize: "14px" }}
+            iconSize={18}
+          />
+        </Box>
       </Box>
     </Box>
   );
@@ -243,6 +244,32 @@ const FeedingStatusBar = () => {
     },
   ]);
 
+  // === منطق اسکرول عمودی با درگ ===
+  const scrollRef = useRef(null);
+  const isDown = useRef(false);
+  const startY = useRef(0);
+  const scrollTopState = useRef(0);
+
+  const handleMouseDown = (e) => {
+    isDown.current = true;
+    startY.current = e.pageY - scrollRef.current.offsetTop;
+    scrollTopState.current = scrollRef.current.scrollTop;
+  };
+  const handleMouseLeave = () => {
+    isDown.current = false;
+  };
+  const handleMouseUp = () => {
+    isDown.current = false;
+  };
+  const handleMouseMove = (e) => {
+    if (!isDown.current) return;
+    e.preventDefault();
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walk = (y - startY.current) * 1.5;
+    scrollRef.current.scrollTop = scrollTopState.current - walk;
+  };
+  // ===================================
+
   const {
     data: rawSchedule = [],
     isLoading: isLoadingSchedule,
@@ -251,9 +278,8 @@ const FeedingStatusBar = () => {
   } = useQuery({
     queryKey: ["foodstuffSchedule"],
     queryFn: getFoodstuffSchedule,
-    refetchInterval: 5000, // Assuming real-time updates are desired
+    refetchInterval: 5000,
     select: (response) => {
-      // Assuming response.data contains the array
       const data = response.data || response;
       return Array.isArray(data) ? data : [];
     },
@@ -273,7 +299,7 @@ const FeedingStatusBar = () => {
   const deleteScheduleMutation = useMutation({
     mutationFn: deleteFoodstuffSchedule,
     onSuccess: () => {
-      queryClient.invalidateQueries(["foodstuffSchedule"]); // Refetch the schedule after deletion
+      queryClient.invalidateQueries(["foodstuffSchedule"]);
       toast.success("ردیف با موفقیت حذف شد");
     },
     onError: (error) => {
@@ -317,11 +343,10 @@ const FeedingStatusBar = () => {
         time: item.time,
         volume: item.volume,
         isActive: item.is_active,
-        status: item.status, // Keep original status from rawSchedule if available
+        status: item.status,
       }));
       setPlanRows(rows);
     } else {
-      // If no existing schedule, initialize with one empty row
       setPlanRows([
         {
           id: crypto.randomUUID(),
@@ -354,21 +379,27 @@ const FeedingStatusBar = () => {
     const isExisting = (rawSchedule || []).some((r) => r.id === idToDelete);
     if (isExisting) {
       deleteScheduleMutation.mutate(idToDelete);
-      setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete)); // Optimistic update
+      setPlanRows((prevRows) =>
+        prevRows.filter((row) => row.id !== idToDelete),
+      );
     } else {
       if (planRows.length <= 1) return;
-      setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete));
+      setPlanRows((prevRows) =>
+        prevRows.filter((row) => row.id !== idToDelete),
+      );
     }
   };
 
   const handleRowChange = (id, field, value) => {
     setPlanRows((prevRows) =>
-      prevRows.map((row) => (row.id === id ? { ...row, [field]: value } : row))
+      prevRows.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     );
   };
 
   const newRows = useMemo(() => {
-    return planRows.filter(row => !((rawSchedule || []).some(raw => raw.id === row.id)));
+    return planRows.filter(
+      (row) => !(rawSchedule || []).some((raw) => raw.id === row.id),
+    );
   }, [planRows, rawSchedule]);
 
   const updatedRows = useMemo(() => {
@@ -417,12 +448,10 @@ const FeedingStatusBar = () => {
 
     try {
       await Promise.all([...savePromises, ...updatePromises]);
-      // Invalidation and toast are handled by onSuccess of individual mutations
       handleModalPlansClose();
     } catch (error) {
-      // Errors are handled by onError of individual mutations
       console.error("Error during batch save/update:", error);
-      toast.error("برخی از تغییرات با خطا مواجه شدند."); // Generic error for batch operation
+      toast.error("برخی از تغییرات با خطا مواجه شدند.");
     }
   };
 
@@ -438,6 +467,7 @@ const FeedingStatusBar = () => {
         padding: "8px 0",
         borderBottom:
           index < scheduleData.length - 1 ? "1px solid #E0E0E0" : "none",
+        pointerEvents: "none", // جلوگیری از تداخل متن با اسکرول
       }}
     >
       <Box sx={cellStyle}>
@@ -492,7 +522,7 @@ const FeedingStatusBar = () => {
         elevation={3}
         sx={{
           width: 300,
-          height: "250px", // Fixed height for loading state
+          height: "250px",
           backgroundColor: "#FFFFFF",
           borderRadius: "10px",
           padding: "16px",
@@ -521,9 +551,7 @@ const FeedingStatusBar = () => {
           alignItems: "center",
         }}
       >
-        <Alert severity="error">
-          خطا در بارگذاری برنامه
-        </Alert>
+        <Alert severity="error">خطا در بارگذاری برنامه</Alert>
       </Paper>
     );
   }
@@ -543,14 +571,33 @@ const FeedingStatusBar = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          // جلوگیری کامل از انتخاب شدن متن
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          MozUserSelect: "none",
+          msUserSelect: "none",
         }}
       >
         <Box
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
           sx={{
             width: "100%",
             maxHeight: "200px",
             overflowY: "auto",
             paddingRight: "8px",
+            cursor: "grab",
+            "&:active": { cursor: "grabbing" },
+            // استایل اسکرول‌بار مخفی و تمیز
+            "&::-webkit-scrollbar": { width: "4px" },
+            "&::-webkit-scrollbar-track": { background: "transparent" },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#888",
+              borderRadius: "4px",
+            },
           }}
         >
           <Box
@@ -561,7 +608,7 @@ const FeedingStatusBar = () => {
               width: "100%",
               padding: "0 0 8px 0",
               borderBottom: "2px solid #E0E0E0",
-              position: 'sticky',
+              position: "sticky",
               top: 0,
               zIndex: 1,
               backgroundColor: "#FFFFFF",
@@ -583,7 +630,7 @@ const FeedingStatusBar = () => {
             marginTop: "15px",
             justifyContent: "right",
             display: "flex",
-            height:"20px"
+            height: "20px",
           }}
         >
           <IconTextButton
@@ -624,6 +671,7 @@ const FeedingStatusBar = () => {
             flexDirection: "column",
             justifyContent: "space-between",
             alignItems: "center",
+            userSelect: "none",
           }}
           className="modalBox"
         >
@@ -674,19 +722,22 @@ const FeedingStatusBar = () => {
             >
               <TransitionGroup>
                 {planRows.map((row) => {
-                   const isNew = !(rawSchedule || []).some((raw) => raw.id === row.id);
-                   return (
-                  <Collapse key={row.id}>
-                    <PlanRow
-                      id={row.id}
-                      data={row}
-                      onChange={handleRowChange}
-                      onDelete={() => handleDeleteRow(row.id)}
-                      canBeDeleted={planRows.length > 1}
-                      isNew={isNew}
-                    />
-                  </Collapse>
-                )})}
+                  const isNew = !(rawSchedule || []).some(
+                    (raw) => raw.id === row.id,
+                  );
+                  return (
+                    <Collapse key={row.id}>
+                      <PlanRow
+                        id={row.id}
+                        data={row}
+                        onChange={handleRowChange}
+                        onDelete={() => handleDeleteRow(row.id)}
+                        canBeDeleted={planRows.length > 1}
+                        isNew={isNew}
+                      />
+                    </Collapse>
+                  );
+                })}
               </TransitionGroup>
             </Box>
           </div>

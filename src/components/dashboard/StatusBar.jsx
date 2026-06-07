@@ -5,8 +5,7 @@ import assets from "../../assets";
 import { makeStyles } from "@mui/styles";
 import { toPersianDigits } from "../../utils/persianDigits";
 
-// --- ۱. Props ها آپدیت شدند ---
-// ما حالا به جای ec و ph، مقادیر و آبجکت range آنها را جداگانه می‌گیریم
+
 const StatusBar = ({
   ecValue = 0,
   phValue = 0,
@@ -19,34 +18,27 @@ const StatusBar = ({
 
   const classes = useStyle();
 
-  // --- ۲. تابع کمکی برای انتخاب عکس ---
   /**
-   * بر اساس آبجکت range، عکس مناسب را برمی‌گرداند
-   * @param {object} range - آبجکتی شامل { higher_than_low, higher_than_high }
+   * @param {object} range 
    */
   const getStatusImage = (range) => {
-    // اگر range وجود نداشته باشد، حالت خوب را برمی‌گردانیم
     if (!range) {
       return assets.svg.goodStatusDashboard;
     }
 
     const { higher_than_low, higher_than_high } = range;
 
-    // اگر بالاتر از حد بالا بود
     if (higher_than_high) {
       return assets.svg.highStatusDashboard;
     }
     
-    // اگر پایین‌تر از حد پایین بود
     if (!higher_than_low) {
       return assets.svg.lowStatusDashboard;
     }
 
-    // در غیر این صورت، در محدوده مجاز (خوب) است
     return assets.svg.goodStatusDashboard;
   };
 
-  // --- ۳. تعیین عکس برای EC و pH ---
   const phStatusImage = getStatusImage(phRange);
   const ecStatusImage = getStatusImage(ecRange);
 
@@ -62,6 +54,10 @@ const StatusBar = ({
         borderRadius: "10px",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
         backgroundColor: "#ffff",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none",
       }}
     >
       {/* --- بخش EC --- */}
@@ -75,7 +71,7 @@ const StatusBar = ({
           borderRadius: "20px",
           display: "flex",
           flexDirection: "row",
-          alignItems: "center", // تغییر به center
+          alignItems: "center", 
           justifyContent: "space-around",
           paddingRight: "1rem",
         }}
@@ -87,14 +83,12 @@ const StatusBar = ({
             flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
-            // marginBottom: "4px", // حذف شد
           }}
         >
-          {/* --- ۴. عکس داینامیک EC جایگزین شد --- */}
-          {/* عکس mark حذف شد */}
+
           <img
             style={{ width: "166px", height: "16px" }}
-            src={ecStatusImage} // استفاده از متغیر داینامیک
+            src={ecStatusImage} 
             alt="ec status bar"
           />
         </div>
@@ -112,7 +106,7 @@ const StatusBar = ({
           borderRadius: "20px",
           display: "flex",
           flexDirection: "row",
-          alignItems: "center", // تغییر به center
+          alignItems: "center",
           justifyContent: "space-around",
           paddingRight: "1rem",
         }}
@@ -124,14 +118,12 @@ const StatusBar = ({
             flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
-            // marginBottom: "4px", // حذف شد
           }}
         >
-          {/* --- ۵. عکس داینامیک pH جایگزین شد --- */}
-          {/* عکس mark حذف شد */}
+
           <img
             style={{ width: "166px", height: "16px" }}
-            src={phStatusImage} // استفاده از متغیر داینامیک
+            src={phStatusImage} 
             alt="ph status bar"
           />
         </div>

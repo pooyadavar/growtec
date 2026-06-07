@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   Box,
   Paper,
@@ -8,7 +8,7 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { styled } from "@mui/system"; // Or '@mui/material/styles'
+import { styled } from "@mui/system";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 import assets from "../../assets";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
@@ -24,7 +24,7 @@ const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   border: selected ? "1px solid #FFCC80" : "1px solid #e0e0e0",
   fontSize: "0.8rem",
   fontWeight: "bold",
-  fontFamily: "IRANSANS", // اضافه شد
+  fontFamily: "IRANSANS",
   "&:hover": {
     backgroundColor: selected ? "#FFEBCC" : "#f5f5f5",
   },
@@ -47,11 +47,56 @@ const PhEcControlCard = ({
   const handleCloseBuildDetailsModal = () => setOpenBuildDetailsModal(false);
 
   const [openStatusModal, setOpenStatusModal] = React.useState(false);
-
-  const handleOpenStatusModal = () => {
-    setOpenStatusModal(true);
-  };
+  const handleOpenStatusModal = () => setOpenStatusModal(true);
   const handleCloseStatusModal = () => setOpenStatusModal(false);
+
+  // === منطق اسکرول عمودی با درگ (Drag to Scroll) ===
+  const scrollRef = useRef(null);
+  const isDown = useRef(false);
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+  const scrollTopState = useRef(0);
+
+  // رویدادهای دسکتاپ (موس)
+  const handleMouseDown = (e) => {
+    isDown.current = true;
+    isDragging.current = false;
+    startY.current = e.pageY - scrollRef.current.offsetTop;
+    scrollTopState.current = scrollRef.current.scrollTop;
+  };
+  const handleMouseLeave = () => {
+    isDown.current = false;
+  };
+  const handleMouseUp = () => {
+    isDown.current = false;
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
+  };
+  const handleMouseMove = (e) => {
+    if (!isDown.current) return;
+    e.preventDefault();
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walk = (y - startY.current) * 1.5;
+    if (Math.abs(walk) > 5) isDragging.current = true;
+    scrollRef.current.scrollTop = scrollTopState.current - walk;
+  };
+
+  // رویدادهای موبایل (تاچ)
+  const handleTouchStart = (e) => {
+    isDragging.current = false;
+    startY.current = e.touches[0].pageY;
+  };
+  const handleTouchMove = (e) => {
+    const y = e.touches[0].pageY;
+    if (Math.abs(y - startY.current) > 5) isDragging.current = true;
+  };
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
+  };
+  // =================================================
 
   const statusDetailsData = [
     { parameter: "پمپ A", status: "روشن" },
@@ -66,6 +111,7 @@ const PhEcControlCard = ({
     fillPercentage = (contents.filled_volume / contents.max_volume) * 100;
   }
   fillPercentage = Math.max(0, Math.min(100, fillPercentage));
+
   const buildDetailsData = [
     { time: "10:30", type: "pH", volume: "50L", tank: "A", status: "success" },
     { time: "11:00", type: "EC", volume: "20L", tank: "B", status: "failed" },
@@ -100,6 +146,11 @@ const PhEcControlCard = ({
         borderRadius: "10px",
         px: 1,
         pr: 1.5,
+        // ✅ اعمال قفل ضدِ سلکت روی کل کامپوننت و تمام فرزندان
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none",
       }}
     >
       <Box
@@ -160,7 +211,6 @@ const PhEcControlCard = ({
               justifyContent: "space-around",
             }}
           >
-            {/* ... (سه دایره فلوتر داینامیک شما) ... */}
             <Box
               sx={{
                 width: "15px",
@@ -257,16 +307,34 @@ const PhEcControlCard = ({
               زمان
             </CustomToggleButton>
           </Stack>
+
           <Box
+            ref={scrollRef}
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             sx={{
               maxHeight: 220,
-              overflowY: "scroll",
+              overflowY: "auto",
               pr: 1,
               pl: 1,
               display: "flex",
               flexDirection: "column",
               gap: 1,
               textAlign: "center",
+              cursor: "grab",
+              "&:active": { cursor: "grabbing" },
+              touchAction: "pan-y",
+              "&::-webkit-scrollbar": { width: "4px" },
+              "&::-webkit-scrollbar-track": { background: "transparent" },
+              "&::-webkit-scrollbar-thumb": {
+                background: "#888",
+                borderRadius: "4px",
+              },
             }}
           >
             {column1Data.map((item, index) => (
@@ -283,7 +351,7 @@ const PhEcControlCard = ({
                 <Box>
                   <Typography
                     variant="body2"
-                    fontFamily="IRANSANS" // اضافه شد
+                    fontFamily="IRANSANS"
                     sx={{ width: "30px", textAlign: "center" }}
                   >
                     {toPersianDigits(index + 1)}
@@ -293,19 +361,18 @@ const PhEcControlCard = ({
                   <TextField
                     variant="outlined"
                     value={toPersianDigits(item)}
-                    InputProps={{
-                      readOnly: true,
-                    }}
+                    InputProps={{ readOnly: true }}
                     sx={{
                       width: 40,
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
-                        fontFamily: "IRANSANS", // اضافه شد
+                        fontFamily: "IRANSANS",
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
                         fontSize: "10px",
+                        cursor: "grab",
                       },
                     }}
                   />
@@ -317,19 +384,18 @@ const PhEcControlCard = ({
                         ? column2Data[index]
                         : "",
                     )}
-                    InputProps={{
-                      readOnly: true,
-                    }}
+                    InputProps={{ readOnly: true }}
                     sx={{
                       width: 40,
                       backgroundColor: "#f0f0f0",
                       "& .MuiOutlinedInput-root": { borderRadius: "8px" },
                       "& input": {
-                        fontFamily: "IRANSANS", // اضافه شد
+                        fontFamily: "IRANSANS",
                         textAlign: "center",
                         padding: "8px",
                         height: "unset",
                         fontSize: "10px",
+                        cursor: "grab",
                       },
                     }}
                   />
@@ -438,7 +504,7 @@ const PhEcControlCard = ({
                   backgroundColor: "white",
                 },
                 "& input": {
-                  fontFamily: "IRANSANS", // اضافه شد
+                  fontFamily: "IRANSANS",
                   textAlign: "center",
                   padding: "8px",
                   height: "unset",

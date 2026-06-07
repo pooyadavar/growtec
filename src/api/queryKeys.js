@@ -20,6 +20,7 @@ export const queryKeys = {
     temperatureHumidity: (zone) => ["payesh", "temperature-humidity", zone],
   },
   climateRangeStartTime: (zone) => ["climateRangeStartTime", zone],
+  climateSpecialParameters: () => ["climateSpecialParameters"],
   climateSettings: (zone, part) => ["climateSettings", zone, part],
   operatorSchedules: (zone) => ["operatorSchedules", zone],
   operatorLogs: (zone) => ["operatorLogs", zone],

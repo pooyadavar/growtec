@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Typography,
   Container,
@@ -20,6 +20,36 @@ const ErrorComponent = () => {
   const [openModal, setOpenModal] = useState(false);
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
+
+  // === منطق اسکرول عمودی با درگ (Drag to Scroll) ===
+  const scrollRef = useRef(null);
+  const isDown = useRef(false);
+  const startY = useRef(0);
+  const scrollTopState = useRef(0);
+
+  const handleMouseDown = (e) => {
+    isDown.current = true;
+    // محاسبه موقعیت Y موس نسبت به کانتینر
+    startY.current = e.pageY - scrollRef.current.offsetTop;
+    scrollTopState.current = scrollRef.current.scrollTop;
+  };
+
+  const handleMouseLeave = () => {
+    isDown.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDown.current = false;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDown.current) return;
+    e.preventDefault(); // جلوگیری از رفتار پیش‌فرض
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walk = (y - startY.current) * 1.5; // ضریب سرعت اسکرول
+    scrollRef.current.scrollTop = scrollTopState.current - walk;
+  };
+  // =================================================
 
   const errorDescriptions = {
     1: "پایین بودن پ هاش بعد از ساخت",
@@ -157,54 +187,49 @@ const ErrorComponent = () => {
         disableGutters
         sx={{
           width: "200px",
-
           height: "320px",
-
           backgroundColor: "#ffff",
-
           display: "flex",
-
           flexDirection: "column",
-
           borderRadius: "10px",
-
           boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
-
           overflow: "hidden",
-
+          // جلوگیری از سلکت شدن متن در کل کانتینر
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          MozUserSelect: "none",
+          msUserSelect: "none",
         }}
       >
         <Box
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
           sx={{
             display: "flex",
-
-
             width: "90%",
-            gap:2,
+            gap: 2,
             justifyContent: "center",
-
             flexGrow: 1,
-
             overflowY: "auto",
-
             overflowX: "hidden",
-
             padding: "0 4px",
-
+            cursor: "grab", // نشانگر موس برای قابلیت کشیدن
+            "&:active": {
+              cursor: "grabbing", // نشانگر موس وقتی کلیک نگه داشته شده
+            },
             "&::-webkit-scrollbar": {
               width: "4px",
             },
-
             "&::-webkit-scrollbar-track": {
               background: "transparent",
             },
-
             "&::-webkit-scrollbar-thumb": {
               background: "#888",
-
               borderRadius: "4px",
             },
-
             "&::-webkit-scrollbar-thumb:hover": {
               background: "#555",
             },
@@ -214,41 +239,30 @@ const ErrorComponent = () => {
             className="errorMessage"
             style={{
               display: "flex",
-
               flexDirection: "column",
-
               alignItems: "center",
-
               paddingTop: "5px",
+              pointerEvents: "none", // جلوگیری از تداخل المان‌های داخلی با اسکرول
             }}
           >
             <div
               style={{
                 width: "64px",
-
                 height: "24px",
-
                 backgroundColor: "#FFCB82",
-
                 border: "0.5px solid #9F9F9F",
-
                 borderRadius: "5px",
-
                 margin: "0 0 1rem 0",
-
                 position: "sticky",
-
                 top: 0,
-
                 zIndex: 1,
+                pointerEvents: "auto",
               }}
             >
               <Typography
                 sx={{
                   fontFamily: "IRANSANS",
-
                   fontSize: "12px",
-
                   textAlign: "center",
                 }}
               >
@@ -276,47 +290,40 @@ const ErrorComponent = () => {
             )}
           </div>
 
-          <img src={assets.svg.line} alt="" />
+          <img 
+             src={assets.svg.line} 
+             alt="" 
+             style={{ pointerEvents: "none" }} // جلوگیری از درگ شدن خود عکس
+          />
 
           <div
             className="errorTime"
             style={{
               display: "flex",
-
               flexDirection: "column",
-
               alignItems: "center",
-
               paddingTop: "5px",
+              pointerEvents: "none", // جلوگیری از تداخل
             }}
           >
             <div
               style={{
                 width: "64px",
-
                 height: "24px",
-
                 backgroundColor: "#FFCB82",
-
                 border: "0.5px solid #9F9F9F",
-
                 borderRadius: "5px",
-
                 margin: "0 0 1rem 0",
-
                 position: "sticky",
-
                 top: 0,
-
                 zIndex: 1,
+                pointerEvents: "auto",
               }}
             >
               <Typography
                 sx={{
                   fontFamily: "IRANSANS",
-
                   fontSize: "12px",
-
                   textAlign: "center",
                 }}
               >
@@ -360,15 +367,10 @@ const ErrorComponent = () => {
             onClick={handleOpen}
             sx={{
               backgroundColor: "#FFCB82",
-
               color: "#000",
-
               fontFamily: "IRANSANS",
-
               fontSize: "12px",
-
               width: "90%",
-
               "&:hover": {
                 backgroundColor: "#ffb74d",
               },
@@ -388,11 +390,8 @@ const ErrorComponent = () => {
           <Box
             sx={{
               display: "flex",
-
               justifyContent: "space-between",
-
               alignItems: "center",
-
               mb: 2,
             }}
           >
@@ -458,13 +457,9 @@ const ErrorComponent = () => {
                   key={index}
                   sx={{
                     display: "flex",
-
                     justifyContent: "space-between",
-
                     alignItems: "center",
-
                     borderBottom: "1px solid #eee",
-
                     py: 1,
                   }}
                 >

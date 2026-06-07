@@ -29,7 +29,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
   const resolvedZone = zone || 1;
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false); // دیفالت رو تغییر دادم تا در افکت به درستی ست بشه
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const { data: schedules = {}, isLoading: schedulesLoading } = useQuery({
     queryKey: queryKeys.operatorSchedules(resolvedZone),
@@ -85,10 +85,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
           timePart =
             parts.length > 1 ? parts[1].substring(0, 8) : log.log_date_time;
         }
-        return {
-          time: timePart,
-          value: Boolean(log.log_data[op]) ? 1 : 0,
-        };
+        return { time: timePart, value: Boolean(log.log_data[op]) ? 1 : 0 };
       });
     });
 
@@ -105,22 +102,18 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     );
   }, [logOperators, scheduleOperators]);
 
-  // ✅ لاجیک محاسبه اسکرول مخصوص RTL فیکس شد
   const handleScrollEvents = useCallback(() => {
     const el = scrollRef.current;
     if (el) {
-      // استفاده از قدرمطلق برای هندل کردن مقادیر منفی در RTL
+      // استفاده از Math.abs به دلیل رفتار کروم در RTL
       const currentScroll = Math.abs(el.scrollLeft);
       const maxScroll = el.scrollWidth - el.clientWidth;
 
-      // چون المان‌ها از راست چیده می‌شن:
-      // وقتی اسکرول صفر باشه یعنی سمت راستِ راست هستیم (شروع)
-      // وقتی اسکرول مکس باشه یعنی سمت چپِ چپ هستیم (پایان)
-      const isAtStart = currentScroll <= 10;
-      const isAtEnd = currentScroll >= maxScroll - 10;
-
-      setCanScrollRight(!isAtStart); // دکمه راست ما رو به سمت شروع میبره
-      setCanScrollLeft(!isAtEnd); // دکمه چپ ما رو به سمت پایان میبره
+      // در RTL، صفر یعنی سمت راست (شروع)
+      // اگر از 10 بیشتر باشد یعنی می‌توان به راست اسکرول کرد
+      setCanScrollRight(currentScroll > 10);
+      // اگر به انتها نرسیده باشد می‌توان به چپ اسکرول کرد
+      setCanScrollLeft(currentScroll < maxScroll - 10);
     }
   }, []);
 
@@ -129,8 +122,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     if (el) {
       el.addEventListener("scroll", handleScrollEvents);
       window.addEventListener("resize", handleScrollEvents);
-      // یک تایم‌اوت کوتاه برای اطمینان از رندر شدن DOM
-      setTimeout(handleScrollEvents, 100);
+      setTimeout(handleScrollEvents, 200);
       return () => {
         el.removeEventListener("scroll", handleScrollEvents);
         window.removeEventListener("resize", handleScrollEvents);
@@ -141,9 +133,12 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
   const slide = (direction) => {
     const el = scrollRef.current;
     if (el) {
-      const scrollAmount = 323;
+      const scrollAmount = 380; // عرض کارت (370) + مارجین‌ها
+      // در RTL جهت اسکرول با مقادیر مثبت/منفی معکوس می‌شود
+      const sign = direction === "right" ? -1 : 1;
+
       el.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
+        left: scrollAmount * sign,
         behavior: "smooth",
       });
     }
@@ -173,11 +168,12 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         justifyContent: "center",
         alignItems: "center",
         gap: 1,
+        userSelect: "none",
       }}
     >
       <IconButton
-        onClick={() => slide("right")}
-        disabled={!canScrollRight}
+        onClick={() => slide("left")}
+        disabled={!canScrollLeft}
         sx={{
           width: "30px",
           height: "40px",
@@ -193,15 +189,16 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         ref={scrollRef}
         sx={{
           width: "970px",
-          height: "auto",
           display: "flex",
-          flexDirection: "row",
-          direction: "ltr",
-          overflowX: "hidden",
-          alignItems: "center",
-          scrollSnapType: "x mandatory",
+          direction: "ltr", 
+          overflowX: "auto",
+          overflowY: "hidden",
+          alignItems: "stretch",
+          scrollBehavior: "smooth",
           padding: "0",
           transform: "scale(0.95)",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
         }}
       >
         {cardsData.length > 0 ? (
@@ -210,7 +207,6 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
               key={operatorKey}
               sx={{
                 flexShrink: 0,
-                scrollSnapAlign: "center", // ✅ این مقدار خالی بود که باعث باگ در اسکرول روان می‌شه
                 marginX: "10px",
               }}
             >
@@ -225,16 +221,14 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
           ))
         ) : (
           <Box sx={{ width: "100%", textAlign: "center" }}>
-            <Typography fontFamily="IRANSANS">
-              داده‌ای برای این زون یافت نشد
-            </Typography>
+            <Typography fontFamily="IRANSANS">داده‌ای یافت نشد</Typography>
           </Box>
         )}
       </Box>
 
       <IconButton
-        onClick={() => slide("left")}
-        disabled={!canScrollLeft}
+        onClick={() => slide("right")}
+        disabled={!canScrollRight}
         sx={{
           width: "30px",
           height: "40px",
