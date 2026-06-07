@@ -3,6 +3,7 @@ import assets from "../assets";
 import { useQuery } from "@tanstack/react-query";
 import { getOperatorMode } from "../api/climateApi";
 import { queryKeys } from "../api/queryKeys";
+import { toPersianDigits } from "../utils/persianDigits";
 
 const EghlimCard = ({
   zone,
@@ -35,15 +36,6 @@ const EghlimCard = ({
   // اگر دیتا فچ شد از آن استفاده می‌کنیم، در غیر این صورت از پراپ والد
   const isAuto = fetchedIsAuto !== null ? fetchedIsAuto : parentIsAuto;
 
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
   return (
     <Box
       sx={{
@@ -82,7 +74,7 @@ const EghlimCard = ({
           }}
         >
           <Typography color="initial" fontFamily={"IRANSANS"}>
-            زون {convert(zone)}
+            زون {toPersianDigits(zone)}
           </Typography>
         </Box>
         <Box
@@ -202,7 +194,7 @@ const EghlimCard = ({
                   fontSize: "14px",
                 }}
               >
-                {temp}
+                {toPersianDigits(temp)}
               </Box>
             </div>
           </div>
@@ -245,7 +237,7 @@ const EghlimCard = ({
                   fontSize: "14px",
                 }}
               >
-                {hum}
+                {toPersianDigits(hum)}
               </Box>
             </div>
           </div>

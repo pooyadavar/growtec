@@ -25,6 +25,7 @@ import {
 } from "../../api/climateApi";
 import { getClimateTemperatureHumidityLogs } from "../../api/logsApi";
 import { queryKeys } from "../../api/queryKeys";
+import { toPersianDigits } from "../../utils/persianDigits";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const StatusIndicators = ({ states }) => (
@@ -55,7 +56,7 @@ const StatusIndicators = ({ states }) => (
           cursor: "default",
         }}
       >
-        {idx + 1}
+        {toPersianDigits(idx + 1)}
       </Box>
     ))}
   </Box>
@@ -526,12 +527,12 @@ const Payesh = () => {
 
   const lineSeriesBase = useMemo(
     () => [
-      { yKey: "sensor1", yName: "سنسور 1", stroke: "#FF6B6B" },
-      { yKey: "sensor2", yName: "سنسور 2", stroke: "#4ECDC4" },
-      { yKey: "sensor3", yName: "سنسور 3", stroke: "#45B7D1" },
-      { yKey: "sensor4", yName: "سنسور 4", stroke: "#FFA07A" },
-      { yKey: "sensor5", yName: "سنسور 5", stroke: "#98D8C8" },
-      { yKey: "sensor6", yName: "سنسور 6", stroke: "#F7DC6F" },
+      { yKey: "sensor1", yName: "سنسور ۱", stroke: "#FF6B6B" },
+      { yKey: "sensor2", yName: "سنسور ۲", stroke: "#4ECDC4" },
+      { yKey: "sensor3", yName: "سنسور ۳", stroke: "#45B7D1" },
+      { yKey: "sensor4", yName: "سنسور ۴", stroke: "#FFA07A" },
+      { yKey: "sensor5", yName: "سنسور ۵", stroke: "#98D8C8" },
+      { yKey: "sensor6", yName: "سنسور ۶", stroke: "#F7DC6F" },
     ],
     [],
   );
@@ -541,15 +542,17 @@ const Payesh = () => {
       const timeParts = params.value.split(":");
       if (timeParts.length >= 2) {
         const minute = parseInt(timeParts[1], 10);
+        let label = "";
         if (xAxisInterval === 60) {
-          if (minute === 0) return `${timeParts[0]}:${timeParts[1]}`;
+          if (minute === 0) label = `${timeParts[0]}:${timeParts[1]}`;
         } else if (xAxisInterval === 30) {
           if (minute === 0 || minute === 30) {
-            return `${timeParts[0]}:${timeParts[1]}`;
+            label = `${timeParts[0]}:${timeParts[1]}`;
           }
         } else {
-          return `${timeParts[0]}:${timeParts[1]}`;
+          label = `${timeParts[0]}:${timeParts[1]}`;
         }
+        return label ? toPersianDigits(label) : "";
       }
       return "";
     };
@@ -573,7 +576,12 @@ const Payesh = () => {
           label: { formatter: getXAxisFormatter },
           tick: { interval: xAxisInterval },
         },
-        { type: "number", position: "left", title: { text: "دما (°C)" } },
+        {
+          type: "number",
+          position: "left",
+          title: { text: "دما (°C)" },
+          label: { formatter: (p) => toPersianDigits(p.value) },
+        },
       ],
       legend: { enabled: false },
     }),
@@ -598,7 +606,12 @@ const Payesh = () => {
           label: { formatter: getXAxisFormatter },
           tick: { interval: xAxisInterval },
         },
-        { type: "number", position: "left", title: { text: "درصد" } },
+        {
+          type: "number",
+          position: "left",
+          title: { text: "درصد" },
+          label: { formatter: (p) => toPersianDigits(p.value) },
+        },
       ],
       legend: {
         enabled: true,
@@ -719,7 +732,7 @@ const Payesh = () => {
                 وضعیت عملگر دما:
               </Typography>
               <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                {temperaturePartStatus}
+                {toPersianDigits(temperaturePartStatus)}
               </Typography>
             </Box>
 
@@ -740,7 +753,7 @@ const Payesh = () => {
                 وضعیت عملگرها رطوبت:
               </Typography>
               <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                {humidityPartStatus}
+                {toPersianDigits(humidityPartStatus)}
               </Typography>
             </Box>
             <Box
@@ -803,7 +816,7 @@ const Payesh = () => {
                   marginLeft={"40px"}
                   alignContent={"center"}
                 >
-                  {zone}
+                  {toPersianDigits(zone)}
                 </Typography>
               </Box>
               <img
@@ -1160,7 +1173,7 @@ const Payesh = () => {
                 }}
               >
                 <Typography fontFamily="IRANSANS" fontSize={18}>
-                  فن اگزاست {num}
+                  فن اگزاست {toPersianDigits(num)}
                 </Typography>
                 <img
                   src={
@@ -1228,7 +1241,7 @@ const Payesh = () => {
                 }}
               >
                 <Typography fontFamily="IRANSANS" fontSize={18}>
-                  فن سیرکوله {num}
+                  فن سیرکوله {toPersianDigits(num)}
                 </Typography>
                 <img
                   src={
@@ -1554,7 +1567,7 @@ const Payesh = () => {
                 }}
               >
                 <Typography fontFamily="IRANSANS" fontSize={18}>
-                  هیتر {num}
+                  هیتر {toPersianDigits(num)}
                 </Typography>
                 <img
                   src={

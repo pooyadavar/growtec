@@ -10,6 +10,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import { AgCharts } from "ag-charts-react";
 import { useQuery } from "@tanstack/react-query";
 import { getIrrigationTanksStatusLogs } from "../../api/irrigationApi";
+import { toPersianDigits } from "../../utils/persianDigits";
 import { styled } from "@mui/system";
 import Calculator from "../tools/Calculator";
 
@@ -76,20 +77,6 @@ const IrrigationOneStorage = ({ storageNumber }) => {
 
   const tankData = irrigationTankStatusLogs || { current: null, history: [] };
 
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = String(num || 0);
-    for (let c of str) {
-      if (!isNaN(parseInt(c, 10))) {
-        res += numbers.charAt(c);
-      } else {
-        res += c;
-      }
-    }
-    return res;
-  };
-
   const chartOptions = React.useMemo(() => {
     const chartData = tankData.history;
     const validValues = chartData
@@ -124,8 +111,8 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 ? date.toLocaleTimeString("en-GB", { hour12: false })
                 : "";
               return {
-                title: timeString,
-                content: `Volume: ${datum[yKey]}`,
+                title: toPersianDigits(timeString),
+                content: toPersianDigits(`Volume: ${datum[yKey]}`),
               };
             },
           },
@@ -163,7 +150,12 @@ const IrrigationOneStorage = ({ storageNumber }) => {
           position: "left",
           min,
           max: tankData.current?.max_volume || 100,
-          label: { enabled: true, fontSize: 9, color: "#333" },
+          label: {
+            enabled: true,
+            fontSize: 9,
+            color: "#333",
+            formatter: (params) => toPersianDigits(params.value),
+          },
           tick: { count: 3, enabled: true },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
           crosshair: { enabled: false },
@@ -305,7 +297,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
             textAlign={"center"}
             flexGrow={1}
           >
-            {convert(tankData.current?.filled_volume || 0)}
+            {toPersianDigits(tankData.current?.filled_volume || 0)}
           </Typography>
           <Box
             sx={{
@@ -507,7 +499,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 }}
               >
                 <Typography fontFamily={"IRANSANS"} fontSize={14}>
-                  {convert(row.startTime)}
+                  {toPersianDigits(row.startTime)}
                 </Typography>
               </Box>
               {/* ستون زمان پایان */}
@@ -523,7 +515,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 }}
               >
                 <Typography fontFamily={"IRANSANS"} fontSize={14}>
-                  {convert(row.endTime)}
+                  {toPersianDigits(row.endTime)}
                 </Typography>
               </Box>
               {/* ستون زون */}
@@ -539,7 +531,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 }}
               >
                 <Typography fontFamily={"IRANSANS"} fontSize={14}>
-                  {convert(row.zone)}
+                  {toPersianDigits(row.zone)}
                 </Typography>
               </Box>
               {/* ستون حجم */}
@@ -555,7 +547,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 }}
               >
                 <Typography fontFamily={"IRANSANS"} fontSize={14}>
-                  {convert(row.volume)}
+                  {toPersianDigits(row.volume)}
                 </Typography>
               </Box>
               {/* [جدید] - ستون وضعیت (آیکون‌ها) */}

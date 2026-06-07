@@ -11,6 +11,7 @@ import {
 import { styled } from "@mui/system"; // Or '@mui/material/styles'
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 import assets from "../../assets";
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "./BuildDetailsModal";
 import StatusModal from "./StatusModal";
 
@@ -285,13 +286,13 @@ const PhEcControlCard = ({
                     variant="body2"
                     sx={{ width: "30px", textAlign: "center" }}
                   >
-                    {index + 1}
+                    {toPersianDigits(index + 1)}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <TextField
                     variant="outlined"
-                    value={item}
+                    value={toPersianDigits(item)}
                     InputProps={{
                       readOnly: true,
                     }}
@@ -310,9 +311,9 @@ const PhEcControlCard = ({
                   <TextField
                     variant="outlined"
                     size="small"
-                    value={
-                      column2Data[index] !== undefined ? column2Data[index] : ""
-                    }
+                    value={toPersianDigits(
+                      column2Data[index] !== undefined ? column2Data[index] : "",
+                    )}
                     InputProps={{
                       readOnly: true,
                     }}
@@ -412,8 +413,16 @@ const PhEcControlCard = ({
             <TextField
               variant="outlined"
               size="small"
-              value={ecTargetValue || ""}
-              onChange={onEcTargetChange}
+              value={toPersianDigits(ecTargetValue || "")}
+              onChange={(e) =>
+                onEcTargetChange?.({
+                  ...e,
+                  target: {
+                    ...e.target,
+                    value: toEnglishDigits(e.target.value),
+                  },
+                })
+              }
               sx={{
                 width: 60,
                 "& .MuiOutlinedInput-root": {

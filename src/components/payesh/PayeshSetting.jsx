@@ -28,20 +28,7 @@ import {
 import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-// --- Utility Functions for Number Conversion ---
-const toPersianDigits = (str) => {
-  if (str === null || str === undefined || str === "") return "";
-  return str.toString().replace(/\d/g, (x) => "۰۱۲۳۴۵۶۷۸۹"[x]);
-};
-
-const toEnglishDigits = (str) => {
-  if (str === null || str === undefined || str === "") return "";
-  return str
-    .toString()
-    .replace(/[۰-۹]/g, (x) => "۰۱۲۳۴۵۶۷۸۹".indexOf(x))
-    .replace(/[٠-٩]/g, (x) => "٠١٢٣٤٥٦٧٨٩".indexOf(x));
-};
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 // --- Sub-components ---
 

@@ -21,7 +21,27 @@ import {
 } from "../api/climateApi";
 import { queryKeys } from "../api/queryKeys";
 import { useQueryClient } from "@tanstack/react-query";
+import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
 import toast from "react-hot-toast";
+
+const inputFontSx = {
+  fontFamily: "IRANSANS",
+  fontSize: "12px",
+  textAlign: "center",
+};
+
+const chartFontTheme = {
+  overrides: {
+    common: {
+      title: { fontFamily: "IRANSANS" },
+      legend: { item: { label: { fontFamily: "IRANSANS" } } },
+      axes: {
+        number: { label: { fontFamily: "IRANSANS" } },
+        category: { label: { fontFamily: "IRANSANS" } },
+      },
+    },
+  },
+};
 
 const operatorTranslations = {
   exhaust_fan_1: "فن اگزاست ۱",
@@ -53,11 +73,23 @@ const TimePlansCards = ({
   schedules = [],
 }) => {
   const queryClient = useQueryClient();
+  const resolvedZone = zone || 1;
   const [rows, setRows] = useState([]);
   const [initialRows, setInitialRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const translatedFanName = operatorTranslations[fan] || fan;
+
+  const isRowChanged = (row, initial) => {
+    if (!initial) return true;
+    return (
+      row.start_time !== initial.start_time ||
+      row.end_time !== initial.end_time ||
+      Number(row.on_time) !== Number(initial.on_time) ||
+      Number(row.off_time) !== Number(initial.off_time) ||
+      row.is_active !== initial.is_active
+    );
+  };
 
   const hasChanges = useMemo(() => {
     // Check for any new rows
@@ -100,18 +132,21 @@ const TimePlansCards = ({
 
   useEffect(() => {
     if (Array.isArray(schedules)) {
-      const mappedServerRows = schedules.map(s => ({
+      const mappedServerRows = schedules.map((s) => ({
         ...s,
-        uiId: s.id, // Use ID from API as stable ID
+        operator: s.operator || fan,
+        uiId: s.id,
         isNew: false,
         is_active: s.is_active !== undefined ? s.is_active : true,
-        isChanging: false
+        isChanging: false,
       }));
-      setInitialRows(mappedServerRows); // Set original server state
-      
-      setRows(prevRows => {
-        const newRows = prevRows.filter(r => r.isNew); // Keep local new rows
-        return [...mappedServerRows, ...newRows]; // Merge
+      setInitialRows(mappedServerRows);
+
+      setRows((prevRows) => {
+        const pendingNewRows = prevRows.filter(
+          (r) => r.isNew && r.operator === fan,
+        );
+        return [...mappedServerRows, ...pendingNewRows];
       });
     }
   }, [schedules]);
@@ -120,6 +155,7 @@ const TimePlansCards = ({
     setRows((prevRows) => [
       {
         uiId: crypto.randomUUID(),
+        operator: fan,
         isNew: true,
         start_time: "00:00:00",
         end_time: "00:00:00",
@@ -162,11 +198,15 @@ const TimePlansCards = ({
       try {
         await deleteOperatorSchedule(row.id);
         toast.success("حذف شد");
-        queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.operatorSchedules(resolvedZone),
+        });
       } catch (error) {
         console.error(error);
         toast.error("خطا در حذف");
-        queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.operatorSchedules(resolvedZone),
+        });
       }
     }
   };
@@ -181,7 +221,14 @@ const TimePlansCards = ({
     setLoading(true);
     let hasError = false;
     try {
-      for (const row of rows) {
+      const rowsToSave = rows.filter((row) => {
+        if (row.operator && row.operator !== fan) return false;
+        if (row.isNew) return true;
+        const initial = initialRows.find((ir) => ir.id === row.id);
+        return isRowChanged(row, initial);
+      });
+
+      for (const row of rowsToSave) {
         let startTime = row.start_time;
         let endTime = row.end_time;
 
@@ -189,7 +236,7 @@ const TimePlansCards = ({
         if (endTime && endTime.length === 5) endTime += ":00";
 
         const payload = {
-          zone: zone || 1,
+          zone: resolvedZone,
           operator: fan,
           start_time: startTime,
           end_time: endTime,
@@ -200,7 +247,7 @@ const TimePlansCards = ({
           end_status: 4294967295,
         };
 
-        try { // Inner try-catch for specific error handling per row
+        try {
           if (row.isNew) {
             await createOperatorSchedule(payload);
           } else {
@@ -228,12 +275,13 @@ const TimePlansCards = ({
 
       if (!hasError) {
         toast.success("تغییرات ذخیره شد");
-        const updatedRows = rows.map(r => ({ ...r, isNew: false }));
-        setRows(updatedRows);
-        setInitialRows(updatedRows.filter(r => !r.isNew));
-        queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.operatorSchedules(resolvedZone),
+        });
       } else {
-         queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.operatorSchedules(resolvedZone),
+        });
       }
     } catch (generalError) { // This catch will only be hit if something outside the loop fails, unlikely
       console.error(generalError);
@@ -245,6 +293,7 @@ const TimePlansCards = ({
 
   const chartOptions = useMemo(
     () => ({
+      theme: chartFontTheme,
       data: data || [],
       series: [
         {
@@ -286,6 +335,7 @@ const TimePlansCards = ({
               return "";
             },
             fontSize: 10,
+            fontFamily: "IRANSANS",
           },
           gridStyle: [
             {
@@ -544,21 +594,20 @@ const TimePlansCards = ({
                       <TextField
                         variant="standard"
                         size="small"
-                        type="time"
-                        value={row.start_time?.substring(0, 5) || "00:00"}
+                        inputMode="numeric"
+                        value={toPersianDigits(row.start_time?.substring(0, 5) || "00:00")}
                         onChange={(e) =>
                           handleInputChange(
                             row.uiId,
                             "start_time",
-                            e.target.value,
+                            toEnglishDigits(e.target.value),
                           )
                         }
                         sx={{
                           width: "75px",
                           "& .MuiInputBase-input": {
                             p: 0.5,
-                            fontSize: "12px",
-                            textAlign: "center",
+                            ...inputFontSx,
                           },
                           "& .MuiInput-underline:before": { borderBottom: "none" },
                           "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },
@@ -568,17 +617,16 @@ const TimePlansCards = ({
                       <TextField
                         variant="standard"
                         size="small"
-                        type="time"
-                        value={row.end_time?.substring(0, 5) || "00:00"}
+                        inputMode="numeric"
+                        value={toPersianDigits(row.end_time?.substring(0, 5) || "00:00")}
                         onChange={(e) =>
-                          handleInputChange(row.uiId, "end_time", e.target.value)
+                          handleInputChange(row.uiId, "end_time", toEnglishDigits(e.target.value))
                         }
                         sx={{
                           width: "75px",
                           "& .MuiInputBase-input": {
                             p: 0.5,
-                            fontSize: "12px",
-                            textAlign: "center",
+                            ...inputFontSx,
                           },
                           "& .MuiInput-underline:before": { borderBottom: "none" },
                           "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },
@@ -588,17 +636,16 @@ const TimePlansCards = ({
                       <TextField
                         variant="standard"
                         size="small"
-                        type="number"
-                        value={row.on_time}
+                        inputMode="numeric"
+                        value={toPersianDigits(row.on_time ?? "")}
                         onChange={(e) =>
-                          handleInputChange(row.uiId, "on_time", e.target.value)
+                          handleInputChange(row.uiId, "on_time", toEnglishDigits(e.target.value))
                         }
                         sx={{
                           width: "50px",
                           "& .MuiInputBase-input": {
                             p: 0.5,
-                            fontSize: "12px",
-                            textAlign: "center",
+                            ...inputFontSx,
                           },
                           "& .MuiInput-underline:before": { borderBottom: "none" },
                           "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },
@@ -608,17 +655,16 @@ const TimePlansCards = ({
                       <TextField
                         variant="standard"
                         size="small"
-                        type="number"
-                        value={row.off_time}
+                        inputMode="numeric"
+                        value={toPersianDigits(row.off_time ?? "")}
                         onChange={(e) =>
-                          handleInputChange(row.uiId, "off_time", e.target.value)
+                          handleInputChange(row.uiId, "off_time", toEnglishDigits(e.target.value))
                         }
                         sx={{
                           width: "50px",
                           "& .MuiInputBase-input": {
                             p: 0.5,
-                            fontSize: "12px",
-                            textAlign: "center",
+                            ...inputFontSx,
                           },
                           "& .MuiInput-underline:before": { borderBottom: "none" },
                           "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },

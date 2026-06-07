@@ -86,6 +86,37 @@ export const updateHumidityRangeOperator = async (data) => {
   return apiClient.post("/climate/humidity-range-operator/", data);
 };
 
+export const OPERATOR_ORDER = [
+  "exhaust_fan_1",
+  "exhaust_fan_2",
+  "exhaust_fan_3",
+  "exhaust_fan_4",
+  "exhaust_fan_5",
+  "circule_fan_1",
+  "circule_fan_2",
+  "pad_pump",
+  "fogger",
+  "hatch_opening",
+  "hatch_closing",
+  "shade_opening",
+  "shade_closing",
+  "hiter_1",
+  "hiter_2",
+  "hiter_3",
+  "hiter_4",
+];
+
+export const sortOperators = (operators) => {
+  return [...operators].sort((a, b) => {
+    const ai = OPERATOR_ORDER.indexOf(a);
+    const bi = OPERATOR_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+};
+
 export const parseOperatorSchedules = (response) => {
   let data = [];
   if (Array.isArray(response)) {
@@ -98,8 +129,10 @@ export const parseOperatorSchedules = (response) => {
 
   const grouped = {};
   data.forEach((item) => {
-    if (!grouped[item.operator]) grouped[item.operator] = [];
-    grouped[item.operator].push(item);
+    const operatorKey = item.operator;
+    if (!operatorKey) return;
+    if (!grouped[operatorKey]) grouped[operatorKey] = [];
+    grouped[operatorKey].push({ ...item, operator: operatorKey });
   });
   return grouped;
 };

@@ -27,26 +27,17 @@ import {
 } from "../../api/solubleApi";
 import { calibrateDosingPump } from "../../api/calibrationApi";
 import toast from "react-hot-toast";
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 const Control = () => {
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
-
-  // استیت‌های بخش تزریق دستی
   const [pomp, setPomp] = React.useState(1);
   const [injectionType, setInjectionType] = React.useState("stock");
   const [selectedPomp, setSelectedPomp] = React.useState(0);
   const [injectionVolume, setInjectionVolume] = React.useState();
 
   const handleInjectionVolumeChange = (event) => {
-    setInjectionVolume(parseInt(event.target.value, 10));
+    const raw = toEnglishDigits(event.target.value);
+    setInjectionVolume(raw === "" ? undefined : parseInt(raw, 10));
   };
 
   const [isMixerOn, setIsMixerOn] = React.useState(false);
@@ -80,7 +71,8 @@ const Control = () => {
 
   const [volume, setVolume] = React.useState(1000);
   const handleVolumeChange = (event) => {
-    setVolume(parseInt(event.target.value, 10));
+    const raw = toEnglishDigits(event.target.value);
+    setVolume(raw === "" ? "" : parseInt(raw, 10));
   };
 
   // استیت‌های مودال‌ها
@@ -455,7 +447,7 @@ const Control = () => {
                       value={num}
                       sx={{ fontFamily: "IRANSANS" }}
                     >
-                      {convert(num)}
+                      {toPersianDigits(num)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -464,11 +456,10 @@ const Control = () => {
 
             <input
               id="volume-input-injection"
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="حجم"
-              min={1}
-              max={10}
-              value={injectionVolume}
+              value={toPersianDigits(injectionVolume ?? "")}
               onChange={handleInjectionVolumeChange}
               style={{
                 paddingRight: "8px",
@@ -587,11 +578,10 @@ const Control = () => {
             }}
           >
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="حجم"
-              min={1}
-              max={10000}
-              value={volume}
+              value={toPersianDigits(volume ?? "")}
               onChange={handleVolumeChange}
               style={{
                 paddingRight: "8px",
@@ -636,7 +626,7 @@ const Control = () => {
                     value={num}
                     sx={{ fontFamily: "IRANSANS" }}
                   >
-                    {convert(num)}
+                    {toPersianDigits(num)}
                   </MenuItem>
                 ))}
               </Select>
@@ -674,7 +664,7 @@ const Control = () => {
                     value={num}
                     sx={{ fontFamily: "IRANSANS" }}
                   >
-                    {convert(num)}
+                    {toPersianDigits(num)}
                   </MenuItem>
                 ))}
               </Select>
@@ -824,7 +814,7 @@ const Control = () => {
                     value={num}
                     sx={{ fontFamily: "IRANSANS" }}
                   >
-                    {convert(num)}
+                    {toPersianDigits(num)}
                   </MenuItem>
                 ))}
               </Select>
@@ -946,7 +936,7 @@ const Control = () => {
                     value={num}
                     sx={{ fontFamily: "IRANSANS", justifyContent: "center" }}
                   >
-                    {convert(num)}
+                    {toPersianDigits(num)}
                   </MenuItem>
                 ))}
               </Select>
@@ -979,9 +969,11 @@ const Control = () => {
           {/* Input: حجم تزریق شده */}
           <TextField
             placeholder="حجم تزریق شده"
-            value={calibInjectedVolume}
-            onChange={(e) => setCalibInjectedVolume(e.target.value)}
-            type="number"
+            value={toPersianDigits(calibInjectedVolume)}
+            onChange={(e) =>
+              setCalibInjectedVolume(toEnglishDigits(e.target.value))
+            }
+            inputProps={{ inputMode: "decimal" }}
             disabled={calibCurrentStep !== 2}
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -1048,16 +1040,6 @@ export const ModalA = ({ open, onClose }) => {
     0,
     Math.min(100, (dummyCapacity / dummyMaxCapacity) * 100),
   );
-
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
 
   const [calibBtn1Disabled, setCalibBtn1Disabled] = React.useState(false);
   const [calibBtn2Disabled, setCalibBtn2Disabled] = React.useState(false);
@@ -1199,7 +1181,7 @@ export const ModalA = ({ open, onClose }) => {
               }}
             >
               <Typography fontSize={"14px"} fontFamily={"IRANSANS"}>
-                {convert(dummyCapacity)}
+                {toPersianDigits(dummyCapacity)}
               </Typography>
             </Box>
             <Typography fontSize={14} pl={"6px"}>

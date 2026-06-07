@@ -14,25 +14,12 @@ import CloseIcon from "@mui/icons-material/Close";
 import assets from "../../assets";
 import { useQuery } from "@tanstack/react-query";
 import { getErrorCodes } from "../../api/dashboardApi";
+import { toPersianDigits } from "../../utils/persianDigits";
 
 const ErrorComponent = () => {
   const [openModal, setOpenModal] = useState(false);
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
-
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      if (!isNaN(parseInt(c, 10))) {
-        res += numbers.charAt(c);
-      } else {
-        res += c;
-      }
-    }
-    return res;
-  };
 
   const errorDescriptions = {
     1: "پایین بودن پ هاش بعد از ساخت",
@@ -276,7 +263,7 @@ const ErrorComponent = () => {
                   fontFamily="IRANSANS"
                   sx={{ marginTop: "4px", fontSize: "12px" }}
                 >
-                  {convert(log.code)}
+                  {toPersianDigits(log.code)}
                 </Typography>
               ))
             ) : (
@@ -345,8 +332,8 @@ const ErrorComponent = () => {
                   sx={{ marginTop: "4px", fontSize: "9px" }}
                 >
                   {log.count > 1
-                    ? ` (${convert(log.count)}) ${convert(log.lastTime)} - ${convert(log.firstTime)} `
-                    : convert(log.firstTime)}
+                    ? ` (${toPersianDigits(log.count)}) ${toPersianDigits(log.lastTime)} - ${toPersianDigits(log.firstTime)} `
+                    : toPersianDigits(log.firstTime)}
                 </Typography>
               ))
             ) : (
@@ -486,7 +473,7 @@ const ErrorComponent = () => {
                     width="10%"
                     textAlign="center"
                   >
-                    {convert(log.code)}
+                    {toPersianDigits(log.code)}
                   </Typography>
 
                   <Typography
@@ -504,8 +491,8 @@ const ErrorComponent = () => {
                     fontSize="12px"
                   >
                     {log.count > 1
-                      ? ` (${convert(log.count)}) ${convert(log.lastTime)} - ${convert(log.firstTime)} `
-                      : convert(log.firstTime)}
+                      ? ` (${toPersianDigits(log.count)}) ${toPersianDigits(log.lastTime)} - ${toPersianDigits(log.firstTime)} `
+                      : toPersianDigits(log.firstTime)}
                   </Typography>
                 </Box>
               ))

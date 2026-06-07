@@ -18,6 +18,7 @@ import {
   updateFoodstuffPreparationProgram,
 } from "../api/solubleApi";
 import toast, { Toaster } from "react-hot-toast";
+import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
 
 // --- Helper for deep comparison handling string/number equality ---
 const deepEqual = (obj1, obj2) => {
@@ -49,27 +50,11 @@ const deepEqual = (obj1, obj2) => {
   return true;
 };
 
-// --- Helper function to convert numbers to Persian numerals ---
-const toPersianNumber = (num) => {
-  if (num === null || num === undefined || num === "") return "";
-  return String(num).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
-};
-
-// --- Helper function to convert Persian numbers to English digits for validation ---
-const toEnglishNumber = (str) => {
-  if (str === null || str === undefined || str === "") return "";
-  const persianNumbers = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
-  let result = String(str);
-  for (let i = 0; i < 10; i++) {
-    result = result.replace(persianNumbers[i], i);
-  }
-  return result;
-};
 
 // --- کامپوننت کمکی برای ستون‌های برنامه ---
 const ProgramColumn = ({ number, data, onChange }) => {
   const handleChange = (field, value) => {
-    const enValue = toEnglishNumber(value);
+    const enValue = toEnglishDigits(value);
     
     if (enValue !== "" && !/^\d*\.?\d*$/.test(enValue)) return;
 
@@ -110,7 +95,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
           color: "#333",
         }}
       >
-        برنامه {toPersianNumber(number)}
+        برنامه {toPersianDigits(number)}
       </Typography>
 
       {/* خطای مجاز EC */}
@@ -122,7 +107,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
           size="small"
           variant="outlined"
           sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianNumber(data?.ec_acceptable_error ?? "")}
+          value={toPersianDigits(data?.ec_acceptable_error ?? "")}
           onChange={(e) => handleChange("ec_acceptable_error", e.target.value)}
           inputProps={{ inputMode: "decimal" }}
         />
@@ -137,7 +122,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
           size="small"
           variant="outlined"
           sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianNumber(data?.target_ec ?? "")}
+          value={toPersianDigits(data?.target_ec ?? "")}
           onChange={(e) => handleChange("target_ec", e.target.value)}
           inputProps={{ inputMode: "decimal" }}
         />
@@ -147,13 +132,13 @@ const ProgramColumn = ({ number, data, onChange }) => {
       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((num) => (
         <Box key={num} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
           <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
-            ماده {toPersianNumber(num)}
+            ماده {toPersianDigits(num)}
           </Typography>
           <TextField
             size="small"
             variant="outlined"
             sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-            value={toPersianNumber(data?.stock_percent?.[num.toString()] ?? "")}
+            value={toPersianDigits(data?.stock_percent?.[num.toString()] ?? "")}
             onChange={(e) => handleChange(`stock_percent.${num}`, e.target.value)}
             inputProps={{ inputMode: "decimal" }}
           />
@@ -169,7 +154,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
           size="small"
           variant="outlined"
           sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianNumber(data?.target_ph ?? "")}
+          value={toPersianDigits(data?.target_ph ?? "")}
           onChange={(e) => handleChange("target_ph", e.target.value)}
           inputProps={{ inputMode: "decimal" }}
         />
@@ -184,7 +169,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
           size="small"
           variant="outlined"
           sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianNumber(data?.acid_liter ?? "")}
+          value={toPersianDigits(data?.acid_liter ?? "")}
           onChange={(e) => handleChange("acid_liter", e.target.value)}
           inputProps={{ inputMode: "decimal" }}
         />
@@ -199,7 +184,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
           size="small"
           variant="outlined"
           sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianNumber(data?.ph_acceptable_error ?? "")}
+          value={toPersianDigits(data?.ph_acceptable_error ?? "")}
           onChange={(e) => handleChange("ph_acceptable_error", e.target.value)}
           inputProps={{ inputMode: "decimal" }}
         />
@@ -214,7 +199,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
           size="small"
           variant="outlined"
           sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianNumber(data?.ec_correction_factor ?? "")}
+          value={toPersianDigits(data?.ec_correction_factor ?? "")}
           onChange={(e) => handleChange("ec_correction_factor", e.target.value)}
           inputProps={{ inputMode: "decimal" }}
         />
@@ -349,7 +334,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   };
 
   const handleInputWaterVolumeChange = (e) => {
-    const enValue = toEnglishNumber(e.target.value);
+    const enValue = toEnglishDigits(e.target.value);
     if (enValue === "" || /^\d*\.?\d*$/.test(enValue)) {
       setInputWaterVolume(enValue);
     }
@@ -479,7 +464,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
                       fullWidth
                       size="small"
                       variant="outlined"
-                      value={toPersianNumber(inputWaterVolume)}
+                      value={toPersianDigits(inputWaterVolume)}
                       onChange={handleInputWaterVolumeChange}
                       inputProps={{ inputMode: "decimal" }}
                       sx={{

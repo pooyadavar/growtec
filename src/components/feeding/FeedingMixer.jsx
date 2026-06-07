@@ -12,6 +12,7 @@ import { styled } from "@mui/system";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 // مسیرهای ایمپورت را طبق پروژه خودتان چک کنید
 import assets from "../../assets";
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "../dashboard/BuildDetailsModal";
 import IconTextButton from "../../card/IconTextButton";
 import StatusModal from "../dashboard/StatusModal";
@@ -170,7 +171,7 @@ const PhEcControlCardMixer = ({
               <TextField
                 variant="outlined"
                 size="small"
-                value={phValue ?? ""}
+                value={toPersianDigits(phValue ?? "")}
                 InputProps={{ readOnly: true }}
                 sx={{
                   width: 50,
@@ -206,7 +207,7 @@ const PhEcControlCardMixer = ({
               <TextField
                 variant="outlined"
                 size="small"
-                value={ecValue ?? ""}
+                value={toPersianDigits(ecValue ?? "")}
                 InputProps={{ readOnly: true }}
                 sx={{
                   width: 50,
@@ -370,14 +371,14 @@ const PhEcControlCardMixer = ({
                     variant="body2"
                     sx={{ width: "30px", textAlign: "center" }}
                   >
-                    {index + 1}
+                    {toPersianDigits(index + 1)}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <TextField
                     variant="outlined"
                     size="small"
-                    value={item}
+                    value={toPersianDigits(item)}
                     InputProps={{ readOnly: true }}
                     sx={{
                       width: 37,
@@ -394,9 +395,9 @@ const PhEcControlCardMixer = ({
                   <TextField
                     variant="outlined"
                     size="small"
-                    value={
-                      column2Data[index] !== undefined ? column2Data[index] : ""
-                    }
+                    value={toPersianDigits(
+                      column2Data[index] !== undefined ? column2Data[index] : "",
+                    )}
                     InputProps={{ readOnly: true }}
                     sx={{
                       width: 37,
@@ -494,8 +495,16 @@ const PhEcControlCardMixer = ({
             <TextField
               variant="outlined"
               size="small"
-              value={ecTargetValue || ""}
-              onChange={onEcTargetChange}
+              value={toPersianDigits(ecTargetValue || "")}
+              onChange={(e) =>
+                onEcTargetChange?.({
+                  ...e,
+                  target: {
+                    ...e.target,
+                    value: toEnglishDigits(e.target.value),
+                  },
+                })
+              }
               sx={{
                 width: 60,
                 "& .MuiOutlinedInput-root": {

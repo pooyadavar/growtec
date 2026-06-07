@@ -24,9 +24,10 @@ import {
   deleteFoodstuffSchedule,
 } from "../../api/solubleApi";
 import toast from "react-hot-toast";
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 // کامپوننت سطر (الان یک کامپوننت کنترل‌شده است و استیت داخلی ندارد)
-const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew }) => {
+const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, isNew }) => {
   const [isChanging, setIsChanging] = useState(false);
 
   // هندل کردن تغییر وضعیت دکمه
@@ -131,7 +132,7 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew })
             </MenuItem>
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <MenuItem key={n} value={n} sx={{ fontFamily: "IRANSANS" }}>
-                {convert(n)}
+                {toPersianDigits(n)}
               </MenuItem>
             ))}
           </Select>
@@ -143,11 +144,12 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew })
           حجم
         </Typography>
         <input
-          type="number"
-          value={data.volume}
-          onChange={(e) => onChange(id, "volume", e.target.value)}
-          min={1}
-          max={100}
+          type="text"
+          inputMode="decimal"
+          value={toPersianDigits(data.volume)}
+          onChange={(e) =>
+            onChange(id, "volume", toEnglishDigits(e.target.value))
+          }
           style={{
             width: "100px",
             height: "60px",
@@ -190,7 +192,7 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew })
             </MenuItem>
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <MenuItem key={n} value={n} sx={{ fontFamily: "IRANSANS" }}>
-                {convert(n)}
+                {toPersianDigits(n)}
               </MenuItem>
             ))}
           </Select>
@@ -202,9 +204,12 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, convert, isNew })
           زمان
         </Typography>
         <input
-          type="time"
-          value={data.time}
-          onChange={(e) => onChange(id, "time", e.target.value)}
+          type="text"
+          inputMode="numeric"
+          value={toPersianDigits(data.time)}
+          onChange={(e) =>
+            onChange(id, "time", toEnglishDigits(e.target.value))
+          }
           style={{
             width: "100px",
             height: "60px",
@@ -238,17 +243,6 @@ const FeedingStatusBar = () => {
     },
   ]);
 
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    if (num === undefined || num === null) return "";
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c) || c;
-    }
-    return res;
-  };
-
   const {
     data: rawSchedule = [],
     isLoading: isLoadingSchedule,
@@ -268,10 +262,10 @@ const FeedingStatusBar = () => {
   const scheduleData = useMemo(() => {
     if (!rawSchedule) return [];
     return rawSchedule.map((item) => ({
-      time: item.time,
-      zone: convert(item.zone),
-      type: convert(item.type),
-      volume: convert(item.volume),
+      time: toPersianDigits(item.time),
+      zone: toPersianDigits(item.zone),
+      type: toPersianDigits(item.type),
+      volume: toPersianDigits(item.volume),
       status: item.is_active ? "فعال" : "غیرفعال",
     }));
   }, [rawSchedule]);
@@ -689,7 +683,6 @@ const FeedingStatusBar = () => {
                       onChange={handleRowChange}
                       onDelete={() => handleDeleteRow(row.id)}
                       canBeDeleted={planRows.length > 1}
-                      convert={convert}
                       isNew={isNew}
                     />
                   </Collapse>

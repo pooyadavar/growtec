@@ -17,6 +17,7 @@ import SwapCallsIcon from "@mui/icons-material/SwapCalls";
 
 // ایمپورت کامپوننت اختصاصی خودت (مسیر رو چک کن)
 import IconTextButton from "../../card/IconTextButton";
+import { toPersianDigits } from "../../utils/persianDigits";
 
 // ثابت‌های طراحی برای حفظ یکپارچگی
 const COLORS = {
@@ -112,28 +113,28 @@ export default function IrrigationCalculatorPage({ onClose }) {
           </Box>
           <Box>
             <CustomLabel>اولین آبیاری</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue="00:00:00" />
+            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
           </Box>
 
           <Box>
             <CustomLabel>تعداد آبیاری</CustomLabel>
             <Select fullWidth defaultValue={1} sx={selectStyles}>
-              <MenuItem value={1}>۱</MenuItem>
-              <MenuItem value={2}>۲</MenuItem>
+              <MenuItem value={1}>{toPersianDigits(1)}</MenuItem>
+              <MenuItem value={2}>{toPersianDigits(2)}</MenuItem>
             </Select>
           </Box>
 
           <Box>
             <CustomLabel>فاصله بین دو آبیاری</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue="00:00:00" />
+            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
           </Box>
           <Box>
             <CustomLabel>مدت زمان آبیاری</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue="00:00:00" />
+            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
           </Box>
           <Box>
             <CustomLabel>فاصله بین دو زون</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue="00:00:00" />
+            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
           </Box>
 
           <IconTextButton
@@ -318,15 +319,15 @@ export default function IrrigationCalculatorPage({ onClose }) {
                   </Box>
                   <TextField
                     sx={{ ...inputStyles, width: "25%" }}
-                    defaultValue={row.end}
+                    defaultValue={toPersianDigits(row.end)}
                   />
                   <TextField
                     sx={{ ...inputStyles, width: "25%" }}
-                    defaultValue={row.start}
+                    defaultValue={toPersianDigits(row.start)}
                   />
                   <TextField
                     sx={{ ...inputStyles, width: "15%" }}
-                    defaultValue={row.zone}
+                    defaultValue={toPersianDigits(row.zone)}
                   />
                   <Select
                     sx={{ ...selectStyles, width: "20%" }}

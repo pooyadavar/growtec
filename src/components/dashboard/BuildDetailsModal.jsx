@@ -15,6 +15,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import assets from "../../assets"; 
 import { getFoodstuffSchedule } from "../../api/solubleApi";
 import { queryKeys } from "../../api/queryKeys";
+import { toPersianDigits } from "../../utils/persianDigits";
 
 const modalStyle = {
   position: "absolute",
@@ -194,7 +195,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
                       fontSize="11px"
                       textAlign="center"
                     >
-                      {detail.tank}
+                      {toPersianDigits(detail.tank)}
                     </Typography>
                   </DataCell>
 
@@ -205,7 +206,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
                       fontSize="11px"
                       textAlign="center"
                     >
-                      {detail.volume}
+                      {toPersianDigits(detail.volume)}
                     </Typography>
                   </DataCell>
 
@@ -216,7 +217,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
                       fontSize="11px"
                       textAlign="center"
                     >
-                      {detail.type}
+                      {toPersianDigits(detail.type)}
                     </Typography>
                   </DataCell>
 
@@ -227,7 +228,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
                       fontSize="11px"
                       textAlign="center"
                     >
-                      {detail.time}
+                      {toPersianDigits(detail.time)}
                     </Typography>
                   </DataCell>
                 </Box>

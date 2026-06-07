@@ -36,6 +36,7 @@ import {
   updateIrrigationSchedule,
   deleteIrrigationSchedule,
 } from "../../api/irrigationApi";
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 // Styled components for the modal
 const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
@@ -75,7 +76,7 @@ const getDisplayStatus = (startStatus, endStatus) => {
   return "blank";
 };
 
-const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
+const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
   const [isChanging, setIsChanging] = useState(false);
 
   const handleToggleActive = () => {
@@ -169,10 +170,12 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
         }}
       >
         <input
-          type="time"
-          step="1"
-          value={data.start_time || ""}
-          onChange={(e) => onChange(id, "start_time", e.target.value)}
+          type="text"
+          inputMode="numeric"
+          value={toPersianDigits(data.start_time || "")}
+          onChange={(e) =>
+            onChange(id, "start_time", toEnglishDigits(e.target.value))
+          }
           style={{
             border: "none",
             outline: "none",
@@ -199,10 +202,12 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
         }}
       >
         <input
-          type="time"
-          step="1"
-          value={data.end_time || ""}
-          onChange={(e) => onChange(id, "end_time", e.target.value)}
+          type="text"
+          inputMode="numeric"
+          value={toPersianDigits(data.end_time || "")}
+          onChange={(e) =>
+            onChange(id, "end_time", toEnglishDigits(e.target.value))
+          }
           style={{
             border: "none",
             outline: "none",
@@ -230,7 +235,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
           color: "#333",
         }}
       >
-        {convert(data.zone)}
+        {toPersianDigits(data.zone)}
       </Box>
 
       {/* Volume */}
@@ -247,9 +252,13 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
         }}
       >
         <input
-          type="number"
-          value={data.volume}
-          onChange={(e) => onChange(id, "volume", parseInt(e.target.value))}
+          type="text"
+          inputMode="decimal"
+          value={toPersianDigits(data.volume ?? "")}
+          onChange={(e) => {
+            const raw = toEnglishDigits(e.target.value);
+            onChange(id, "volume", raw === "" ? "" : parseInt(raw, 10));
+          }}
           style={{
             border: "none",
             outline: "none",
@@ -407,20 +416,6 @@ const IrrigationManyStorage = () => {
   };
 
   const tankIds = [1, 2, 3, 4];
-
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = String(num || 0);
-    for (let c of str) {
-      if (!isNaN(parseInt(c, 10))) {
-        res += numbers.charAt(c);
-      } else {
-        res += c;
-      }
-    }
-    return res;
-  };
 
   // Helper to extract HH:mm:ss from a time string
   const getCleanTime = (timeStr) => {
@@ -792,7 +787,7 @@ const IrrigationManyStorage = () => {
             >
               <Typography fontFamily={"IRANSANS"} fontSize={12} mb={1}>
                 جدول آبیاری (مخزن{" "}
-                {selectedTankId ? convert(selectedTankId) : ""})
+                {selectedTankId ? toPersianDigits(selectedTankId) : ""})
               </Typography>
 
               {/* Table Header */}
@@ -870,7 +865,6 @@ const IrrigationManyStorage = () => {
                         data={row}
                         onChange={handleRowChange}
                         onDelete={handleDeleteRow}
-                        convert={convert}
                         isNew={row.isNew}
                       />
                       <Divider sx={{ my: 1 }} />

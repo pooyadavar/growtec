@@ -13,6 +13,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getFoodstuffHistory } from "../api/solubleApi";
+import { toPersianDigits } from "../utils/persianDigits";
 
 const PlanColumn = ({ number, values = [] }) => (
   <Paper
@@ -34,7 +35,7 @@ const PlanColumn = ({ number, values = [] }) => (
       mb={1}
       fontSize="1rem"
     >
-      {number}
+      {toPersianDigits(number)}
     </Typography>
 
     {/* ردیف‌های داخل ستون */}
@@ -52,13 +53,13 @@ const PlanColumn = ({ number, values = [] }) => (
           size="small"
           variant="outlined"
           sx={{ width: "100px" }}
-          value={values[index] || ""}
+          value={toPersianDigits(values[index] || "")}
           InputProps={{
             readOnly: true,
           }}
         />
         <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.9rem" }}>
-          {index + 1}
+          {toPersianDigits(index + 1)}
         </Typography>
       </Box>
     ))}

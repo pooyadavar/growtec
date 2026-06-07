@@ -3,6 +3,7 @@ import { Typography } from "@mui/material";
 import Container from "@mui/material/Container";
 import assets from "../../assets";
 import { makeStyles } from "@mui/styles";
+import { toPersianDigits } from "../../utils/persianDigits";
 
 // --- ۱. Props ها آپدیت شدند ---
 // ما حالا به جای ec و ph، مقادیر و آبجکت range آنها را جداگانه می‌گیریم
@@ -17,16 +18,6 @@ const StatusBar = ({
   }));
 
   const classes = useStyle();
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    if (num === null || num === undefined) return numbers.charAt(0);
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
 
   // --- ۲. تابع کمکی برای انتخاب عکس ---
   /**
@@ -89,7 +80,7 @@ const StatusBar = ({
           paddingRight: "1rem",
         }}
       >
-        <Typography fontFamily={"IRANSANS"}> EC : {convert(ecValue)}</Typography>
+        <Typography fontFamily={"IRANSANS"}> EC : {toPersianDigits(ecValue)}</Typography>
         <div
           style={{
             display: "flex",
@@ -126,7 +117,7 @@ const StatusBar = ({
           paddingRight: "1rem",
         }}
       >
-        <Typography fontFamily={"IRANSANS"}> pH : {convert(phValue)}</Typography>
+        <Typography fontFamily={"IRANSANS"}> pH : {toPersianDigits(phValue)}</Typography>
         <div
           style={{
             display: "flex",

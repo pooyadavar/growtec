@@ -11,6 +11,7 @@ import { styled } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
 import { getMixTankStatus } from "../../api/solubleApi";
 import { queryKeys } from "../../api/queryKeys";
+import { toPersianDigits } from "../../utils/persianDigits";
 
 const modalStyle = {
   position: "absolute",
@@ -154,7 +155,7 @@ const StatusModal = ({ open, onClose, title }) => {
                 {/* Parameter Cell (Value) */}
                 <DataCell>
                   <Typography fontFamily={"IRANSANS"} fontSize="12px">
-                    {item.value}
+                    {toPersianDigits(item.value)}
                   </Typography>
                 </DataCell>
               </Box>

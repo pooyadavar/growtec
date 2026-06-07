@@ -7,6 +7,7 @@ import IconTextButton from "./IconTextButton";
 import { calibratePressureSensor } from "../api/calibrationApi";
 import { getIrrigationTanksStatus } from "../api/dashboardApi";
 import toast from "react-hot-toast";
+import { toPersianDigits } from "../utils/persianDigits";
 
 const IrrigationCard = ({
   storageNumber,
@@ -26,20 +27,6 @@ const IrrigationCard = ({
   // استیت‌های مستقل برای حذف اولویت‌بندی
   const [lowConfirmed, setLowConfirmed] = React.useState(false);
   const [highConfirmed, setHighConfirmed] = React.useState(false);
-
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = String(num || 0);
-    for (let c of str) {
-      if (!isNaN(parseInt(c, 10))) {
-        res += numbers.charAt(c);
-      } else {
-        res += c;
-      }
-    }
-    return res;
-  };
 
   const formatTime = (timeString) => {
     if (!timeString) return "";
@@ -89,8 +76,8 @@ const IrrigationCard = ({
                 ? date.toLocaleTimeString("en-GB", { hour12: false })
                 : "";
               return {
-                title: timeString,
-                content: `Volume: ${datum[yKey]}`,
+                title: toPersianDigits(timeString),
+                content: `Volume: ${toPersianDigits(datum[yKey])}`,
               };
             },
           },
@@ -128,7 +115,12 @@ const IrrigationCard = ({
           position: "left",
           min,
           max: maxStorageCapacity || 100,
-          label: { enabled: true, fontSize: 9, color: "#333" },
+          label: {
+            enabled: true,
+            fontSize: 9,
+            color: "#333",
+            formatter: ({ value }) => toPersianDigits(value),
+          },
           tick: { count: 3, enabled: true },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
           crosshair: { enabled: false },
@@ -166,7 +158,7 @@ const IrrigationCard = ({
   const realTimeLevel =
     tankRealTimeData?.level ??
     tankRealTimeData?.water_level ??
-    `${realTimeFillPercentage.toFixed(0)} %`;
+    `${toPersianDigits(realTimeFillPercentage.toFixed(0))} %`;
 
   // بررسی اتمام هر دو مرحله
   React.useEffect(() => {
@@ -284,7 +276,7 @@ const IrrigationCard = ({
               fontSize={21}
               textAlign={"center"}
             >
-              مخزن {convert(storageNumber)}
+              مخزن {toPersianDigits(storageNumber)}
             </Typography>
           </Box>
           <Typography
@@ -294,7 +286,7 @@ const IrrigationCard = ({
             flexGrow={1}
             alignContent={"center"}
           >
-            {convert(storageCapacity)}
+            {toPersianDigits(storageCapacity)}
           </Typography>
         </Box>
         <Typography color="#5B5B5B" fontFamily={"IRANSANS"} fontSize={18}>
@@ -460,7 +452,7 @@ const IrrigationCard = ({
                           fontFamily: "IRANSANS",
                         }}
                       >
-                        {convert(formatTime(item.start_time))}
+                        {toPersianDigits(formatTime(item.start_time))}
                       </Box>
                     </div>
                     <div
@@ -490,7 +482,7 @@ const IrrigationCard = ({
                           fontFamily: "IRANSANS",
                         }}
                       >
-                        {convert(formatTime(item.end_time))}
+                        {toPersianDigits(formatTime(item.end_time))}
                       </Box>
                     </div>
                     <div
@@ -520,7 +512,7 @@ const IrrigationCard = ({
                           fontFamily: "IRANSANS",
                         }}
                       >
-                        {convert(item.zone)}
+                        {toPersianDigits(item.zone)}
                       </Box>
                     </div>
                     <div
@@ -550,7 +542,7 @@ const IrrigationCard = ({
                           fontFamily: "IRANSANS",
                         }}
                       >
-                        {convert(item.volume)}
+                        {toPersianDigits(item.volume)}
                       </Box>
                     </div>
                     <div
@@ -731,7 +723,7 @@ const IrrigationCard = ({
             }}
           >
             <Typography fontFamily={"IRANSANS"} fontSize={18} fontWeight="bold">
-              کالیبراسیون سطح مخزن {convert(storageNumber)}
+              کالیبراسیون سطح مخزن {toPersianDigits(storageNumber)}
             </Typography>
             <img
               src={assets.svg.close}
@@ -754,14 +746,14 @@ const IrrigationCard = ({
             <Typography fontFamily={"IRANSANS"} fontSize={16}>
               حجم مخزن:{" "}
               <strong style={{ color: "#004323" }}>
-                {convert(realTimeVolume)}
+                {toPersianDigits(realTimeVolume)}
               </strong>{" "}
               لیتر
             </Typography>
             <Typography fontFamily={"IRANSANS"} fontSize={16}>
               سطح مخزن:{" "}
               <strong style={{ color: "#004323" }}>
-                {convert(realTimeLevel)}
+                {toPersianDigits(realTimeLevel)}
               </strong>
             </Typography>
           </Box>

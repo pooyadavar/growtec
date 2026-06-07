@@ -10,6 +10,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import { AgCharts } from "ag-charts-react";
 import apiClient from "../../api/apiClient";
 import { styled } from "@mui/system";
+import { toPersianDigits } from "../../utils/persianDigits";
 
 const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
   height: "40px",
@@ -63,20 +64,6 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
     fetchData();
   }, [fetchData]);
 
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    let res = "";
-    const str = String(num || 0);
-    for (let c of str) {
-      if (!isNaN(parseInt(c, 10))) {
-        res += numbers.charAt(c);
-      } else {
-        res += c;
-      }
-    }
-    return res;
-  };
-
   const chartOptions = React.useMemo(() => {
     const chartData = data.history;
     return {
@@ -108,7 +95,12 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
           position: "left",
           min: 0,
           max: 100,
-          label: { enabled: true, fontSize: 9, color: "#333" },
+          label: {
+            enabled: true,
+            fontSize: 9,
+            color: "#333",
+            formatter: (params) => toPersianDigits(params.value),
+          },
           tick: { count: 3, enabled: true },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
         },
@@ -169,7 +161,7 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
       <Box className="irrigation-card-header" sx={{ width: "95%", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
         <Box sx={{ width: "250px", height: "37px", borderRadius: "10px", border: "0.5px solid #9F9F9F", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#FFFFFF", flexDirection: "row-reverse" }}>
           <Typography fontFamily={"IRANSANS"} fontSize={21} textAlign={"center"} flexGrow={1}>
-            {convert(50)} 
+            {toPersianDigits(50)} 
           </Typography>
           <Box sx={{ width: "170px", height: "37px", borderRadius: "10px", borderLeft: "0.5px solid #9F9F9F", backgroundColor: "#FFCB82", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Typography fontFamily={"IRANSANS"} fontSize={18} textAlign={"center"}>
@@ -200,16 +192,16 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
           <React.Fragment key={index}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "97%", height: "50px", px: "15px" }}>
               <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.startTime)}</Typography>
+                <Typography fontFamily={"IRANSANS"} fontSize={14}>{toPersianDigits(row.startTime)}</Typography>
               </Box>
               <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.endTime)}</Typography>
+                <Typography fontFamily={"IRANSANS"} fontSize={14}>{toPersianDigits(row.endTime)}</Typography>
               </Box>
               <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.onDuration)}</Typography> {/* Assuming 'onDuration' field */}
+                <Typography fontFamily={"IRANSANS"} fontSize={14}>{toPersianDigits(row.onDuration)}</Typography> {/* Assuming 'onDuration' field */}
               </Box>
               <Box sx={{ width: "25%", height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography fontFamily={"IRANSANS"} fontSize={14}>{convert(row.offDuration)}</Typography> {/* Assuming 'offDuration' field */}
+                <Typography fontFamily={"IRANSANS"} fontSize={14}>{toPersianDigits(row.offDuration)}</Typography> {/* Assuming 'offDuration' field */}
               </Box>
             </Box>
             {index < rows.length - 1 && <Divider sx={{ width: "100%", backgroundColor: "#E0E0E0", my: "5px" }} />}
@@ -273,10 +265,10 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
                         {rows.concat(rows).map((row, index) => (
                             <React.Fragment key={index}>
                                 <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 1, width: "100%", height: "50px", alignItems: "center" }}>
-                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.startTime)}</Typography></Box>
-                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.endTime)}</Typography></Box>
-                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.onDuration)}</Typography></Box> {/* Assuming 'onDuration' field */}
-                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{convert(row.offDuration)}</Typography></Box> {/* Assuming 'offDuration' field */}
+                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{toPersianDigits(row.startTime)}</Typography></Box>
+                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{toPersianDigits(row.endTime)}</Typography></Box>
+                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{toPersianDigits(row.onDuration)}</Typography></Box> {/* Assuming 'onDuration' field */}
+                                    <Box sx={{ height: "35px", border: "0.5px solid #9F9F9F", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography fontFamily={"IRANSANS"} fontSize={12}>{toPersianDigits(row.offDuration)}</Typography></Box> {/* Assuming 'offDuration' field */}
                                 </Box>
                                 <Divider sx={{ width: "100%", backgroundColor: "#E0E0E0", my: "5px" }} />
                             </React.Fragment>

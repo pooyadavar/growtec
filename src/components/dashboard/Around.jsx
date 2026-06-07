@@ -8,6 +8,7 @@ import {
   CircularProgress // <- اضافه شد
 } from "@mui/material";
 import assets from "../../assets";
+import { toPersianDigits } from "../../utils/persianDigits";
 // import axios from "axios"; // <- حذف شد
 
 // --- ۱. ایمپورت‌های React Query ---
@@ -41,16 +42,6 @@ const Around = () => {
         queryFn: getOutsideCliment,
         refetchInterval: 5000,
       });
-
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    const str = String(num || 0);
-    let res = "";
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
 
   if (isLoading || !outsideData) {
     return (
@@ -106,7 +97,7 @@ const Around = () => {
             دما:
           </Typography>
           <Typography fontFamily={"IRANSANS"} fontWeight={"bold"}>
-            {temp.toFixed(2)} C
+            {toPersianDigits(temp.toFixed(2))} C
           </Typography>
         </div>
         <img src={assets.svg.temp} alt="" />
@@ -132,7 +123,7 @@ const Around = () => {
             نور:
           </Typography>
           <Typography fontFamily={"IRANSANS"} fontWeight={"bold"}>
-            {light.toFixed(2)} lux
+            {toPersianDigits(light.toFixed(2))} lux
           </Typography>
         </div>
         <img src={assets.svg.light} alt="" />
@@ -158,7 +149,7 @@ const Around = () => {
             باد:
           </Typography>
           <Typography fontFamily={"IRANSANS"} fontWeight={"bold"}>
-            {wind.toFixed(2)} km/h
+            {toPersianDigits(wind.toFixed(2))} km/h
           </Typography>
         </div>
         <img src={assets.svg.wind} alt="" />

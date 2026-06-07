@@ -26,6 +26,7 @@ import {
 import { queryKeys } from "../../api/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 const SENSORS = [
   { id: 1, name: "سنسور شماره ۱" },
@@ -34,42 +35,6 @@ const SENSORS = [
   { id: 4, name: "سنسور شماره ۴" },
   { id: 5, name: "سنسور شماره ۵" },
 ];
-
-const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-const convert = (num) => {
-  if (num === null || num === undefined || num === "") return "";
-  let res = "";
-  const str = num.toString();
-  for (let c of str) {
-    if (c >= "0" && c <= "9") {
-      res += numbers.charAt(c);
-    } else {
-      res += c;
-    }
-  }
-  return res;
-};
-
-const toEnglishNumber = (str) => {
-  if (!str) return "";
-  const persianDigits = [
-    /۰/g,
-    /۱/g,
-    /۲/g,
-    /۳/g,
-    /۴/g,
-    /۵/g,
-    /۶/g,
-    /۷/g,
-    /۸/g,
-    /۹/g,
-  ];
-  let result = str.toString();
-  for (let i = 0; i < 10; i++) {
-    result = result.replace(persianDigits[i], i);
-  }
-  return result;
-};
 
 // --- کامپوننت مودال کالیبراسیون سنسورهای EC و pH ---
 const CalibrationModalContent = ({
@@ -133,7 +98,7 @@ const CalibrationModalContent = ({
           renderer: ({ datum, xKey, yKey }) => {
             return {
               title: datum[xKey].toLocaleTimeString(),
-              content: convert(datum[yKey]),
+              content: toPersianDigits(datum[yKey]),
             };
           },
         },
@@ -151,7 +116,7 @@ const CalibrationModalContent = ({
         position: "left",
         label: {
           fontSize: 10,
-          formatter: (params) => convert(params.value.toFixed(1)),
+          formatter: (params) => toPersianDigits(params.value.toFixed(1)),
         },
       },
     ],
@@ -384,7 +349,7 @@ const CalibrationModalContent = ({
                 variant="outlined"
                 size="small"
                 disabled={isStarted}
-                value={convert(
+                value={toPersianDigits(
                   calibrateTab === "ec"
                     ? calibrateValues.ecHigh
                     : calibrateValues.phHigh,
@@ -393,7 +358,7 @@ const CalibrationModalContent = ({
                   setCalibrateValues((prev) => ({
                     ...prev,
                     [calibrateTab === "ec" ? "ecHigh" : "phHigh"]:
-                      toEnglishNumber(e.target.value),
+                      toEnglishDigits(e.target.value),
                   }))
                 }
                 sx={{
@@ -466,7 +431,7 @@ const CalibrationModalContent = ({
                 variant="outlined"
                 size="small"
                 disabled={isStarted}
-                value={convert(
+                value={toPersianDigits(
                   calibrateTab === "ec"
                     ? calibrateValues.ecLow
                     : calibrateValues.phLow,
@@ -475,7 +440,7 @@ const CalibrationModalContent = ({
                   setCalibrateValues((prev) => ({
                     ...prev,
                     [calibrateTab === "ec" ? "ecLow" : "phLow"]:
-                      toEnglishNumber(e.target.value),
+                      toEnglishDigits(e.target.value),
                   }))
                 }
                 sx={{
@@ -585,7 +550,7 @@ const SensorChartItem = ({
           label: {
             fontSize: 9,
             color: "#333",
-            formatter: (p) => convert(p.value.toFixed(1)),
+            formatter: (p) => toPersianDigits(p.value.toFixed(1)),
           },
           tick: { count: 3 },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
@@ -761,7 +726,7 @@ const SlidingWindowChart = () => {
           <Typography fontFamily={"IRANSANS"} fontSize={12} color="#666">
             -- آخرین داده:{" "}
             <span style={{ direction: "ltr", display: "inline-block" }}>
-              {convert(lastUpdateTime)}
+              {toPersianDigits(lastUpdateTime)}
             </span>
           </Typography>
         </Box>

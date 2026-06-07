@@ -22,43 +22,7 @@ import { queryKeys } from "../../api/queryKeys";
 import { parseAdminConfig } from "../../lib/configHelpers";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-
-// تابع تبدیل اعداد انگلیسی به فارسی (نمایش)
-const convert = (num) => {
-  if (num === null || num === undefined || num === "") return "";
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  let res = "";
-  const str = num.toString();
-  for (let c of str) {
-    if (c >= "0" && c <= "9") {
-      res += numbers.charAt(c);
-    } else {
-      res += c;
-    }
-  }
-  return res;
-};
-
-const toEnglishNumber = (str) => {
-  if (str === null || str === undefined) return "";
-  const persianDigits = [
-    /۰/g,
-    /۱/g,
-    /۲/g,
-    /۳/g,
-    /۴/g,
-    /۵/g,
-    /۶/g,
-    /۷/g,
-    /۸/g,
-    /۹/g,
-  ];
-  let result = str.toString();
-  for (let i = 0; i < 10; i++) {
-    result = result.replace(persianDigits[i], i);
-  }
-  return result;
-};
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 // =====================================================================
 // کامپوننت‌های ردیفی (برای تب‌های آبیاری و تغذیه)
@@ -81,9 +45,9 @@ const FormRow = ({ label, name, value, onChange }) => (
       variant="outlined"
       size="small"
       name={name}
-      value={convert(value)} // همیشه فارسی نمایش می‌دهد
+      value={toPersianDigits(value)} // همیشه فارسی نمایش می‌دهد
       onChange={(e) =>
-        onChange({ target: { name, value: toEnglishNumber(e.target.value) } })
+        onChange({ target: { name, value: toEnglishDigits(e.target.value) } })
       } // همیشه انگلیسی ذخیره می‌کند
       inputProps={{ inputMode: "decimal" }} // جایگزین type="number"
       sx={{
@@ -140,7 +104,7 @@ const VerticalSelect = ({ label, name, value, onChange, maxCount }) => (
           value={num}
           sx={{ fontFamily: "IRANSANS", justifyContent: "center" }}
         >
-          {convert(num)}
+          {toPersianDigits(num)}
         </MenuItem>
       ))}
     </Select>
@@ -237,9 +201,9 @@ const VerticalInput = ({ label, name, value, onChange }) => (
       variant="outlined"
       size="small"
       name={name}
-      value={convert(value)} // ہمیشہ فارسی نمایش می‌دهد
+      value={toPersianDigits(value)} // همیشه فارسی نمایش می‌دهد
       onChange={(e) =>
-        onChange({ target: { name, value: toEnglishNumber(e.target.value) } })
+        onChange({ target: { name, value: toEnglishDigits(e.target.value) } })
       }
       inputProps={{ inputMode: "decimal" }} // جایگزین type="number"
       sx={{
@@ -483,7 +447,7 @@ const AdminSetting = () => {
                       {[1, 2, 3, 4, 5].map((num) => (
                         <FormRow
                           key={`tank-${num}`}
-                          label={`حجم مخزن آبیاری ${convert(num)}`}
+                          label={`حجم مخزن آبیاری ${toPersianDigits(num)}`}
                           name={`tank_volume_${num}`}
                           value={settings[`tank_volume_${num}`]}
                           onChange={handleChange}
@@ -496,7 +460,7 @@ const AdminSetting = () => {
                       {[1, 2, 3, 4].map((num) => (
                         <FormRow
                           key={`sensor-${num}`}
-                          label={`تعداد سنسور در زون ${convert(num)}`}
+                          label={`تعداد سنسور در زون ${toPersianDigits(num)}`}
                           name={`number_of_sensors_zone_${num}`}
                           value={settings[`number_of_sensors_zone_${num}`]}
                           onChange={handleChange}
@@ -629,7 +593,7 @@ const AdminSetting = () => {
                   }}
                 >
                   {[1, 2, 3, 4, 5].map((z) => (
-                    <Tab key={z} label={`زون ${convert(z)}`} />
+                    <Tab key={z} label={`زون ${toPersianDigits(z)}`} />
                   ))}
                 </Tabs>
 

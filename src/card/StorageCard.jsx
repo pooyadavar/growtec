@@ -4,6 +4,7 @@ import assets from "../assets/index";
 import { useQuery } from "@tanstack/react-query";
 import { getIrrigationSchedules } from "../api/irrigationApi";
 import { queryKeys } from "../api/queryKeys";
+import { toPersianDigits } from "../utils/persianDigits";
 
 const style = {
   position: "absolute",
@@ -36,21 +37,6 @@ const StorageCard = ({
   if (isNaN(waterHeight) || !isFinite(waterHeight)) {
     waterHeight = 100;
   }
-
-  const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-  const convert = (num) => {
-    if (num == null) return "";
-    let res = "";
-    const str = String(num);
-    for (let c of str) {
-      if (c >= "0" && c <= "9") {
-        res += numbers.charAt(parseInt(c));
-      } else {
-        res += c;
-      }
-    }
-    return res;
-  };
 
   const formattedCapacity = Number(capacity || 0).toFixed(2);
   const image = `url(${assets.img.mixerBGImage})`;
@@ -124,7 +110,7 @@ const StorageCard = ({
               fontSize: "10px",
             }}
           >
-            زون {convert(zone)}
+            زون {toPersianDigits(zone)}
           </Typography>
         </Box>
         <Box
@@ -143,7 +129,7 @@ const StorageCard = ({
           onClick={handleOpen}
         >
           <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "14px" }}>
-            مخزن {convert(zone)}
+            مخزن {toPersianDigits(zone)}
           </Typography>
           <div
             style={{
@@ -206,7 +192,7 @@ const StorageCard = ({
           }}
         >
           <Typography color="initial" fontSize={"12px"} fontFamily={"IRANSANS"}>
-            {convert(formattedCapacity)}
+            {toPersianDigits(formattedCapacity)}
           </Typography>
         </Box>
         <Typography color="initial" fontSize={14} pl={"6px"}>
@@ -243,7 +229,7 @@ const StorageCard = ({
               color="#333"
               mr={1}
             >
-              جدول آبیاری - مخزن زون {convert(zone)}
+              جدول آبیاری - مخزن زون {toPersianDigits(zone)}
             </Typography>
             <img
               src={assets.svg.close}
@@ -376,7 +362,7 @@ const StorageCard = ({
                       color="#444"
                       sx={{ flex: 2, textAlign: "center" }}
                     >
-                      {convert(formatTime(item.start_time))}
+                      {toPersianDigits(formatTime(item.start_time))}
                     </Typography>
 
                     <Typography
@@ -385,7 +371,7 @@ const StorageCard = ({
                       color="#444"
                       sx={{ flex: 2, textAlign: "center" }}
                     >
-                      {convert(formatTime(item.end_time))}
+                      {toPersianDigits(formatTime(item.end_time))}
                     </Typography>
 
                     <Typography
@@ -394,7 +380,7 @@ const StorageCard = ({
                       color="#444"
                       sx={{ flex: 1, textAlign: "center" }}
                     >
-                      {convert(item.zone)}
+                      {toPersianDigits(item.zone)}
                     </Typography>
 
                     <Typography
@@ -403,7 +389,7 @@ const StorageCard = ({
                       color="#444"
                       sx={{ flex: 1.5, textAlign: "center" }}
                     >
-                      {convert(item.volume)}
+                      {toPersianDigits(item.volume)}
                     </Typography>
 
                     <Box

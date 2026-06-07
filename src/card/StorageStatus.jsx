@@ -1,17 +1,9 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import assets from "../assets";
+import { toPersianDigits } from "../utils/persianDigits";
 
 const StorageStatus = ({ start, end, size, status }) => {
-  const convert = (num) => {
-    const numbers = `۰۱۲۳۴۵۶۷۸۹`;
-    let res = "";
-    const str = num.toString();
-    for (let c of str) {
-      res += numbers.charAt(c);
-    }
-    return res;
-  };
   return (
     <Box
       sx={{
@@ -33,7 +25,7 @@ const StorageStatus = ({ start, end, size, status }) => {
           textAlign: "center",
         }}
       >
-        <Typography>{start}</Typography>
+        <Typography>{toPersianDigits(start)}</Typography>
       </div>
       <div
         style={{
@@ -45,7 +37,7 @@ const StorageStatus = ({ start, end, size, status }) => {
           textAlign: "center",
         }}
       >
-        <Typography>{end}</Typography>
+        <Typography>{toPersianDigits(end)}</Typography>
       </div>
       <div
         style={{
@@ -58,7 +50,7 @@ const StorageStatus = ({ start, end, size, status }) => {
         }}
       >
         <Typography style={{ direction: "ltr" }} fontFamily={"IRANSANS"}>
-          {convert(size)} L
+          {toPersianDigits(size)} L
         </Typography>
       </div>
       <div
