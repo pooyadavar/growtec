@@ -3,10 +3,10 @@ import { Container, Box, Typography } from "@mui/material";
 import StorageCard from "../../card/StorageCard";
 import styled from "styled-components";
 
-// آیتم‌های تکی (قفل مگنتی حذف شد تا اسکرول آزاد باشد)
+// آیتم‌های تکی
 const StyledScrollItem = styled(Box)({
   transition: "transform 0.3s ease",
-  flexShrink: 0, // scrollSnapAlign حذف شد
+  flexShrink: 0,
   userSelect: "none",
   WebkitUserSelect: "none",
   MozUserSelect: "none",
@@ -21,17 +21,16 @@ const Storages = ({ storagesList = [] }) => {
   const scrollLeftState = React.useRef(0);
 
   const handleMouseDown = (e) => {
-    // محاسبه موقعیت کلیک قلم نسبت به لبه بالایی کامپوننت
     const rect = scrollContainerRef.current.getBoundingClientRect();
     const clickY = e.clientY - rect.top;
 
-    // اگر کاربر روی نیمه بالایی کامپوننت ضربه بزنه، اسکرول قفل میشه تا کلیک کار کنه
-    if (clickY < 70) {
+    // فقط اگر روی ۳۵ پیکسل بالایی (سربرگ) کلیک شد، اسکرول متوقف میشه تا کلیک روی مودال عمل کنه
+    if (clickY < 35) {
       isDown.current = false;
       return;
     }
 
-    // در نیمه پایینی، اسکرول فیزیکی با قلم فعال می‌شود
+    // در بقیه قسمت‌ها اسکرول با درگ فعال میشه
     isDown.current = true;
     startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
     scrollLeftState.current = scrollContainerRef.current.scrollLeft;
@@ -96,7 +95,6 @@ const Storages = ({ storagesList = [] }) => {
         cursor: "grab",
         "&:active": { cursor: "grabbing" },
         overflowX: "auto",
-        // scrollSnapType حذف شد تا حرکت پله‌ای از بین برود
         scrollPaddingLeft: "12px",
         userSelect: "none",
         touchAction: "none",
@@ -131,7 +129,6 @@ const Storages = ({ storagesList = [] }) => {
         {storagesList.map((card) => (
           <StyledScrollItem key={card.id}>
             <Box sx={{ position: "relative" }}>
-              {/* خود کارت که بازکننده مودال است */}
               <StorageCard
                 maxCapacity={card.max_volume}
                 zone={card.id}
@@ -141,18 +138,19 @@ const Storages = ({ storagesList = [] }) => {
                 float3={card.top_float_switch}
               />
 
-              {/* سپر نامرئی برای مهار کلیک‌های مزاحم هنگام درگ کردن کارت */}
+              {/* سپر نامرئی با محاسبه پیکسلی به جای درصد */}
               <Box
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
                 }}
+                onMouseDown={(e) => e.stopPropagation()} // جلوگیری از باگ درگ روی لایه
                 sx={{
                   position: "absolute",
                   bottom: 0,
                   left: 0,
                   width: "100%",
-                  height: "70%",
+                  height: "calc(100% - 35px)", // فقط ۳۵ پیکسل بالا رو برای کلیک کردن هدر باز می‌ذاره
                   zIndex: 10,
                   backgroundColor: "transparent",
                 }}

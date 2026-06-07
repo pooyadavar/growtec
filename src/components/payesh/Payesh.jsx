@@ -536,29 +536,26 @@ const Payesh = () => {
     const labels = new Set();
     if (!temp || temp.length === 0) return labels;
 
-    // تعداد کل لیبل‌هایی که می‌خوای زیر نمودار ببینی (مثلاً ۸ تا برای این عرض مناسبه)
     const labelCount = 8;
-
-    // محاسبه فاصله ایندکس‌ها برای توزیع برابر
     const step = Math.max(1, Math.floor((temp.length - 1) / labelCount));
 
     for (let i = 0; i < temp.length; i += step) {
+      if (temp.length - 1 - i < Math.max(1, step * 0.6)) {
+        continue;
+      }
       labels.add(temp[i].time);
     }
 
-    // همیشه نقطه آخر (زمان فعلی) رو هم برای دقت اضافه کن
     labels.add(temp[temp.length - 1].time);
 
     return labels;
   }, [temp]);
 
-  // ۲. فرمتر حالا فقط چک می‌کنه که آیا زمانِ فعلی تو لیست مجازها هست یا نه
   const getXAxisFormatter = useMemo(() => {
     return (params) => {
       if (visibleLabels.has(params.value)) {
         const timeParts = params.value.split(":");
         if (timeParts.length >= 2) {
-          // فرمت کردن به صورت 08:05 به جای 8:5
           const formattedTime = `${String(timeParts[0]).padStart(2, "0")}:${String(timeParts[1]).padStart(2, "0")}`;
           return toPersianDigits(formattedTime);
         }

@@ -91,7 +91,9 @@ const StorageCard = ({
           border: "0.5px solid #9F9F9F",
         }}
       >
+        {/* هدر مخزن - رویداد کلیک به اینجا منتقل شد */}
         <Box
+          onClick={handleOpen}
           sx={{
             height: "20px",
             width: "100%",
@@ -99,6 +101,7 @@ const StorageCard = ({
             borderRadius: "10px 10px 0px 0px",
             display: "flex",
             justifyContent: "center",
+            cursor: "pointer", // نشانگر موس برای هدر
           }}
         >
           <Typography
@@ -113,6 +116,8 @@ const StorageCard = ({
             زون {toPersianDigits(zone)}
           </Typography>
         </Box>
+
+        {/* بدنه مخزن - رویداد کلیک از اینجا حذف شد */}
         <Box
           sx={{
             display: "flex",
@@ -124,9 +129,8 @@ const StorageCard = ({
             backgroundSize: "100%",
             backgroundRepeat: "no-repeat",
             backgroundPositionY: `${waterHeight}px`,
-            cursor: "pointer",
+            // cursor: "pointer" حذف شد
           }}
-          onClick={handleOpen}
         >
           <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "14px" }}>
             مخزن {toPersianDigits(zone)}
