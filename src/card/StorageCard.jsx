@@ -2,7 +2,8 @@ import * as React from "react";
 import { Typography, Box, Modal, CircularProgress } from "@mui/material";
 import assets from "../assets/index";
 import { useQuery } from "@tanstack/react-query";
-import apiClient from "../api/apiClient";
+import { getIrrigationSchedules } from "../api/irrigationApi";
+import { queryKeys } from "../api/queryKeys";
 
 const style = {
   position: "absolute",
@@ -60,9 +61,9 @@ const StorageCard = ({
 
   // --- واکشی دیتای جدول آبیاری ---
   const { data: scheduleItems = [], isLoading } = useQuery({
-    queryKey: ["storageIrrigationSchedule", zone],
+    queryKey: queryKeys.storageIrrigationSchedule(zone),
     queryFn: async () => {
-      const response = await apiClient.get("/irrigation/irrigation-schedule/");
+      const response = await getIrrigationSchedules();
       const data = Array.isArray(response) ? response : response.data || [];
 
       return data.filter(

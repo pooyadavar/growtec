@@ -4,7 +4,7 @@ import { AgCharts } from "ag-charts-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import assets from "../assets/index";
 import IconTextButton from "./IconTextButton";
-import apiClient from "../api/apiClient";
+import { calibratePressureSensor } from "../api/calibrationApi";
 import { getIrrigationTanksStatus } from "../api/dashboardApi";
 import toast from "react-hot-toast";
 
@@ -184,12 +184,7 @@ const IrrigationCard = ({
 
   // --- API کالیبراسیون مخزن ---
   const { mutate: calibrateTankMutation } = useMutation({
-    mutationFn: async (data) => {
-      return await apiClient.post(
-        "/calibration/calibration-pressure-sensor/",
-        data,
-      );
-    },
+    mutationFn: calibratePressureSensor,
     onSuccess: (data, variables) => {
       if (variables.status === "empty") {
         toast.success("حجم پایین مخزن با موفقیت ثبت شد.");

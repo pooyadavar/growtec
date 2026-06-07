@@ -1,7 +1,8 @@
 import { Box, Typography } from "@mui/material";
 import assets from "../assets";
 import { useQuery } from "@tanstack/react-query";
-import apiClient from "../api/apiClient";
+import { getOperatorMode } from "../api/climateApi";
+import { queryKeys } from "../api/queryKeys";
 
 const EghlimCard = ({
   zone,
@@ -18,11 +19,8 @@ const EghlimCard = ({
 }) => {
   // دریافت وضعیت اتوماتیک/دستی برای هر زون
   const { data: modeData } = useQuery({
-    queryKey: ["operatorModeEghlim", zone],
-    queryFn: async () => {
-      const res = await apiClient.get(`/climate/operators-mode/?zone=${zone}`);
-      return res;
-    },
+    queryKey: queryKeys.operatorModeEghlim(zone),
+    queryFn: () => getOperatorMode(zone),
     refetchInterval: 5000,
   });
 

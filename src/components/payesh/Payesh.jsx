@@ -11,13 +11,21 @@ import {
   Container,
 } from "@mui/material";
 import assets from "../../assets";
-import axios from "axios";
 import { AgCharts } from "ag-charts-react";
 import PayeshSetting from "./PayeshSetting";
 import IconTextButton from "../../card/IconTextButton";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import apiClient from "../../api/apiClient";
-import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import {
+  getOperatorMode,
+  getOperatorStatus,
+  updateOperatorMode,
+  sendOperatorCommand as sendOperatorCommandApi,
+  getTemperaturePart,
+  getHumidityPart,
+} from "../../api/climateApi";
+import { getClimateTemperatureHumidityLogs } from "../../api/logsApi";
+import { queryKeys } from "../../api/queryKeys";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const StatusIndicators = ({ states }) => (
   <Box
@@ -54,134 +62,72 @@ const StatusIndicators = ({ states }) => (
 );
 
 const Payesh = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isChanging, setIsChanging] = React.useState(false);
-  const [operatorMode, setOperatorMode] = React.useState(false); // New state for operator mode
-  const [activity, setActivity] = React.useState(!operatorMode); // New state for operator mode
+  const [operatorMode, setOperatorMode] = React.useState(false);
+  const [activity, setActivity] = React.useState(true);
   const [zone, setZone] = useState(1);
-  const sendOperatorModeUpdate = async (newMode) => {
-    try {
-      // Use apiClient for POST request
-      const data = await apiClient.post(`/climate/operators-mode/`, {
+
+  const { data: operatorModeData } = useQuery({
+    queryKey: queryKeys.operatorMode(zone),
+    queryFn: () => getOperatorMode(zone),
+    refetchInterval: 30_000,
+  });
+
+  const { data: operatorStatusData } = useQuery({
+    queryKey: queryKeys.operatorStatus(zone),
+    queryFn: () => getOperatorStatus(zone),
+    refetchInterval: 30_000,
+  });
+
+  const updateModeMutation = useMutation({
+    mutationFn: (newMode) =>
+      updateOperatorMode({ is_auto: newMode, zone }),
+    onMutate: async (newMode) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.operatorMode(zone) });
+      const previous = queryClient.getQueryData(queryKeys.operatorMode(zone));
+      queryClient.setQueryData(queryKeys.operatorMode(zone), {
         is_auto: newMode,
-        zone: zone,
+        zone,
       });
-      console.log(
-        `sendOperatorModeUpdate: newMode sent=${newMode}, API response:`,
-        data,
-      ); // Debug log
-      // We rely on optimistic update in changOnAndOff, so we don't update state here
-      // to avoid race conditions or flickering if the API returns old data.
-    } catch (error) {
-      console.error("Error updating operator mode:", error);
-      // Optional: Revert state here if needed
+      return { previous };
+    },
+    onError: (_err, newMode, context) => {
+      queryClient.setQueryData(queryKeys.operatorMode(zone), context?.previous);
       setOperatorMode(!newMode);
       setActivity(newMode);
-    }
-  };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.operatorMode(zone) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operatorStatus(zone) });
+    },
+  });
 
-  const sendOperatorCommand = async (operatorName, isOn) => {
-    try {
-      await apiClient.post("/climate/operator/", {
-        operator: operatorName,
-        zone: zone,
-        on_off: isOn ? "on" : "off",
-      });
-    } catch (error) {
-      console.error(`Error updating ${operatorName} status:`, error);
-      // Handle error: perhaps revert UI change or show an error message
-    }
+  const operatorCommandMutation = useMutation({
+    mutationFn: (data) => sendOperatorCommandApi(data),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.operatorStatus(zone) });
+    },
+  });
+
+  const sendOperatorCommand = (operatorName, isOn) => {
+    operatorCommandMutation.mutate({
+      operator: operatorName,
+      zone,
+      on_off: isOn ? "on" : "off",
+    });
   };
 
   const changOnAndOff = () => {
     setIsChanging(true);
-    // Optimistic Update
-    const targetMode = activity; // If currently Manual (activity=true), target is Auto (true)
+    const targetMode = activity;
     setOperatorMode(targetMode);
     setActivity(!targetMode);
-
-    sendOperatorModeUpdate(targetMode);
-    fetchOperatorStatus(zone);
-    setTimeout(() => {
-      setIsChanging(false);
-    }, 200); // Match this to the CSS transition duration
+    updateModeMutation.mutate(targetMode);
+    setTimeout(() => setIsChanging(false), 200);
   };
 
-  const fetchOperatorMode = async (zoneNum) => {
-    try {
-      const data = await apiClient.get(
-        `/climate/operators-mode/?zone=${zoneNum}`,
-      );
-      const mode =
-        typeof data === "object" && data !== null && "is_auto" in data
-          ? data.is_auto
-          : data;
-      setOperatorMode(mode);
-      setActivity(!mode); // activity is inverse of is_auto
-      console.log(
-        `fetchOperatorMode: API raw data:`,
-        data,
-        `Parsed mode (is_auto):`,
-        mode,
-      ); // Debug log
-    } catch (error) {
-      console.error("Error fetching operator mode:", error);
-      // Optionally handle error, e.g., set operatorMode to a default or show an error message
-    }
-  };
-
-  const fetchOperatorStatus = async (zoneNum) => {
-    try {
-      const data = await apiClient.get(`/climate/operator/?zone=${zoneNum}`);
-
-      setExhaustFanStates({
-        fan1: data.exhaust_fan_1 || false,
-        fan2: data.exhaust_fan_2 || false,
-        fan3: data.exhaust_fan_3 || false,
-        fan4: data.exhaust_fan_4 || false,
-        fan5: data.exhaust_fan_5 || false,
-      });
-
-      setCirculationFanStates({
-        fan1: data.circule_fan_1 || false,
-        fan2: data.circule_fan_2 || false,
-      });
-
-      setPadPumpState(data.pad_pump || false);
-      setFoggerState(data.fogger || false);
-
-      setHatchStates({
-        opening: data.hatch_opening || false,
-        closing: data.hatch_closing || false,
-      });
-
-      setShadeStates({
-        opening: data.shade_opening || false,
-        closing: data.shade_closing || false,
-      });
-
-      setHeaterStates({
-        hiter1: data.hiter_1 || false,
-        hiter2: data.hiter_2 || false,
-        hiter3: data.hiter_3 || false,
-        hiter4: data.hiter_4 || false,
-      });
-    } catch (error) {
-      console.error("Error fetching operator status:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchOperatorMode(zone);
-    fetchOperatorStatus(zone);
-
-    const interval = setInterval(() => {
-      fetchOperatorMode(zone);
-      fetchOperatorStatus(zone);
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [zone]);
   // Modal States --------
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
@@ -359,6 +305,50 @@ const Payesh = () => {
     });
   };
 
+  useEffect(() => {
+    if (operatorModeData === undefined) return;
+    const mode =
+      typeof operatorModeData === "object" &&
+      operatorModeData !== null &&
+      "is_auto" in operatorModeData
+        ? operatorModeData.is_auto
+        : operatorModeData;
+    setOperatorMode(mode);
+    setActivity(!mode);
+  }, [operatorModeData]);
+
+  useEffect(() => {
+    if (!operatorStatusData) return;
+    const data = operatorStatusData;
+    setExhaustFanStates({
+      fan1: data.exhaust_fan_1 || false,
+      fan2: data.exhaust_fan_2 || false,
+      fan3: data.exhaust_fan_3 || false,
+      fan4: data.exhaust_fan_4 || false,
+      fan5: data.exhaust_fan_5 || false,
+    });
+    setCirculationFanStates({
+      fan1: data.circule_fan_1 || false,
+      fan2: data.circule_fan_2 || false,
+    });
+    setPadPumpState(data.pad_pump || false);
+    setFoggerState(data.fogger || false);
+    setHatchStates({
+      opening: data.hatch_opening || false,
+      closing: data.hatch_closing || false,
+    });
+    setShadeStates({
+      opening: data.shade_opening || false,
+      closing: data.shade_closing || false,
+    });
+    setHeaterStates({
+      hiter1: data.hiter_1 || false,
+      hiter2: data.hiter_2 || false,
+      hiter3: data.hiter_3 || false,
+      hiter4: data.hiter_4 || false,
+    });
+  }, [operatorStatusData]);
+
   const getExhaustFanIcon = () => {
     const isAnyOn = Object.values(exhaustFanStates).some((s) => s);
     if (!activity) {
@@ -436,59 +426,26 @@ const Payesh = () => {
     }
   };
 
-  // تابع retry برای درخواست‌های با timeout
-  const fetchWithRetry = async (zoneNum, retries = 3) => {
-    // استفاده از baseURL از apiClient
-    const baseURL =
-      apiClient.defaults?.baseURL || "http://192.168.31.140:8000/api/v1";
-
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        // استفاده از axios مستقیم برای تنظیم timeout بیشتر
-        const response = await axios.post(
-          `${baseURL}/log/climate/temperature-humidity/`,
-          { zone: zoneNum },
-          {
-            timeout: 180000, // 180 ثانیه (3 دقیقه) timeout برای داده‌های حجیم
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        return response.data;
-      } catch (error) {
-        console.log(
-          `Attempt ${attempt} failed for zone ${zoneNum}, retrying...`,
-        );
-        if (attempt === retries) {
-          throw error;
-        }
-        // صبر کردن قبل از retry بعدی (exponential backoff)
-        await new Promise((resolve) => setTimeout(resolve, 5000 * attempt));
-      }
-    }
-  };
-
   const { data: temperaturePartStatus = "" } = useQuery({
-    queryKey: ["payesh", "temperature-part", zone],
-    queryFn: () => apiClient.get(`/climate/temperature-part/?zone=${zone}`),
+    queryKey: queryKeys.payesh.temperaturePart(zone),
+    queryFn: () => getTemperaturePart(zone),
     staleTime: 20_000,
     gcTime: 5 * 60_000,
     refetchInterval: 30_000,
   });
 
   const { data: humidityPartStatus = "" } = useQuery({
-    queryKey: ["payesh", "humidity-part", zone],
-    queryFn: () => apiClient.get(`/climate/humidity-part/?zone=${zone}`),
+    queryKey: queryKeys.payesh.humidityPart(zone),
+    queryFn: () => getHumidityPart(zone),
     staleTime: 20_000,
     gcTime: 5 * 60_000,
     refetchInterval: 30_000,
   });
 
   const { data: climateChartData } = useQuery({
-    queryKey: ["payesh", "temperature-humidity", zone],
+    queryKey: queryKeys.payesh.temperatureHumidity(zone),
     queryFn: async () => {
-      const response = await fetchWithRetry(zone);
+      const response = await getClimateTemperatureHumidityLogs(zone);
       const data = Array.isArray(response) ? response : response.results || [];
       const zoneData = data.filter((item) => item.log_data?.zone === zone);
       const sortedData = [...zoneData].reverse();

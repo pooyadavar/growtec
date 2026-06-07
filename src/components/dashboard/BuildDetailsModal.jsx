@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Paper,
@@ -13,6 +14,7 @@ import { styled } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
 import assets from "../../assets"; 
 import { getFoodstuffSchedule } from "../../api/solubleApi";
+import { queryKeys } from "../../api/queryKeys";
 
 const modalStyle = {
   position: "absolute",
@@ -72,31 +74,23 @@ const StatusBox = styled(Box)(({ theme, status }) => ({
 }));
 
 const BuildDetailsModal = ({ open, onClose }) => {
-  const [details, setDetails] = useState([]);
+  const { data: scheduleData } = useQuery({
+    queryKey: queryKeys.foodstuffSchedule(),
+    queryFn: getFoodstuffSchedule,
+    enabled: open,
+  });
 
-  useEffect(() => {
-    if (open) {
-      const fetchData = async () => {
-        try {
-          const response = await getFoodstuffSchedule();
-          const data = response.data || response;
-          if (Array.isArray(data)) {
-            const formatted = data.map((item) => ({
-              time: item.time,
-              tank: item.zone,
-              type: item.type,
-              volume: item.volume,
-              status: item.status,
-            }));
-            setDetails(formatted);
-          }
-        } catch (error) {
-          console.error("Failed to fetch schedule", error);
-        }
-      };
-      fetchData();
-    }
-  }, [open]);
+  const details = useMemo(() => {
+    const data = scheduleData?.data || scheduleData;
+    if (!Array.isArray(data)) return [];
+    return data.map((item) => ({
+      time: item.time,
+      tank: item.zone,
+      type: item.type,
+      volume: item.volume,
+      status: item.status,
+    }));
+  }, [scheduleData]);
 
   return (
     <Modal

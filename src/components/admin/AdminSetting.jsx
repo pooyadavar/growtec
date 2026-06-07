@@ -12,7 +12,15 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import assets from "../../assets";
-import apiClient from "../../api/apiClient";
+import {
+  getAllConfig,
+  updateIrrigationConfig,
+  updateSolubleConfig,
+  updateClimateConfig,
+} from "../../api/configApi";
+import { queryKeys } from "../../api/queryKeys";
+import { parseAdminConfig } from "../../lib/configHelpers";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 // تابع تبدیل اعداد انگلیسی به فارسی (نمایش)
@@ -50,15 +58,6 @@ const toEnglishNumber = (str) => {
     result = result.replace(persianDigits[i], i);
   }
   return result;
-};
-
-// تابع کمکی برای حذف .0 اضافه از دیتای API
-const cleanDecimal = (val) => {
-  if (typeof val === "number") return val.toString();
-  if (typeof val === "string" && val.trim() !== "" && !isNaN(Number(val))) {
-    return Number(val).toString(); // "0.0" را تبدیل می‌کند به "0"
-  }
-  return val;
 };
 
 // =====================================================================
@@ -275,6 +274,7 @@ const getInitialClimateState = () => {
 };
 
 const AdminSetting = () => {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(0);
   const [activeZoneTab, setActiveZoneTab] = useState(0);
 
@@ -293,108 +293,80 @@ const AdminSetting = () => {
     ...getInitialClimateState(),
   });
 
-  const fetchSettings = async () => {
-    try {
-      const [irrRes, solRes, cliRes] = await Promise.allSettled([
-        apiClient.get("/config/irrigation/"),
-        apiClient.get("/config/soluble/"),
-        apiClient.get("/config/climate/"),
-      ]);
-
-      let newData = {};
-
-      if (irrRes.status === "fulfilled") {
-        const data = irrRes.value.data || irrRes.value;
-        for (let key in data) newData[key] = cleanDecimal(data[key]);
-      }
-      if (solRes.status === "fulfilled") {
-        const data = solRes.value.data || solRes.value;
-        for (let key in data) newData[key] = cleanDecimal(data[key]);
-      }
-      if (cliRes.status === "fulfilled") {
-        const data = cliRes.value.data || cliRes.value;
-        if (data.zones) {
-          for (let i = 1; i <= 5; i++) {
-            const zoneData = data.zones[i.toString()];
-            if (zoneData) {
-              newData[`climate_z${i}_number_of_exhaust_fans`] = cleanDecimal(
-                zoneData.number_of_exhaust_fans,
-              );
-              newData[`climate_z${i}_number_of_circulating_fans`] =
-                cleanDecimal(zoneData.number_of_circulating_fans);
-              newData[`climate_z${i}_pump_pad`] = zoneData.pump_pad;
-              newData[`climate_z${i}_heater`] = zoneData.heater;
-              newData[`climate_z${i}_roof_hatch`] = zoneData.roof_hatch;
-              newData[`climate_z${i}_fogger`] = zoneData.fogger;
-              newData[`climate_z${i}_shade`] = zoneData.shade;
-              newData[`climate_z${i}_number_of_sensors`] = cleanDecimal(
-                zoneData.number_of_sensors,
-              );
-            }
-          }
-        }
-      }
-
-      setSettings((prev) => ({ ...prev, ...newData }));
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-    }
-  };
+  const { data: configData } = useQuery({
+    queryKey: queryKeys.adminConfig(),
+    queryFn: getAllConfig,
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const handleSave = async () => {
-    try {
-      if (activeTab === 0) {
-        const payload = {
-          tank_volume_1: Number(settings.tank_volume_1) || 0,
-          tank_volume_2: Number(settings.tank_volume_2) || 0,
-          tank_volume_3: Number(settings.tank_volume_3) || 0,
-          tank_volume_4: Number(settings.tank_volume_4) || 0,
-          tank_volume_5: Number(settings.tank_volume_5) || 0,
-          number_of_sensors_zone_1:
-            Number(settings.number_of_sensors_zone_1) || 0,
-          number_of_sensors_zone_2:
-            Number(settings.number_of_sensors_zone_2) || 0,
-          number_of_sensors_zone_3:
-            Number(settings.number_of_sensors_zone_3) || 0,
-          number_of_sensors_zone_4:
-            Number(settings.number_of_sensors_zone_4) || 0,
-        };
-        await apiClient.put("/config/irrigation/", payload);
-        toast.success("تنظیمات آبیاری با موفقیت ذخیره شد");
-      } else if (activeTab === 1) {
-        const payload = {
-          number_of_sensors: Number(settings.number_of_sensors) || 0,
-          number_of_dosing_pumps: Number(settings.number_of_dosing_pumps) || 0,
-        };
-        await apiClient.put("/config/soluble/", payload);
-        toast.sec("تنظیمات تغذیه با موفقیت ذخیره شد");
-      } else if (activeTab === 2) {
-        const payload = { zones: {} };
-        for (let i = 1; i <= 5; i++) {
-          payload.zones[i.toString()] = {
-            number_of_exhaust_fans:
-              Number(settings[`climate_z${i}_number_of_exhaust_fans`]) || 0,
-            number_of_circulating_fans:
-              Number(settings[`climate_z${i}_number_of_circulating_fans`]) || 0,
-            pump_pad: Boolean(settings[`climate_z${i}_pump_pad`]),
-            heater: Boolean(settings[`climate_z${i}_heater`]),
-            roof_hatch: Boolean(settings[`climate_z${i}_roof_hatch`]),
-            fogger: Boolean(settings[`climate_z${i}_fogger`]),
-            shade: Boolean(settings[`climate_z${i}_shade`]),
-            number_of_sensors:
-              Number(settings[`climate_z${i}_number_of_sensors`]) || 0,
-          };
-        }
-        await apiClient.put("/config/climate/", payload);
-        toast.success("تنظیمات اقلیم با موفقیت ذخیره شد");
-      }
-    } catch (error) {
-      toast.success("تنظیمات اقلیم با موفقیت ذخیره شد");
+    if (configData) {
+      const newData = parseAdminConfig(configData);
+      setSettings((prev) => ({ ...prev, ...newData }));
     }
+  }, [configData]);
+
+  const saveMutation = useMutation({
+    mutationFn: async ({ tab, settings: currentSettings }) => {
+      if (tab === 0) {
+        return updateIrrigationConfig({
+          tank_volume_1: Number(currentSettings.tank_volume_1) || 0,
+          tank_volume_2: Number(currentSettings.tank_volume_2) || 0,
+          tank_volume_3: Number(currentSettings.tank_volume_3) || 0,
+          tank_volume_4: Number(currentSettings.tank_volume_4) || 0,
+          tank_volume_5: Number(currentSettings.tank_volume_5) || 0,
+          number_of_sensors_zone_1:
+            Number(currentSettings.number_of_sensors_zone_1) || 0,
+          number_of_sensors_zone_2:
+            Number(currentSettings.number_of_sensors_zone_2) || 0,
+          number_of_sensors_zone_3:
+            Number(currentSettings.number_of_sensors_zone_3) || 0,
+          number_of_sensors_zone_4:
+            Number(currentSettings.number_of_sensors_zone_4) || 0,
+        });
+      }
+      if (tab === 1) {
+        return updateSolubleConfig({
+          number_of_sensors: Number(currentSettings.number_of_sensors) || 0,
+          number_of_dosing_pumps:
+            Number(currentSettings.number_of_dosing_pumps) || 0,
+        });
+      }
+      const payload = { zones: {} };
+      for (let i = 1; i <= 5; i++) {
+        payload.zones[i.toString()] = {
+          number_of_exhaust_fans:
+            Number(currentSettings[`climate_z${i}_number_of_exhaust_fans`]) || 0,
+          number_of_circulating_fans:
+            Number(currentSettings[`climate_z${i}_number_of_circulating_fans`]) ||
+            0,
+          pump_pad: Boolean(currentSettings[`climate_z${i}_pump_pad`]),
+          heater: Boolean(currentSettings[`climate_z${i}_heater`]),
+          roof_hatch: Boolean(currentSettings[`climate_z${i}_roof_hatch`]),
+          fogger: Boolean(currentSettings[`climate_z${i}_fogger`]),
+          shade: Boolean(currentSettings[`climate_z${i}_shade`]),
+          number_of_sensors:
+            Number(currentSettings[`climate_z${i}_number_of_sensors`]) || 0,
+        };
+      }
+      return updateClimateConfig(payload);
+    },
+    onSuccess: (_, { tab }) => {
+      const messages = [
+        "تنظیمات آبیاری با موفقیت ذخیره شد",
+        "تنظیمات تغذیه با موفقیت ذخیره شد",
+        "تنظیمات اقلیم با موفقیت ذخیره شد",
+      ];
+      toast.success(messages[tab]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminConfig() });
+    },
+    onError: () => {
+      toast.error("خطا در ذخیره تنظیمات");
+    },
+  });
+
+  const handleSave = () => {
+    saveMutation.mutate({ tab: activeTab, settings });
   };
 
   const handleChange = (e) => {

@@ -19,8 +19,13 @@ import {
   calibrationPh,
   getSolubleEcPhTemperature,
 } from "../../api/solubleApi";
+import {
+  getSolubleEcPhTemperatureLogs,
+  parseSolubleEcPhLogs,
+} from "../../api/logsApi";
+import { queryKeys } from "../../api/queryKeys";
+import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import apiClient from "../../api/apiClient";
 
 const SENSORS = [
   { id: 1, name: "سنسور شماره ۱" },
@@ -92,32 +97,26 @@ const CalibrationModalContent = ({
     }
   }, [open, calibrateTab, sensorId]);
 
+  const { data: liveSensorData } = useQuery({
+    queryKey: queryKeys.solubleEcPhTemperature(),
+    queryFn: getSolubleEcPhTemperature,
+    enabled: open,
+    refetchInterval: open ? 1000 : false,
+  });
+
   useEffect(() => {
-    if (!open) return;
+    if (!open || !liveSensorData) return;
+    const sensorData = liveSensorData[String(sensorId)];
+    if (!sensorData) return;
 
-    const fetchData = async () => {
-      try {
-        const response = await getSolubleEcPhTemperature();
-        const sensorData = response[String(sensorId)];
-
-        if (sensorData) {
-          const now = new Date();
-          const value = calibrateTab === "ec" ? sensorData.ec : sensorData.ph;
-
-          setRealTimeData((prev) => {
-            const newData = [...prev, { time: now, value: Number(value) || 0 }];
-            if (newData.length > 50) newData.shift();
-            return newData;
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching real-time calibration data:", error);
-      }
-    };
-
-    const interval = setInterval(fetchData, 1000);
-    return () => clearInterval(interval);
-  }, [open, sensorId, calibrateTab]);
+    const now = new Date();
+    const value = calibrateTab === "ec" ? sensorData.ec : sensorData.ph;
+    setRealTimeData((prev) => {
+      const newData = [...prev, { time: now, value: Number(value) || 0 }];
+      if (newData.length > 50) newData.shift();
+      return newData;
+    });
+  }, [open, sensorId, calibrateTab, liveSensorData]);
 
   const chartOptions = {
     data: realTimeData,
@@ -516,37 +515,22 @@ const SensorChartItem = ({
   isActive,
   onTimeUpdate,
   isModalOpen,
-  initialData, // New prop
-  fetchSensorData, // New prop
 }) => {
-  const [data, setData] = useState(initialData || []);
+  const { data = [] } = useQuery({
+    queryKey: queryKeys.solubleEcPhLog(sensor.id),
+    queryFn: async () => {
+      const response = await getSolubleEcPhTemperatureLogs(sensor.id);
+      return parseSolubleEcPhLogs(response, sensor.id);
+    },
+    enabled: isActive && !isModalOpen,
+    refetchInterval: isActive && !isModalOpen ? 5000 : false,
+  });
 
   useEffect(() => {
-    setData(initialData || []); // Initialize data with initialData from props
-  }, [initialData]);
-
-  useEffect(() => {
-    let interval = null;
-
-    const loadData = async () => {
-      const points = await fetchSensorData(sensor.id); // Use the passed fetch function
-      if (isActive && points && points.length > 0) {
-        onTimeUpdate(points[points.length - 1].time);
-      }
-      if (isActive) { // Only update data for the active sensor
-        setData(points || []);
-      }
-    };
-
-    // Set interval only for the active sensor and when modal is not open
-    if (isActive && !isModalOpen) {
-      interval = setInterval(loadData, 5000);
+    if (isActive && data.length > 0) {
+      onTimeUpdate(data[data.length - 1].time);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive, isModalOpen, sensor.id, onTimeUpdate, fetchSensorData]); // Add fetchSensorData to dependencies
+  }, [isActive, data, onTimeUpdate]);
 
   const getChartOptions = (key, title, color, showXAxis) => {
     const validValues = data
@@ -721,54 +705,6 @@ const SlidingWindowChart = () => {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastUpdateTime, setLastUpdateTime] = useState("---");
-  const [allSensorsInitialData, setAllSensorsInitialData] = useState({});
-
-  const fetchSensorData = useCallback(async (sensorId) => {
-    try {
-      const response = await apiClient.post("/log/soluble/ec-ph-temperature/", {
-        sensor_number: sensorId,
-        limit: 1000,
-      });
-      const array = Array.isArray(response) ? response : response.results || [];
-      if (!array.length) return [];
-
-      const sortedArray = [...array]
-        .sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time))
-        .filter((item) => item.log_data.sensot_number === sensorId);
-
-      const newPoints = sortedArray.map((latest) => {
-        const rawTime = latest.log_date_time;
-        return {
-          dateObj: new Date(rawTime),
-          time: rawTime.split(" ")[1],
-          ec: Number(latest.log_data.ec) || 0,
-          pc: Number(latest.log_data.ph) || 0,
-          temp: Number(latest.log_data.temperature) || 0,
-        };
-      });
-      return newPoints;
-    } catch (err) {
-      console.error(`Error fetching data for sensor ${sensorId}:`, err);
-      return [];
-    }
-  }, []);
-
-  useEffect(() => {
-    const loadAllInitialData = async () => {
-      const dataPromises = SENSORS.map(async (sensor) => {
-        const data = await fetchSensorData(sensor.id);
-        return { sensorId: sensor.id, data };
-      });
-      const results = await Promise.all(dataPromises);
-      const initialDataMap = results.reduce((acc, curr) => {
-        acc[curr.sensorId] = curr.data;
-        return acc;
-      }, {});
-      setAllSensorsInitialData(initialDataMap);
-    };
-
-    loadAllInitialData();
-  }, [fetchSensorData]);
 
   // فیکس باگ اصلی: تابع آپدیت زمان رو با useCallback کش (Cache) کردیم که باعث رندر مجدد بچه‌ها نشه
   const handleTimeUpdate = useCallback((t) => {
@@ -895,8 +831,6 @@ const SlidingWindowChart = () => {
                 isActive={index === activeIndex}
                 onTimeUpdate={handleTimeUpdate}
                 isModalOpen={isCalibrateOpen}
-                initialData={allSensorsInitialData[sensor.id]}
-                fetchSensorData={fetchSensorData} // Pass the fetching function
               />
             </Box>
           ))}

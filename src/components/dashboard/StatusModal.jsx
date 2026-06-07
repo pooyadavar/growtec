@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Paper,
@@ -9,6 +10,7 @@ import {
 import { styled } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
 import { getMixTankStatus } from "../../api/solubleApi";
+import { queryKeys } from "../../api/queryKeys";
 
 const modalStyle = {
   position: "absolute",
@@ -60,26 +62,19 @@ const FIELD_TRANSLATIONS = {
 };
 
 const StatusModal = ({ open, onClose, title }) => {
-  const [details, setDetails] = useState([]);
+  const { data: mixTankData } = useQuery({
+    queryKey: queryKeys.mixTankStatusDetail(),
+    queryFn: getMixTankStatus,
+    enabled: open,
+  });
 
-  useEffect(() => {
-    if (open) {
-      const fetchData = async () => {
-        try {
-          const response = await getMixTankStatus();
-          const data = response.detail || {}; 
-          const formatted = Object.entries(data).map(([key, value]) => ({
-            name: FIELD_TRANSLATIONS[key] || key,
-            value: value,
-          }));
-          setDetails(formatted);
-        } catch (error) {
-          console.error("Failed to fetch mix tank status", error);
-        }
-      };
-      fetchData();
-    }
-  }, [open]);
+  const details = useMemo(() => {
+    const data = mixTankData?.detail || {};
+    return Object.entries(data).map(([key, value]) => ({
+      name: FIELD_TRANSLATIONS[key] || key,
+      value: value,
+    }));
+  }, [mixTankData]);
 
   return (
     <Modal

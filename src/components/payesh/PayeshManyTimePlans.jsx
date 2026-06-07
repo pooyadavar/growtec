@@ -8,104 +8,81 @@ import {
 } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import TimePlansCards from "../../card/TimePlansCards"; 
-import apiClient from "../../api/apiClient";
-import { getOperatorSchedule } from "../../api/climateApi";
+import TimePlansCards from "../../card/TimePlansCards";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getOperatorSchedule,
+  parseOperatorSchedules,
+  parseOperatorLogs,
+} from "../../api/climateApi";
+import { getClimateOperatorLogs } from "../../api/logsApi";
+import { queryKeys } from "../../api/queryKeys";
 
 const PayeshManyTimePlans = ({ onCardClick, zone }) => {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-  
-  const [logOperators, setLogOperators] = useState([]);
-  const [scheduleOperators, setScheduleOperators] = useState([]);
-  const [chartsData, setChartsData] = useState({}); 
-  const [loading, setLoading] = useState(true);
-  const [schedules, setSchedules] = useState({});
+
+  const { data: schedules = {}, isLoading: schedulesLoading } = useQuery({
+    queryKey: queryKeys.operatorSchedules(zone),
+    queryFn: async () => {
+      const response = await getOperatorSchedule({ zone: zone || 1 });
+      return parseOperatorSchedules(response);
+    },
+    refetchInterval: 60_000,
+  });
+
+  const { data: logsData, isLoading: logsLoading } = useQuery({
+    queryKey: queryKeys.operatorLogs(zone),
+    queryFn: async () => {
+      const response = await getClimateOperatorLogs(zone || 1);
+      return parseOperatorLogs(response);
+    },
+    refetchInterval: 10_000,
+  });
+
+  const loading = schedulesLoading || logsLoading;
+
+  const { logOperators, chartsData, scheduleOperators } = useMemo(() => {
+    const logs = logsData || [];
+    const scheduleOps = Object.keys(schedules);
+
+    if (logs.length === 0) {
+      return { logOperators: [], chartsData: {}, scheduleOperators: scheduleOps };
+    }
+
+    const latestLog = logs[logs.length - 1];
+    if (!latestLog?.log_data) {
+      return { logOperators: [], chartsData: {}, scheduleOperators: scheduleOps };
+    }
+
+    const operators = Object.keys(latestLog.log_data).filter((key) => key !== "zone");
+    const newChartsData = {};
+
+    operators.forEach((op) => {
+      newChartsData[op] = logs.map((log) => {
+        let timePart = "00:00";
+        if (log.log_date_time) {
+          const parts = log.log_date_time.split(" ");
+          timePart = parts.length > 1 ? parts[1].substring(0, 8) : log.log_date_time;
+        }
+        return {
+          time: timePart,
+          value: Boolean(log.log_data[op]) ? 1 : 0,
+        };
+      });
+    });
+
+    return {
+      logOperators: operators,
+      chartsData: newChartsData,
+      scheduleOperators: scheduleOps,
+    };
+  }, [logsData, schedules]);
 
   const cardsData = useMemo(() => {
     return Array.from(new Set([...logOperators, ...scheduleOperators]));
   }, [logOperators, scheduleOperators]);
-
-  const fetchSchedules = useCallback(async () => {
-    try {
-      const response = await getOperatorSchedule({ zone: zone || 1 });
-      let data = [];
-      if (Array.isArray(response)) {
-        data = response;
-      } else if (response && response.results && Array.isArray(response.results)) {
-        data = response.results;
-      } else if (response && response.data && Array.isArray(response.data)) {
-        data = response.data;
-      }
-
-      const grouped = {};
-      data.forEach((item) => {
-        if (!grouped[item.operator]) grouped[item.operator] = [];
-        grouped[item.operator].push(item);
-      });
-      setSchedules(grouped);
-      setScheduleOperators(Object.keys(grouped));
-    } catch (error) {
-      console.error("Error fetching schedules:", error);
-    }
-  }, [zone]);
-
-  const fetchData = useCallback(async () => {
-    try {
-      const requestBody = { zone: zone || 1 };
-      const response = await apiClient.post('/log/climate/operators/', requestBody);
-
-      let logs = [];
-      if (Array.isArray(response)) {
-        logs = response;
-      } else if (response && response.results && Array.isArray(response.results)) {
-        logs = response.results;
-      }
-
-      logs.sort((a, b) => new Date(a.log_date_time) - new Date(b.log_date_time));
-
-      if (logs.length > 0) {
-        const latestLog = logs[logs.length - 1];
-        
-        if (latestLog && latestLog.log_data) {
-            const operators = Object.keys(latestLog.log_data).filter(key => key !== 'zone');
-            setLogOperators(operators);
-
-            const newChartsData = {};
-            operators.forEach(op => {
-                newChartsData[op] = logs.map(log => {
-                    let timePart = '00:00';
-                    if (log.log_date_time) {
-                        const parts = log.log_date_time.split(' ');
-                        timePart = parts.length > 1 ? parts[1].substring(0, 8) : log.log_date_time;
-                    }
-                    
-                    return {
-                        time: timePart,
-                        value: Boolean(log.log_data[op]) ? 1 : 0
-                    };
-                });
-            });
-            
-            setChartsData(newChartsData);
-        }
-      } else {
-        setLogOperators([]);
-      }
-    } catch (error) {
-      console.error("Error fetching operator logs:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [zone]);
-
-  useEffect(() => {
-    fetchData();
-    fetchSchedules();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, [fetchData, fetchSchedules]);
 
   const handleScrollEvents = useCallback(() => {
     const el = scrollRef.current;
@@ -133,7 +110,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
   const slide = (direction) => {
     const el = scrollRef.current;
     if (el) {
-      const scrollAmount = 323; 
+      const scrollAmount = 323;
       el.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -151,13 +128,13 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
 
   return (
     <Container
-      disableGutters 
+      disableGutters
       sx={{
         width: "100%",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        gap: 1, 
+        gap: 1,
       }}
     >
       <IconButton
@@ -177,34 +154,33 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
       <Box
         ref={scrollRef}
         sx={{
-          width: "970px", 
-          height: "auto", // Changed from 600px
+          width: "970px",
+          height: "auto",
           display: "flex",
           flexDirection: "row-reverse",
           overflowX: "hidden",
           alignItems: "center",
           scrollSnapType: "x mandatory",
-          padding: "0", // Changed from "20px 0"
+          padding: "0",
           transform: "scale(0.95)",
         }}
       >
         {cardsData.length > 0 ? (
           cardsData.map((operatorKey) => (
-            <Box 
-              key={operatorKey} 
-              sx={{ 
-                flexShrink: 0, 
+            <Box
+              key={operatorKey}
+              sx={{
+                flexShrink: 0,
                 scrollSnapAlign: "start",
                 marginX: "10px",
               }}
             >
-              <TimePlansCards 
-                fan={operatorKey} 
-                data={chartsData[operatorKey] || []} 
+              <TimePlansCards
+                fan={operatorKey}
+                data={chartsData[operatorKey] || []}
                 status={chartsData[operatorKey]?.slice(-1)[0]?.value === 1}
                 zone={zone || 1}
                 schedules={schedules[operatorKey] || []}
-                onRefresh={fetchSchedules}
               />
             </Box>
           ))
@@ -231,4 +207,5 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
     </Container>
   );
 };
+
 export default PayeshManyTimePlans;

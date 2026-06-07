@@ -16,7 +16,16 @@ import {
 } from "@mui/material";
 
 import assets from "../../assets";
-import apiClient from "../../api/apiClient";
+import {
+  getRangeStartTime,
+  getClimateSettings,
+  updateRangeStartTime,
+  updateTemperatureRange,
+  updateHumidityRange,
+  updateTemperatureRangeOperator,
+  updateHumidityRangeOperator,
+} from "../../api/climateApi";
+import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -426,9 +435,9 @@ const PayeshSetting = ({ zone }) => {
 
   // واکشی مجزای بازه‌های زمانی (فقط یک بار انجام می‌شود)
   const { data: rangeData, isLoading: isRangeLoading } = useQuery({
-    queryKey: ["climateRangeStartTime", zone],
+    queryKey: queryKeys.climateRangeStartTime(zone),
     queryFn: async () => {
-      const res = await apiClient.get(`/climate/range-start-time/`);
+      const res = await getRangeStartTime();
       return Array.isArray(res) ? res : [];
     },
     staleTime: 5 * 60 * 1000,
@@ -443,28 +452,13 @@ const PayeshSetting = ({ zone }) => {
     }
   }, [rangeData]);
 
-  // واکشی مجزای اطلاعات اختصاصی هر تب
-  const fetchClimateData = async () => {
-    const [tempRes, humRes, opRes, humOpRes] = await Promise.all([
-      apiClient.get(`/climate/temperature-range/`, { params: { zone, part } }),
-      apiClient.get(`/climate/humidity-range/`, { params: { zone, part } }),
-      apiClient.get(`/climate/temperature-range-operator/`, {
-        params: { zone, part },
-      }),
-      apiClient.get(`/climate/humidity-range-operator/`, {
-        params: { zone, part },
-      }),
-    ]);
-    return { tempRes, humRes, opRes, humOpRes };
-  };
-
   const {
     data: queryData,
     isLoading: isClimateLoading,
     error,
   } = useQuery({
-    queryKey: ["climateSettings", zone, part],
-    queryFn: fetchClimateData,
+    queryKey: queryKeys.climateSettings(zone, part),
+    queryFn: () => getClimateSettings(zone, part),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -550,9 +544,7 @@ const PayeshSetting = ({ zone }) => {
       JSON.stringify(currentRange) !== JSON.stringify(initialRangeRef.current)
     ) {
       promises.push(
-        apiClient.post(`/climate/range-start-time/`, {
-          range_start_time: currentRange,
-        }),
+        updateRangeStartTime({ range_start_time: currentRange }),
       );
     }
 
@@ -563,7 +555,7 @@ const PayeshSetting = ({ zone }) => {
       JSON.stringify(initialTempRangeRef.current)
     ) {
       promises.push(
-        apiClient.post(`/climate/temperature-range/`, {
+        updateTemperatureRange({
           temperature_range: currentTempRange,
           zone,
           part,
@@ -578,7 +570,7 @@ const PayeshSetting = ({ zone }) => {
       JSON.stringify(initialHumRangeRef.current)
     ) {
       promises.push(
-        apiClient.post(`/climate/humidity-range/`, {
+        updateHumidityRange({
           humidity_range: currentHumRange,
           zone,
           part,
@@ -589,7 +581,7 @@ const PayeshSetting = ({ zone }) => {
     // 4. Check Temperature Operators
     if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
       promises.push(
-        apiClient.post(`/climate/temperature-range-operator/`, {
+        updateTemperatureRangeOperator({
           temperature_range_operator: tempControllers,
           zone,
           part,
@@ -600,7 +592,7 @@ const PayeshSetting = ({ zone }) => {
     // 5. Check Humidity Operators
     if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
       promises.push(
-        apiClient.post(`/climate/humidity-range-operator/`, {
+        updateHumidityRangeOperator({
           humidity_range_operator: humControllers,
           zone,
           part,
@@ -622,9 +614,11 @@ const PayeshSetting = ({ zone }) => {
       console.log("Data successfully saved!");
 
       // Invalidate queries so that fetching fresh data occurs when needed
-      queryClient.invalidateQueries({ queryKey: ["climateSettings", zone] });
       queryClient.invalidateQueries({
-        queryKey: ["climateRangeStartTime", zone],
+        queryKey: queryKeys.climateSettings(zone, part),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.climateRangeStartTime(zone),
       });
 
       // Update refs

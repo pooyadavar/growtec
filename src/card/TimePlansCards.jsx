@@ -19,6 +19,8 @@ import {
   updateOperatorSchedule,
   deleteOperatorSchedule,
 } from "../api/climateApi";
+import { queryKeys } from "../api/queryKeys";
+import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 const operatorTranslations = {
@@ -49,8 +51,8 @@ const TimePlansCards = ({
   data,
   zone,
   schedules = [],
-  onRefresh,
 }) => {
+  const queryClient = useQueryClient();
   const [rows, setRows] = useState([]);
   const [initialRows, setInitialRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -160,11 +162,11 @@ const TimePlansCards = ({
       try {
         await deleteOperatorSchedule(row.id);
         toast.success("حذف شد");
-        if (onRefresh) onRefresh();
+        queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
       } catch (error) {
         console.error(error);
         toast.error("خطا در حذف");
-        if (onRefresh) onRefresh();
+        queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
       }
     }
   };
@@ -228,11 +230,10 @@ const TimePlansCards = ({
         toast.success("تغییرات ذخیره شد");
         const updatedRows = rows.map(r => ({ ...r, isNew: false }));
         setRows(updatedRows);
-        setInitialRows(updatedRows.filter(r => !r.isNew)); // Update initialRows from successfully saved (now non-new) rows
-        if (onRefresh) onRefresh();
+        setInitialRows(updatedRows.filter(r => !r.isNew));
+        queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
       } else {
-         // If there was an error, re-fetch to restore correct state if some saved before error
-         if (onRefresh) onRefresh();
+         queryClient.invalidateQueries({ queryKey: queryKeys.operatorSchedules(zone) });
       }
     } catch (generalError) { // This catch will only be hit if something outside the loop fails, unlikely
       console.error(generalError);

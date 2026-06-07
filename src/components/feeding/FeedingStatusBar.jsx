@@ -250,7 +250,7 @@ const FeedingStatusBar = () => {
   };
 
   const {
-    data: rawSchedule,
+    data: rawSchedule = [],
     isLoading: isLoadingSchedule,
     isError: isErrorSchedule,
     error: scheduleError,
@@ -357,7 +357,7 @@ const FeedingStatusBar = () => {
   };
 
   const handleDeleteRow = (idToDelete) => {
-    const isExisting = rawSchedule.some((r) => r.id === idToDelete);
+    const isExisting = (rawSchedule || []).some((r) => r.id === idToDelete);
     if (isExisting) {
       deleteScheduleMutation.mutate(idToDelete);
       setPlanRows((prevRows) => prevRows.filter((row) => row.id !== idToDelete)); // Optimistic update
@@ -680,7 +680,7 @@ const FeedingStatusBar = () => {
             >
               <TransitionGroup>
                 {planRows.map((row) => {
-                   const isNew = !rawSchedule.some((raw) => raw.id === row.id);
+                   const isNew = !(rawSchedule || []).some((raw) => raw.id === row.id);
                    return (
                   <Collapse key={row.id}>
                     <PlanRow

@@ -25,7 +25,7 @@ import {
   controlStocksMixer,
   emergencyStop,
 } from "../../api/solubleApi";
-import apiClient from "../../api/apiClient"; // اضافه شدن برای کالیبراسیون
+import { calibrateDosingPump } from "../../api/calibrationApi";
 import toast from "react-hot-toast";
 
 const Control = () => {
@@ -196,12 +196,7 @@ const Control = () => {
 
   // --- API کالیبراسیون دوزینگ پمپ ---
   const { mutate: calibratePumpMutation } = useMutation({
-    mutationFn: async (data) => {
-      return await apiClient.post(
-        "/calibration/calibration-dosing-pump/",
-        data,
-      );
-    },
+    mutationFn: calibrateDosingPump,
     onSuccess: (data, variables) => {
       toast.success("عملیات با موفقیت انجام شد");
       // مدیریت مراحل بعد از موفقیت آمیز بودن درخواست
