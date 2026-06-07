@@ -92,38 +92,31 @@ const TimePlansCards = ({
   };
 
   const hasChanges = useMemo(() => {
-    // Check for any new rows
-    if (rows.some(row => row.isNew)) {
+    if (rows.some((row) => row.isNew)) {
       return true;
     }
 
-    // Filter out rows that are only in `rows` (meaning deleted from server but not saved yet, or just new rows not yet in initialRows)
-    const currentServerRows = rows.filter(r => !r.isNew);
+    const currentServerRows = rows.filter((r) => !r.isNew);
 
-    // Check if number of server-sourced rows changed (deletion/addition not yet saved)
     if (currentServerRows.length !== initialRows.length) {
       return true;
     }
 
-    // Check if any existing row has been modified
     for (const currentRow of currentServerRows) {
-      const initialRow = initialRows.find(ir => ir.id === currentRow.id);
-      
-      // If an initialRow is not found, it means this row is new, or was deleted from initialRows.
-      // This should ideally be covered by length check, but also handles cases where IDs might mismatch or a row was replaced.
+      const initialRow = initialRows.find((ir) => ir.id === currentRow.id);
+
       if (!initialRow) {
         return true;
       }
 
-      // Deep comparison of relevant fields
       if (
-          currentRow.start_time !== initialRow.start_time ||
-          currentRow.end_time !== initialRow.end_time ||
-          Number(currentRow.on_time) !== Number(initialRow.on_time) ||
-          Number(currentRow.off_time) !== Number(initialRow.off_time) ||
-          currentRow.is_active !== initialRow.is_active
+        currentRow.start_time !== initialRow.start_time ||
+        currentRow.end_time !== initialRow.end_time ||
+        Number(currentRow.on_time) !== Number(initialRow.on_time) ||
+        Number(currentRow.off_time) !== Number(initialRow.off_time) ||
+        currentRow.is_active !== initialRow.is_active
       ) {
-          return true;
+        return true;
       }
     }
 
@@ -164,7 +157,7 @@ const TimePlansCards = ({
         is_active: true,
         isChanging: false,
       },
-      ...prevRows, // Prepends new row to the beginning
+      ...prevRows,
     ]);
   };
 
@@ -191,9 +184,8 @@ const TimePlansCards = ({
   };
 
   const handleDeleteRow = async (row) => {
-    // Optimistic update: remove immediately from UI
     setRows((prevRows) => prevRows.filter((r) => r.uiId !== row.uiId));
-    
+
     if (!row.isNew) {
       try {
         await deleteOperatorSchedule(row.id);
@@ -257,19 +249,17 @@ const TimePlansCards = ({
           hasError = true;
           console.error("Row save error:", rowError);
 
-          // Check for 400 error specifically for on_time/off_time being 0
           if (
             rowError.response?.status === 400 &&
             (payload.on_time === 0 || payload.off_time === 0)
-            // Can add more specific checks from rowError.response.data if available
-            // e.g., rowError.response.data.detail?.includes("cannot be 0")
           ) {
-            toast.error(`خطا: فیلدهای روشن و خاموش نمی‌توانند 0 باشند.`); // Specific message
+            toast.error(`خطا: فیلدهای روشن و خاموش نمی‌توانند 0 باشند.`);
           } else {
-            toast.error(`خطا در ذخیره سازی ردیف: ${rowError.response?.data?.detail || rowError.message || "نامشخص"}`);
+            toast.error(
+              `خطا در ذخیره سازی ردیف: ${rowError.response?.data?.detail || rowError.message || "نامشخص"}`,
+            );
           }
-          // Decide whether to continue or break the loop
-          break; // Exit loop on first error
+          break;
         }
       }
 
@@ -283,7 +273,7 @@ const TimePlansCards = ({
           queryKey: queryKeys.operatorSchedules(resolvedZone),
         });
       }
-    } catch (generalError) { // This catch will only be hit if something outside the loop fails, unlikely
+    } catch (generalError) {
       console.error(generalError);
       toast.error("خطا کلی در ذخیره سازی");
     } finally {
@@ -336,7 +326,6 @@ const TimePlansCards = ({
             },
             fontSize: 10,
             fontFamily: "IRANSANS",
-            // مقادیر direction و textAlign برای جلوگیری از باگ AgCharts حذف شدند
           },
           gridStyle: [
             {
@@ -353,7 +342,7 @@ const TimePlansCards = ({
         top: 5,
         right: 10,
         bottom: 20,
-        left: 5, 
+        left: 45,
       },
     }),
     [data, fan],
@@ -363,7 +352,7 @@ const TimePlansCards = ({
     <Container
       sx={{
         width: "400px",
-        height: "580px", 
+        height: "580px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         display: "flex",
@@ -378,7 +367,7 @@ const TimePlansCards = ({
       <Box
         className="irrigation-card-title"
         sx={{
-          width: "300px", // Increased width in previous step
+          width: "300px",
           height: "37px",
           display: "flex",
           justifyContent: "center",
@@ -396,7 +385,7 @@ const TimePlansCards = ({
         >
           <Typography
             fontFamily={"IRANSANS"}
-            fontSize={16} // Reduced font size to fit longer names
+            fontSize={16}
             textAlign={"center"}
           >
             {translatedFanName}
@@ -416,18 +405,18 @@ const TimePlansCards = ({
         </Typography>
       </Box>
 
-      <Box // This box now directly contains only the chart.
+      <Box
         sx={{
-          width: "350px", // Increased width in previous step
+          width: "350px",
           height: "113px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Box // This is the chart container itself
+        <Box
           sx={{
-            width: "100%", // Now fills its parent
+            width: "100%",
             height: "113px",
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
@@ -438,268 +427,330 @@ const TimePlansCards = ({
             paddingRight: "15px",
           }}
         >
-          <Box sx={{ width: "100%", height: "calc(100% - 10px)" , direction:'rtl' }}>
-            {" "}
-            {/* Also fills its parent */}
+          <Box
+            sx={{
+              width: "100%",
+              height: "calc(100% - 10px)",
+              direction: "rtl",
+            }}
+          >
             <AgCharts
               options={chartOptions}
-              style={{ width: "95%", height: "100%" , direction:'rtl' }}
+              style={{ width: "95%", height: "100%", direction: "rtl" }}
             />
           </Box>
         </Box>
       </Box>
 
-      <Box my={3}>
-        {/* <Typography
-          color="initial"
-          fontFamily={"IRANSANS"}
-          fontSize={16}
-          textAlign={"center"}
-        >
-          تاریخچه وضعیت عملگر
-        </Typography> */}
-      </Box>
+      <Box my={3}></Box>
 
       <Box
         className="irrigation-card-table"
         sx={{
-          width: "360px", // Increased width in previous step
+          width: "360px",
           height: "260px",
           minHeight: "275px",
           display: "flex",
           flexDirection: "column",
         }}
       >
-          <Box // Header Always Visible
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-around",
+            width: "100%",
+            mb: 1,
+            backgroundColor: "#F3F4F6",
+            borderRadius: "8px",
+            padding: "8px 4px",
+            alignItems: "center",
+          }}
+        >
+          <Typography
+            fontFamily={"IRANSANS"}
+            fontSize={10}
             sx={{
-              display: "flex",
-              justifyContent: "space-around",
-              width: "100%",
-              mb: 1,
-              backgroundColor: "#F3F4F6",
-              borderRadius: "8px",
-              padding: "8px 4px",
-              alignItems: "center"
+              width: "30px",
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#555",
             }}
           >
-            <Typography
-              fontFamily={"IRANSANS"}
-              fontSize={10}
-              sx={{ width: "30px", textAlign: "center", fontWeight: "bold", color: "#555" }}
-            >
-              وضعیت
-            </Typography>
-            <Typography
-              fontFamily={"IRANSANS"}
-              fontSize={10}
-              sx={{ width: "75px", textAlign: "center", fontWeight: "bold", color: "#555" }}
-            >
-              شروع
-            </Typography>
-            <Typography
-              fontFamily={"IRANSANS"}
-              fontSize={10}
-              sx={{ width: "75px", textAlign: "center", fontWeight: "bold", color: "#555" }}
-            >
-              پایان
-            </Typography>
-            <Typography
-              fontFamily={"IRANSANS"}
-              fontSize={10}
-              sx={{ width: "50px", textAlign: "center", fontWeight: "bold", color: "#555" }}
-            >
-              روشن
-            </Typography>
-            <Typography
-              fontFamily={"IRANSANS"}
-              fontSize={10}
-              sx={{ width: "50px", textAlign: "center", fontWeight: "bold", color: "#555" }}
-            >
-              خاموش
-            </Typography>
-            <Typography
-              fontFamily={"IRANSANS"}
-              fontSize={10}
-              sx={{ width: "20px", textAlign: "center", fontWeight: "bold", color: "#555" }}
-            >
-              حذف
-            </Typography>
-          </Box>
+            وضعیت
+          </Typography>
+          <Typography
+            fontFamily={"IRANSANS"}
+            fontSize={10}
+            sx={{
+              width: "75px",
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#555",
+            }}
+          >
+            شروع
+          </Typography>
+          <Typography
+            fontFamily={"IRANSANS"}
+            fontSize={10}
+            sx={{
+              width: "75px",
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#555",
+            }}
+          >
+            پایان
+          </Typography>
+          <Typography
+            fontFamily={"IRANSANS"}
+            fontSize={10}
+            sx={{
+              width: "50px",
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#555",
+            }}
+          >
+            روشن
+          </Typography>
+          <Typography
+            fontFamily={"IRANSANS"}
+            fontSize={10}
+            sx={{
+              width: "50px",
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#555",
+            }}
+          >
+            خاموش
+          </Typography>
+          <Typography
+            fontFamily={"IRANSANS"}
+            fontSize={10}
+            sx={{
+              width: "20px",
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#555",
+            }}
+          >
+            حذف
+          </Typography>
+        </Box>
 
-        <Box // Scrollable content or message
+        <Box
           sx={{
             width: "98%",
-            flexGrow: 1, // This makes the box fill remaining vertical space
+            flexGrow: 1,
             maxHeight: rows.length > 0 ? "220px" : "auto",
             overflowY: rows.length > 0 ? "auto" : "hidden",
             paddingRight: rows.length > 0 ? "4px" : "0",
             mb: 1,
             display: "flex",
-            flexDirection: "column", // ADDED: Ensure rows stack vertically
+            flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          {loading && rows.length === 0 && ( // Changed condition: only show spinner if empty AND loading
+          {loading && rows.length === 0 && (
             <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
               <CircularProgress size={24} />
             </Box>
           )}
-          {rows.length > 0
-            ? (
-              <TransitionGroup style={{ width: "98%" }}>
-                {rows.map((row) => (
-                  <Collapse key={row.uiId}>
+          {rows.length > 0 ? (
+            <TransitionGroup style={{ width: "98%" }}>
+              {rows.map((row) => (
+                <Collapse key={row.uiId}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: "space-around",
+                      alignItems: "center",
+                      py: 1,
+                      mb: 1,
+                      border: row.isNew
+                        ? "1px dashed #2196F3"
+                        : "1px solid #F3F4F6",
+                      borderRadius: "8px",
+                      backgroundColor: row.isNew ? "#E3F2FD" : "transparent",
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        borderColor: row.isNew ? "#2196F3" : "#E5E7EB",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                      },
+                    }}
+                  >
                     <Box
                       sx={{
-                        width: "100%",
+                        width: "30px",
                         display: "flex",
-                        justifyContent: "space-around",
-                        alignItems: "center",
-                        py: 1,
-                        mb: 1,
-                        border: row.isNew ? "1px dashed #2196F3" : "1px solid #F3F4F6",
-                        borderRadius: "8px",
-                        backgroundColor: row.isNew ? "#E3F2FD" : "transparent",
-                        transition: "all 0.2s",
-                        "&:hover": {
-                           borderColor: row.isNew ? "#2196F3" : "#E5E7EB",
-                           boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
-                        }
+                        justifyContent: "center",
                       }}
                     >
-                      <Box
-                        sx={{
+                      <img
+                        onClick={() => handleToggleActive(row.uiId)}
+                        className={`on-and-off-btn ${row.isChanging ? "changing" : ""}`}
+                        src={
+                          row.is_active
+                            ? assets.svg.buttonOn
+                            : assets.svg.buttonOff
+                        }
+                        alt="Toggle"
+                        style={{
+                          cursor: "pointer",
                           width: "30px",
-                          display: "flex",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <img
-                          onClick={() => handleToggleActive(row.uiId)}
-                          className={`on-and-off-btn ${row.isChanging ? "changing" : ""}`}
-                          src={
-                            row.is_active
-                              ? assets.svg.buttonOn
-                              : assets.svg.buttonOff
-                          }
-                          alt="Toggle"
-                          style={{
-                            cursor: "pointer",
-                            width: "30px",
-                            height: "auto",
-                          }}
-                        />
-                      </Box>
-
-                      <TextField
-                        variant="standard"
-                        size="small"
-                        inputMode="numeric"
-                        value={toPersianDigits(row.start_time?.substring(0, 5) || "00:00")}
-                        onChange={(e) =>
-                          handleInputChange(
-                            row.uiId,
-                            "start_time",
-                            toEnglishDigits(e.target.value),
-                          )
-                        }
-                        sx={{
-                          width: "75px",
-                          "& .MuiInputBase-input": {
-                            p: 0.5,
-                            ...inputFontSx,
-                          },
-                          "& .MuiInput-underline:before": { borderBottom: "none" },
-                          "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },
-                          "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottom: "1px solid #ddd" }
+                          height: "auto",
                         }}
                       />
-                      <TextField
-                        variant="standard"
-                        size="small"
-                        inputMode="numeric"
-                        value={toPersianDigits(row.end_time?.substring(0, 5) || "00:00")}
-                        onChange={(e) =>
-                          handleInputChange(row.uiId, "end_time", toEnglishDigits(e.target.value))
-                        }
-                        sx={{
-                          width: "75px",
-                          "& .MuiInputBase-input": {
-                            p: 0.5,
-                            ...inputFontSx,
-                          },
-                          "& .MuiInput-underline:before": { borderBottom: "none" },
-                          "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },
-                          "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottom: "1px solid #ddd" }
-                        }}
-                      />
-                      <TextField
-                        variant="standard"
-                        size="small"
-                        inputMode="numeric"
-                        value={toPersianDigits(row.on_time ?? "")}
-                        onChange={(e) =>
-                          handleInputChange(row.uiId, "on_time", toEnglishDigits(e.target.value))
-                        }
-                        sx={{
-                          width: "50px",
-                          "& .MuiInputBase-input": {
-                            p: 0.5,
-                            ...inputFontSx,
-                          },
-                          "& .MuiInput-underline:before": { borderBottom: "none" },
-                          "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },
-                          "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottom: "1px solid #ddd" }
-                        }}
-                      />
-                      <TextField
-                        variant="standard"
-                        size="small"
-                        inputMode="numeric"
-                        value={toPersianDigits(row.off_time ?? "")}
-                        onChange={(e) =>
-                          handleInputChange(row.uiId, "off_time", toEnglishDigits(e.target.value))
-                        }
-                        sx={{
-                          width: "50px",
-                          "& .MuiInputBase-input": {
-                            p: 0.5,
-                            ...inputFontSx,
-                          },
-                          "& .MuiInput-underline:before": { borderBottom: "none" },
-                          "& .MuiInput-underline:after": { borderBottom: "2px solid #FFCB82" },
-                          "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottom: "1px solid #ddd" }
-                        }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteRow(row)}
-                        sx={{ p: 0.5, width: "20px", color: "#ef5350" }}
-                      >
-                        <CloseIcon fontSize="small" sx={{ fontSize: "1.1rem" }} />
-                      </IconButton>
                     </Box>
-                  </Collapse>
-                ))}
-              </TransitionGroup>
+
+                    <TextField
+                      variant="standard"
+                      size="small"
+                      inputMode="numeric"
+                      value={toPersianDigits(
+                        row.start_time?.substring(0, 5) || "00:00",
+                      )}
+                      onChange={(e) =>
+                        handleInputChange(
+                          row.uiId,
+                          "start_time",
+                          toEnglishDigits(e.target.value),
+                        )
+                      }
+                      sx={{
+                        width: "75px",
+                        "& .MuiInputBase-input": {
+                          p: 0.5,
+                          ...inputFontSx,
+                        },
+                        "& .MuiInput-underline:before": {
+                          borderBottom: "none",
+                        },
+                        "& .MuiInput-underline:after": {
+                          borderBottom: "2px solid #FFCB82",
+                        },
+                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
+                          { borderBottom: "1px solid #ddd" },
+                      }}
+                    />
+                    <TextField
+                      variant="standard"
+                      size="small"
+                      inputMode="numeric"
+                      value={toPersianDigits(
+                        row.end_time?.substring(0, 5) || "00:00",
+                      )}
+                      onChange={(e) =>
+                        handleInputChange(
+                          row.uiId,
+                          "end_time",
+                          toEnglishDigits(e.target.value),
+                        )
+                      }
+                      sx={{
+                        width: "75px",
+                        "& .MuiInputBase-input": {
+                          p: 0.5,
+                          ...inputFontSx,
+                        },
+                        "& .MuiInput-underline:before": {
+                          borderBottom: "none",
+                        },
+                        "& .MuiInput-underline:after": {
+                          borderBottom: "2px solid #FFCB82",
+                        },
+                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
+                          { borderBottom: "1px solid #ddd" },
+                      }}
+                    />
+                    <TextField
+                      variant="standard"
+                      size="small"
+                      inputMode="numeric"
+                      value={toPersianDigits(row.on_time ?? "")}
+                      onChange={(e) =>
+                        handleInputChange(
+                          row.uiId,
+                          "on_time",
+                          toEnglishDigits(e.target.value),
+                        )
+                      }
+                      sx={{
+                        width: "50px",
+                        "& .MuiInputBase-input": {
+                          p: 0.5,
+                          ...inputFontSx,
+                        },
+                        "& .MuiInput-underline:before": {
+                          borderBottom: "none",
+                        },
+                        "& .MuiInput-underline:after": {
+                          borderBottom: "2px solid #FFCB82",
+                        },
+                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
+                          { borderBottom: "1px solid #ddd" },
+                      }}
+                    />
+                    <TextField
+                      variant="standard"
+                      size="small"
+                      inputMode="numeric"
+                      value={toPersianDigits(row.off_time ?? "")}
+                      onChange={(e) =>
+                        handleInputChange(
+                          row.uiId,
+                          "off_time",
+                          toEnglishDigits(e.target.value),
+                        )
+                      }
+                      sx={{
+                        width: "50px",
+                        "& .MuiInputBase-input": {
+                          p: 0.5,
+                          ...inputFontSx,
+                        },
+                        "& .MuiInput-underline:before": {
+                          borderBottom: "none",
+                        },
+                        "& .MuiInput-underline:after": {
+                          borderBottom: "2px solid #FFCB82",
+                        },
+                        "& .MuiInput-underline:hover:not(.Mui-disabled):before":
+                          { borderBottom: "1px solid #ddd" },
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteRow(row)}
+                      sx={{ p: 0.5, width: "20px", color: "#ef5350" }}
+                    >
+                      <CloseIcon fontSize="small" sx={{ fontSize: "1.1rem" }} />
+                    </IconButton>
+                  </Box>
+                </Collapse>
+              ))}
+            </TransitionGroup>
+          ) : (
+            !loading && (
+              <Typography fontFamily={"IRANSANS"} color="text.secondary">
+                برنامه زمانی ای تنظیم نشده
+              </Typography>
             )
-            : !loading && ( // Only show message if not loading
-                <Typography fontFamily={"IRANSANS"} color="text.secondary">
-                  برنامه زمانی ای تنظیم نشده
-                </Typography>
-              )}
+          )}
         </Box>
 
-        <Box // Buttons Box - Moved to bottom
+        <Box
           sx={{
             width: "100%",
             display: "flex",
-            justifyContent: "right", // Center buttons
-            gap: 8, // Space between buttons
+            justifyContent: "right",
+            gap: 8,
             mb: 3,
             mt: 2,
-
           }}
         >
           <IconTextButton
@@ -724,7 +775,7 @@ const TimePlansCards = ({
             text={loading ? "..." : "ذخیره"}
             icon={!loading ? assets?.svg?.Save : null}
             iconPosition="left"
-            bgColor={!loading && hasChanges ? "#86CCB2" : "#dbf5eb"} 
+            bgColor={!loading && hasChanges ? "#86CCB2" : "#dbf5eb"}
             textColor="#000000"
             width="30%"
             height="20px"

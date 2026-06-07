@@ -48,14 +48,61 @@ export const getMixTankStatus = async () => {
   return apiClient.get('/soluble/mix-tank-status/');
 };
 
-export const getFoodstuffPreparationProgram = async (programNumber) => {
-  return apiClient.get('/soluble/foodstuff-preparation-program/', {
-    params: { program_number: programNumber },
+const STOCK_PERCENT_KEYS = Array.from({ length: 10 }, (_, i) =>
+  String(i + 1),
+);
+
+export const normalizeFoodstuffProgram = (response) => {
+  const data =
+    response?.foodstuff_preparation_program ??
+    response?.foodstuf_preparation_program ??
+    response ??
+    {};
+
+  const stockPercent = {};
+  STOCK_PERCENT_KEYS.forEach((key) => {
+    stockPercent[key] = data?.stock_percent?.[key] ?? 0;
   });
+
+  return {
+    target_ec: data?.target_ec ?? 0,
+    ec_acceptable_error: data?.ec_acceptable_error ?? 0,
+    target_ph: data?.target_ph ?? 0,
+    ph_acceptable_error: data?.ph_acceptable_error ?? 0,
+    ec_correction_coefficient: data?.ec_correction_coefficient ?? 0,
+    stock_percent: stockPercent,
+  };
 };
 
-export const updateFoodstuffPreparationProgram = async (data) => {
-  return apiClient.post('/soluble/foodstuff-preparation-program/', data);
+export const buildFoodstuffProgramPayload = (programNumber, program) => {
+  const stockPercent = {};
+  STOCK_PERCENT_KEYS.forEach((key) => {
+    stockPercent[key] = Number(program?.stock_percent?.[key] ?? 0);
+  });
+
+  return {
+    program_number: programNumber,
+    foodstuf_preparation_program: {
+      target_ec: Number(program?.target_ec ?? 0),
+      ec_acceptable_error: Number(program?.ec_acceptable_error ?? 0),
+      target_ph: Number(program?.target_ph ?? 0),
+      ph_acceptable_error: Number(program?.ph_acceptable_error ?? 0),
+      ec_correction_coefficient: Number(program?.ec_correction_coefficient ?? 0),
+      stock_percent: stockPercent,
+    },
+  };
+};
+
+export const getFoodstuffPreparationProgram = async (programNumber) => {
+  const response = await apiClient.get("/soluble/foodstuff-preparation-program/", {
+    params: { program_number: programNumber },
+  });
+  return normalizeFoodstuffProgram(response);
+};
+
+export const updateFoodstuffPreparationProgram = async ({ program_number, program }) => {
+  const payload = buildFoodstuffProgramPayload(program_number, program);
+  return apiClient.post("/soluble/foodstuff-preparation-program/", payload);
 };
 
 export const getFoodstuffPreparationProgramPh = async (programNumber) => {

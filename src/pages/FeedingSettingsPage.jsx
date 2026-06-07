@@ -12,15 +12,16 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
-import { useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getFoodstuffPreparationProgram,
   updateFoodstuffPreparationProgram,
+  getSolubleEcPhTemperature,
 } from "../api/solubleApi";
+import { queryKeys } from "../api/queryKeys";
 import toast, { Toaster } from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
 
-// --- Helper for deep comparison handling string/number equality ---
 const deepEqual = (obj1, obj2) => {
   if (obj1 === obj2) return true;
 
@@ -50,8 +51,6 @@ const deepEqual = (obj1, obj2) => {
   return true;
 };
 
-
-// --- کامپوننت کمکی برای ستون‌های برنامه ---
 const ProgramColumn = ({ number, data, onChange }) => {
   const handleChange = (field, value) => {
     const enValue = toEnglishDigits(value);
@@ -60,7 +59,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
 
     if (field.startsWith("stock_percent.")) {
       const key = field.split(".")[1];
-      const newStockPercent = { ...data.stock_percent, [key]: enValue };
+      const newStockPercent = { ...(data?.stock_percent || {}), [key]: enValue };
       onChange({ ...data, stock_percent: newStockPercent });
     } else {
       onChange({ ...data, [field]: enValue });
@@ -98,7 +97,6 @@ const ProgramColumn = ({ number, data, onChange }) => {
         برنامه {toPersianDigits(number)}
       </Typography>
 
-      {/* خطای مجاز EC */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
         <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
           خطای مجاز EC
@@ -113,7 +111,6 @@ const ProgramColumn = ({ number, data, onChange }) => {
         />
       </Box>
 
-      {/* EC مطلوب */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
         <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
           EC مطلوب
@@ -128,8 +125,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
         />
       </Box>
 
-      {/* ماده ۱ تا ۱۳ */}
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((num) => (
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
         <Box key={num} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
           <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
             ماده {toPersianDigits(num)}
@@ -145,7 +141,6 @@ const ProgramColumn = ({ number, data, onChange }) => {
         </Box>
       ))}
 
-      {/* PH مطلوب */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
         <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
           PH مطلوب
@@ -160,22 +155,6 @@ const ProgramColumn = ({ number, data, onChange }) => {
         />
       </Box>
 
-      {/* لیتر اسید */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
-        <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
-          لیتر اسید
-        </Typography>
-        <TextField
-          size="small"
-          variant="outlined"
-          sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianDigits(data?.acid_liter ?? "")}
-          onChange={(e) => handleChange("acid_liter", e.target.value)}
-          inputProps={{ inputMode: "decimal" }}
-        />
-      </Box>
-
-      {/* خطای قابل قبول pH */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
         <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
           خطای قابل قبول pH
@@ -190,7 +169,6 @@ const ProgramColumn = ({ number, data, onChange }) => {
         />
       </Box>
 
-      {/* ضریب تصحیح EC */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
         <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
           ضریب تصحیح EC
@@ -199,8 +177,8 @@ const ProgramColumn = ({ number, data, onChange }) => {
           size="small"
           variant="outlined"
           sx={{ flex: 1, "& .MuiInputBase-input": { textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", fontFamily: "IRANSANS" } }}
-          value={toPersianDigits(data?.ec_correction_factor ?? "")}
-          onChange={(e) => handleChange("ec_correction_factor", e.target.value)}
+          value={toPersianDigits(data?.ec_correction_coefficient ?? "")}
+          onChange={(e) => handleChange("ec_correction_coefficient", e.target.value)}
           inputProps={{ inputMode: "decimal" }}
         />
       </Box>
@@ -208,7 +186,6 @@ const ProgramColumn = ({ number, data, onChange }) => {
   );
 };
 
-// --- کامپوننت اصلی صفحه ---
 const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const navigate = useNavigate();
   const [programs, setPrograms] = useState({});
@@ -218,29 +195,38 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
 
   const programNumbers = [1, 2, 3];
 
+  const { data: liveEcPhData } = useQuery({
+    queryKey: queryKeys.solubleEcPhTemperature(),
+    queryFn: getSolubleEcPhTemperature,
+    refetchInterval: 5000,
+  });
+
+  const primarySensor = liveEcPhData?.["1"];
+  const currentEc = primarySensor?.ec;
+  const currentPh = primarySensor?.ph;
+
   const programQueries = useQueries({
     queries: programNumbers.map((i) => ({
-      queryKey: ["foodstuffProgram", i],
+      queryKey: queryKeys.foodstuffProgram(i),
       queryFn: () => getFoodstuffPreparationProgram(i),
       staleTime: 5 * 60 * 1000,
-      cacheTime: 10 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
     })),
   });
 
-  // بررسی وضعیت لود شدن کوئری‌ها به عنوان یک متغیر ساده
   const isDataReady = programQueries.length > 0 && programQueries.every((q) => q.isSuccess);
 
   useEffect(() => {
-    // فرم فقط یک‌بار وقتی که دیتا آماده شد پر می‌شود تا با تایپ کاربر تداخل نکند
     if (isDataReady && Object.keys(initialPrograms).length === 0) {
       const newPrograms = {};
       programQueries.forEach((query, index) => {
-        newPrograms[programNumbers[index]] = query.data;
+        // اطمینان از اینکه اگر دیتایی از سمت بک‌اند نیامد، مقادیر پیش‌فرض ست شود
+        newPrograms[programNumbers[index]] = query.data || {};
       });
       setPrograms(newPrograms);
       setInitialPrograms(JSON.parse(JSON.stringify(newPrograms)));
     }
-  }, [isDataReady]); // وابستگی درست شد
+  }, [isDataReady]);
 
   useEffect(() => {
     if (
@@ -257,10 +243,9 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const updateProgramMutation = useMutation({
     mutationFn: updateFoodstuffPreparationProgram,
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries([
-        "foodstuffProgram",
-        variables.program_number,
-      ]);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.foodstuffProgram(variables.program_number),
+      });
       toast.success(`برنامه ${variables.program_number} با موفقیت ذخیره شد`);
     },
     onError: (error, variables) => {
@@ -282,37 +267,16 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
 
     const updatePromises = [];
     for (let i = 1; i <= 3; i++) {
-      const initial = initialPrograms[i];
-      const current = programs[i];
+      const initial = initialPrograms[i] || {};
+      const current = programs[i] || {};
 
       if (!deepEqual(initial, current)) {
-        const payload = {
-          program_number: i,
-          foodstuff_preparation_program: {
-            target_ec: Number(current.target_ec),
-            ec_acceptable_error: Number(current.ec_acceptable_error),
-            target_ph: Number(current.target_ph),
-            ph_acceptable_error: Number(current.ph_acceptable_error),
-            acid_liter: Number(current.acid_liter),
-            ec_correction_factor: Number(current.ec_correction_factor),
-            stock_percent: {
-              1: Number(current.stock_percent?.["1"] || 0),
-              2: Number(current.stock_percent?.["2"] || 0),
-              3: Number(current.stock_percent?.["3"] || 0),
-              4: Number(current.stock_percent?.["4"] || 0),
-              5: Number(current.stock_percent?.["5"] || 0),
-              6: Number(current.stock_percent?.["6"] || 0),
-              7: Number(current.stock_percent?.["7"] || 0),
-              8: Number(current.stock_percent?.["8"] || 0),
-              9: Number(current.stock_percent?.["9"] || 0),
-              10: Number(current.stock_percent?.["10"] || 0),
-              11: Number(current.stock_percent?.["11"] || 0),
-              12: Number(current.stock_percent?.["12"] || 0),
-              13: Number(current.stock_percent?.["13"] || 0),
-            },
-          },
-        };
-        updatePromises.push(updateProgramMutation.mutateAsync(payload));
+        updatePromises.push(
+          updateProgramMutation.mutateAsync({
+            program_number: i,
+            program: current,
+          }),
+        );
       }
     }
 
@@ -322,7 +286,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
       setInitialPrograms(JSON.parse(JSON.stringify(programs)));
       setIsSaveDisabled(true);
     } catch (error) {
-      toast.error("خطا در ذخیره سازی برخی از برنامه ها");
+      toast.error("خطا در ذخیره‌سازی برخی از برنامه‌ها");
     }
   };
 
@@ -343,208 +307,74 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   return (
     <Container
       maxWidth={isModal ? false : "xl"}
-      sx={{
-        mt: 1,
-        mb: 0,
-        px: isModal ? "0 !important" : undefined,
-      }}
+      sx={{ mt: 1, mb: 0, px: isModal ? "0 !important" : undefined }}
     >
       <Box
         sx={
           isModal
-            ? {
-                transform: {
-                  xs: "scale(0.94)",
-                  md: "scale(0.92)",
-                },
-                transformOrigin: "top center",
-                width: "100%",
-                mx: "auto",
-                pt: 0.5,
-                overflowX: "hidden",
-              }
+            ? { transform: { xs: "scale(0.94)", md: "scale(0.92)" }, transformOrigin: "top center", width: "100%", mx: "auto", pt: 0.5, overflowX: "hidden" }
             : undefined
         }
       >
         <Toaster position="top-center" reverseOrder={false} />
-
-        {/* Header */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            direction: "rtl",
-            pb: 1,
-            px: 1,
-          }}
-        >
-          <Typography
-            fontFamily="IRANSANS"
-            fontWeight="bold"
-            fontSize="1.2rem"
-            sx={{ color: "#333" }}
-          >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", direction: "rtl", pb: 1, px: 1 }}>
+          <Typography fontFamily="IRANSANS" fontWeight="bold" fontSize="1.2rem" sx={{ color: "#333" }}>
             تنظیمات ساخت محلول
           </Typography>
-          <IconButton
-            onClick={handleBackClick}
-            title="بستن"
-            size="small"
-            sx={{
-              color: "#FFF",
-              backgroundColor: "red",
-              borderRadius: "8px",
-              "&:hover": { backgroundColor: "#D32F2F" },
-            }}
-          >
+          <IconButton onClick={handleBackClick} title="بستن" size="small" sx={{ color: "#FFF", backgroundColor: "red", borderRadius: "8px", "&:hover": { backgroundColor: "#D32F2F" } }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
 
-        <Paper
-          elevation={3}
-          sx={{
-            height: "auto",
-            maxHeight: "calc(100vh - 32px)",
-            display: "flex",
-            flexDirection: "column",
-            borderRadius: "10px",
-            overflow: "hidden",
-          }}
-        >
-          <Box
-            sx={{
-              flexGrow: 1,
-              overflowY: "auto",
-              p: { xs: 1, md: 1.5 },
-              direction: "rtl",
-            }}
-          >
-            {/* Top Controls Row */}
-            <Grid
-              container
-              spacing={1.5}
-              sx={{ mb: 2, alignItems: "center", overflowY: "visible" }}
-            >
+        <Paper elevation={3} sx={{ height: "auto", maxHeight: "calc(100vh - 32px)", display: "flex", flexDirection: "column", borderRadius: "10px", overflow: "hidden" }}>
+          <Box sx={{ flexGrow: 1, overflowY: "auto", p: { xs: 1, md: 1.5 }, direction: "rtl" }}>
+            <Grid container spacing={1.5} sx={{ mb: 2, alignItems: "center", overflowY: "visible" }}>
               <Grid item xs={12} md={2.5}>
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  disabled={isSaveDisabled}
-                  sx={{
-                    fontFamily: "IRANSANS",
-                    backgroundColor: isSaveDisabled ? "#e0e0e0" : "#F7C98C",
-                    color: isSaveDisabled ? "#9e9e9e" : "#333",
-                    fontWeight: "bold",
-                    "&:hover": {
-                      backgroundColor: isSaveDisabled ? "#e0e0e0" : "#f5b982",
-                    },
-                    width: "100%",
-                    height: "42px",
-                    fontSize: "0.9rem",
-                    gap:2,
-                  }}
-                  onClick={handleSave}
-                >
+                <Button variant="contained" startIcon={<SaveIcon />} disabled={isSaveDisabled} sx={{ fontFamily: "IRANSANS", backgroundColor: isSaveDisabled ? "#e0e0e0" : "#F7C98C", color: isSaveDisabled ? "#9e9e9e" : "#333", fontWeight: "bold", "&:hover": { backgroundColor: isSaveDisabled ? "#e0e0e0" : "#f5b982" }, width: "100%", height: "42px", fontSize: "0.9rem", gap: 2 }} onClick={handleSave}>
                   ذخیره
                 </Button>
               </Grid>
               <Grid item xs={12} md={9.5}>
                 <Grid container spacing={1.5}>
                   <Grid item xs={12} sm={4}>
-                    <Typography
-                      variant="body2"
-                      fontFamily="IRANSANS"
-                      sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}
-                    >
+                    <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}>
                       حجم تغییر آب ورودی
                     </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      variant="outlined"
-                      value={toPersianDigits(inputWaterVolume)}
-                      onChange={handleInputWaterVolumeChange}
-                      inputProps={{ inputMode: "decimal" }}
-                      sx={{
-                        "& .MuiInputBase-input": {
-                          textAlign: "center",
-                          padding: "6px 8px",
-                          fontSize: "0.8rem",
-                          fontFamily: "IRANSANS",
-                        },
-                      }}
-                    />
+                    <TextField fullWidth size="small" variant="outlined" value={toPersianDigits(inputWaterVolume)} onChange={handleInputWaterVolumeChange} inputProps={{ inputMode: "decimal" }} sx={{ "& .MuiInputBase-input": { textAlign: "center", padding: "6px 8px", fontSize: "0.8rem", fontFamily: "IRANSANS" } }} />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <Typography
-                      variant="body2"
-                      fontFamily="IRANSANS"
-                      sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}
-                    >
+                    <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}>
                       pH فعلی
                     </Typography>
                     <TextField
                       fullWidth
                       size="small"
                       variant="outlined"
+                      value={currentPh !== undefined && currentPh !== null ? toPersianDigits(currentPh) : ""}
                       inputProps={{ readOnly: true }}
-                      sx={{
-                        "& .MuiInputBase-input": {
-                          textAlign: "center",
-                          padding: "6px 8px",
-                          fontSize: "0.8rem",
-                          fontFamily: "IRANSANS",
-                        },
-                        backgroundColor: "#f5f5f5",
-                      }}
+                      sx={{ "& .MuiInputBase-input": { textAlign: "center", padding: "6px 8px", fontSize: "0.8rem", fontFamily: "IRANSANS" }, backgroundColor: "#f5f5f5" }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <Typography
-                      variant="body2"
-                      fontFamily="IRANSANS"
-                      sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}
-                    >
+                    <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}>
                       EC فعلی
                     </Typography>
                     <TextField
                       fullWidth
                       size="small"
                       variant="outlined"
+                      value={currentEc !== undefined && currentEc !== null ? toPersianDigits(currentEc) : ""}
                       inputProps={{ readOnly: true }}
-                      sx={{
-                        "& .MuiInputBase-input": {
-                          textAlign: "center",
-                          padding: "6px 8px",
-                          fontSize: "0.8rem",
-                          fontFamily: "IRANSANS",
-                        },
-                        backgroundColor: "#f5f5f5",
-                      }}
+                      sx={{ "& .MuiInputBase-input": { textAlign: "center", padding: "6px 8px", fontSize: "0.8rem", fontFamily: "IRANSANS" }, backgroundColor: "#f5f5f5" }}
                     />
                   </Grid>
                 </Grid>
               </Grid>
             </Grid>
 
-            {/* Programs Section */}
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1.5,
-                justifyContent: "center",
-                flexWrap: "nowrap",
-              }}
-            >
+            <Box sx={{ display: "flex", gap: 1.5, justifyContent: "center", flexWrap: "nowrap" }}>
               {[1, 2, 3].map((num) => (
-                <ProgramColumn
-                  key={num}
-                  number={num}
-                  data={programs[num]}
-                  onChange={(newData) => handleProgramChange(num, newData)}
-                />
+                <ProgramColumn key={num} number={num} data={programs[num]} onChange={(newData) => handleProgramChange(num, newData)} />
               ))}
             </Box>
           </Box>
