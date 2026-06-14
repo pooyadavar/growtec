@@ -30,6 +30,42 @@ const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   },
 }));
 
+const formatApproxTwoDecimals = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return toPersianDigits(num.toFixed(2));
+};
+
+const ReadonlyValueBox = ({ value, useTwoDecimals = true }) => (
+  <Box
+    sx={{
+      width: 40,
+      minHeight: 32,
+      backgroundColor: "#f0f0f0",
+      borderRadius: "8px",
+      border: "1px solid #c4c4c4",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      pointerEvents: "none",
+      userSelect: "none",
+      WebkitUserSelect: "none",
+    }}
+  >
+    <Typography
+      fontFamily="IRANSANS"
+      fontSize="10px"
+      textAlign="center"
+      sx={{ userSelect: "none", WebkitUserSelect: "none" }}
+    >
+      {useTwoDecimals
+        ? formatApproxTwoDecimals(value)
+        : toPersianDigits(value ?? "")}
+    </Typography>
+  </Box>
+);
+
 const PhEcControlCard = ({
   contents,
   statusText,
@@ -261,6 +297,7 @@ const PhEcControlCard = ({
             minWidth: 0,
             border: "0.5px solid gray",
             borderRadius: "15px",
+            userSelect: "none",
             pt: 1,
           }}
           pl={1}
@@ -317,6 +354,7 @@ const PhEcControlCard = ({
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onSelectStart={(e) => e.preventDefault()}
             sx={{
               maxHeight: 220,
               overflowY: "auto",
@@ -335,6 +373,8 @@ const PhEcControlCard = ({
                 background: "#888",
                 borderRadius: "4px",
               },
+              userSelect: "none",
+              WebkitUserSelect: "none",
             }}
           >
             {column1Data.map((item, index) => (
@@ -346,6 +386,9 @@ const PhEcControlCard = ({
                   justifyContent: "space-between",
                   gap: 1,
                   flexShrink: 0,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
                 }}
               >
                 <Box>
@@ -358,46 +401,15 @@ const PhEcControlCard = ({
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>
-                  <TextField
-                    variant="outlined"
-                    value={toPersianDigits(item)}
-                    InputProps={{ readOnly: true }}
-                    sx={{
-                      width: 40,
-                      backgroundColor: "#f0f0f0",
-                      "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-                      "& input": {
-                        fontFamily: "IRANSANS",
-                        textAlign: "center",
-                        padding: "8px",
-                        height: "unset",
-                        fontSize: "10px",
-                        cursor: "grab",
-                      },
-                    }}
+                  <ReadonlyValueBox
+                    value={item}
+                    useTwoDecimals={selectedStockType !== "time"}
                   />
-                  <TextField
-                    variant="outlined"
-                    size="small"
-                    value={toPersianDigits(
-                      column2Data[index] !== undefined
-                        ? column2Data[index]
-                        : "",
-                    )}
-                    InputProps={{ readOnly: true }}
-                    sx={{
-                      width: 40,
-                      backgroundColor: "#f0f0f0",
-                      "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-                      "& input": {
-                        fontFamily: "IRANSANS",
-                        textAlign: "center",
-                        padding: "8px",
-                        height: "unset",
-                        fontSize: "10px",
-                        cursor: "grab",
-                      },
-                    }}
+                  <ReadonlyValueBox
+                    value={
+                      column2Data[index] !== undefined ? column2Data[index] : ""
+                    }
+                    useTwoDecimals={false}
                   />
                 </Box>
               </Box>

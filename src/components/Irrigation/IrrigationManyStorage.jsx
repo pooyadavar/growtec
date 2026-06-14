@@ -37,6 +37,7 @@ import {
   deleteIrrigationSchedule,
 } from "../../api/irrigationApi";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import { uiIrrigationTankToApi } from "../../utils/tankMapping";
 import TimeInput from "../common/TimeInput";
 
 // Styled components for the modal
@@ -409,7 +410,7 @@ const IrrigationManyStorage = () => {
   const handleSettingsClick = (id) => {
     setSelectedTankId(id);
     const filteredRows = rawSchedules
-      .filter((item) => item.zone === id)
+      .filter((item) => item.zone === uiIrrigationTankToApi(id))
       .map((item) => ({
         ...item,
         tempId: item.id || crypto.randomUUID(),
@@ -436,7 +437,7 @@ const IrrigationManyStorage = () => {
       tempId: crypto.randomUUID(),
       start_time: "00:00:00",
       end_time: "00:00:00",
-      zone: selectedTankId,
+      zone: uiIrrigationTankToApi(selectedTankId),
       volume: 0,
       is_active: true,
       start_status: 0,
@@ -595,12 +596,14 @@ const IrrigationManyStorage = () => {
         }}
       >
         {tankIds.map((id) => {
-          const tank = tanksData[id];
+          const apiTankKey = uiIrrigationTankToApi(id);
+          const tank = tanksData[apiTankKey] ?? tanksData[String(apiTankKey)];
           const current = tank ? tank.current : {};
           const history = tank ? tank.history : [];
 
-          // Filter schedules for this specific tank
-          const tankSchedules = rawSchedules.filter((s) => s.zone === id);
+          const tankSchedules = rawSchedules.filter(
+            (s) => s.zone === apiTankKey,
+          );
 
           return (
             <Box

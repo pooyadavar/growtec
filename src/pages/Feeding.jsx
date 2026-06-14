@@ -19,6 +19,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus } from "../api/dashboardApi";
 import FeedingHistoryPage from "./FeedingHistoryPage";
 import FeedingSettingsPage from "./FeedingSettingsPage";
+import TankCalibrationModal from "../components/common/TankCalibrationModal";
+import { MIX_TANK_API_NUMBER } from "../utils/tankMapping";
+import { queryKeys } from "../api/queryKeys";
 
 const Feeding = () => {
   const modalFrameStyle = {
@@ -52,17 +55,20 @@ const Feeding = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["mixTankStatus"],
+    queryKey: queryKeys.mixTankStatus(),
     queryFn: getMixTankStatus,
     refetchInterval: 5000,
+    placeholderData: (previousData) => previousData,
   });
 
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isCalibModalOpen, setIsCalibModalOpen] = useState(false);
 
   const handleHistoryClick = () => setIsHistoryModalOpen(true);
   const handleAiClick = () => console.log("هوش مصنوعی کلیک شد");
   const handleSettingsClick = () => setIsSettingsModalOpen(true);
+  const handleCalibClick = () => setIsCalibModalOpen(true);
 
   const [ecTarget, setEcTarget] = useState(2.1);
 
@@ -171,7 +177,7 @@ const Feeding = () => {
             مخزن ساخت محلول
           </Typography>
           {/* <FeedingMixer /> */}
-          {isLoading ? (
+          {isLoading && !mixTankData ? (
             <Paper
               elevation={3}
               sx={{
@@ -189,7 +195,7 @@ const Feeding = () => {
             >
               <CircularProgress />
             </Paper>
-          ) : isError ? (
+          ) : isError && !mixTankData ? (
             <Alert severity="error">
               خطا: {error.message}
             </Alert>
@@ -221,44 +227,62 @@ const Feeding = () => {
               gap={5}
               justifyContent="center"
               alignItems="center"
+              flexWrap="wrap"
               sx={{
-                width: "91%",
-                margin: "8px 0",
-                px: "7px",
+                width: "95%",
+                margin: "5px 0",
+                px: "0px",
+                transform: "scale(0.95, 0.85)",
               }}
             >
-              <Box sx={{}}>
+              <Box>
                 <IconTextButton
                   icon={assets.svg.clockicon}
                   text="تاریخچه ساخت "
                   bgColor="#FFD799"
                   textColor="#333"
                   onClick={handleHistoryClick}
-                  width="150px"
+                  width="110px"
+
                 />
               </Box>
 
-              <Box sx={{}}>
+              <Box>
                 <IconTextButton
-                  icon={assets.svg.aiicon}
-                  text="هوش مصنوعی Ai"
-                  bgColor="#FF9933"
-                  textColor="#fff"
-                  onClick={handleAiClick}
-                  width="150px"
+                  icon={assets.svg.setting2}
+                  text="کالیبره مخزن"
+                  bgColor="#6CCDB0"
+                  textColor="#333"
+                  onClick={handleCalibClick}
+                  width="110px"
                 />
               </Box>
 
-              <Box sx={{}}>
+              <Box>
                 <IconTextButton
                   icon={assets.svg.testtubeicone}
                   text="تنظیمات محلول"
                   bgColor="#86CCB2"
                   textColor="#333"
                   onClick={handleSettingsClick}
-                  width="155px"
+                  width="110px"
                 />
               </Box>
+
+              <Box>
+                <IconTextButton
+                  icon={assets.svg.aiicon}
+                  text="هوش مصنوعی"
+                  bgColor="#FF9933"
+                  textColor="#fff"
+                  onClick={handleAiClick}
+                  width="110px"
+                />
+              </Box>
+
+
+
+
             </Stack>
           </Paper>
         </div>
@@ -291,6 +315,18 @@ const Feeding = () => {
           </Box>
         </Box>
       </Modal>
+      <TankCalibrationModal
+        open={isCalibModalOpen}
+        onClose={() => setIsCalibModalOpen(false)}
+        displayNumber="ساخت محلول"
+        apiTankNumber={MIX_TANK_API_NUMBER}
+        float1={mixTankData?.contents?.buttom_float_switch}
+        float2={mixTankData?.contents?.middle_float_switch}
+        float3={mixTankData?.contents?.top_float_switch}
+        fallbackVolume={mixTankData?.contents?.filled_volume}
+        fallbackMaxVolume={mixTankData?.contents?.max_volume}
+        externalContents={mixTankData?.contents}
+      />
       <div
         style={{
           marginTop: "125px",

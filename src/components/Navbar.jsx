@@ -45,13 +45,10 @@ const Navbar = () => {
   const classes = useStyles();
   const location = useLocation();
 
-  // Function to determine if a path is active
   const isActive = (path) => {
-    // Special case: if current path is '/' and the tab path is '/Feeding', consider it active
-    if (location.pathname === '/' && path === '/Feeding') {
+    if (location.pathname === '/' && path === '/Home') {
       return true;
     }
-    // For other paths, check if the current path starts with the tab's path
     return location.pathname.startsWith(path);
   };
 
@@ -140,7 +137,7 @@ const Navbar = () => {
               }}
             >
               <img src={assets.svg.water} alt="water" className={classes.iconImage} />
-              آب‌رسانی
+              آبیاری
             </Button>
             <Button
               component={Link}
@@ -157,7 +154,7 @@ const Navbar = () => {
               }}
             >
               <img src={assets.svg.monitoring} alt="Growtec" className={classes.iconImage} />
-              پایش
+              اقلیم
             </Button>
             <Button
               component={Link}

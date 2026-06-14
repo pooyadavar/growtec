@@ -34,14 +34,14 @@ import toast from "react-hot-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
-// --- Sub-components ---
-
 const TimeRangeInput = ({
   label,
   rangeValue,
   setRangeValue,
   displayRange,
   isLoading,
+  bgColor = "#FFCB82",
+  labelColor = "#3A3A3A",
 }) => {
   return (
     <Box
@@ -69,7 +69,7 @@ const TimeRangeInput = ({
           sx={{
             width: "84px",
             height: "37px",
-            backgroundColor: "#FFCB82",
+            backgroundColor: bgColor,
             borderRadius: "10px",
             borderLeft: "0.5px solid #9F9F9F",
             textAlign: "center",
@@ -78,7 +78,7 @@ const TimeRangeInput = ({
             justifyContent: "center",
           }}
         >
-          <Typography fontFamily={"IRANSANS"} fontSize={21} color="#3A3A3A">
+          <Typography fontFamily={"IRANSANS"} fontSize={21} color={labelColor}>
             {label}
           </Typography>
         </Box>
@@ -290,7 +290,11 @@ const specialSettingsConfig = [
   { key: "vent_delay", label: "مکث دریچه (دهم ثانیه)", isFloat: false },
   { key: "vent_open", label: "حرکت تو باز شدن (دهم ثانیه)", isFloat: false },
   { key: "vent_close", label: "حرکت تو بسته شدن (دهم ثانیه)", isFloat: false },
-  { key: "min_temperature", label: "حداقل دمای بیرون برای باز شدن", isFloat: true },
+  {
+    key: "min_temperature",
+    label: "حداقل دمای بیرون برای باز شدن",
+    isFloat: true,
+  },
 ];
 
 const buildSpecialParametersPayload = (form) =>
@@ -305,8 +309,7 @@ const buildSpecialParametersPayload = (form) =>
 const mapSpecialParametersToForm = (data = {}) =>
   specialSettingsConfig.reduce((acc, field) => {
     const value = data[field.key];
-    acc[field.key] =
-      value !== undefined && value !== null ? String(value) : "";
+    acc[field.key] = value !== undefined && value !== null ? String(value) : "";
     return acc;
   }, {});
 
@@ -417,7 +420,6 @@ const PayeshSetting = ({ zone, onClose }) => {
     [tempMax1, tempMax2, tempMax3, tempMin1, tempMin2, tempMin3],
   );
 
-  // واکشی مجزای بازه‌های زمانی (فقط یک بار انجام می‌شود)
   const { data: rangeData, isLoading: isRangeLoading } = useQuery({
     queryKey: queryKeys.climateRangeStartTime(zone),
     queryFn: async () => {
@@ -534,7 +536,6 @@ const PayeshSetting = ({ zone, onClose }) => {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryData, part]);
 
   const handleSpecialSettingChange = (code, value) => {
@@ -619,15 +620,24 @@ const PayeshSetting = ({ zone, onClose }) => {
       }
     }
 
-    const promises = [];
     const currentRange = normalizeRange([range1, range2, range3]);
+    const [r1, r2, r3] = currentRange;
+
+    // ولیدیشن: بازه‌ها نباید همپوشانی داشته باشن و باید به ترتیب باشن
+    if (r1 >= r2 || r2 >= r3) {
+      if (!silent)
+        toast.error(
+          "بازه‌ها نباید همپوشانی داشته باشند (اعداد باید از کم به زیاد وارد شوند).",
+        );
+      return { saved: false, hadChanges: true, error: true };
+    }
+
+    const promises = [];
 
     if (
       JSON.stringify(currentRange) !== JSON.stringify(initialRangeRef.current)
     ) {
-      promises.push(
-        updateRangeStartTime({ range_start_time: currentRange }),
-      );
+      promises.push(updateRangeStartTime({ range_start_time: currentRange }));
     }
 
     const currentTempRange = normalizeClimateRange(tempObject);
@@ -883,593 +893,790 @@ const PayeshSetting = ({ zone, onClose }) => {
     isClimateLoading && !queryData && selected !== "ویژه";
   const showSpecialLoading =
     isSpecialLoading && !specialParamsData && selected === "ویژه";
-  const showClimateError =
-    isClimateError && !queryData && selected !== "ویژه";
+  const showClimateError = isClimateError && !queryData && selected !== "ویژه";
   const showSpecialError =
     isSpecialError && !specialParamsData && selected === "ویژه";
 
-  return (
-    <>
-    <Container
-      sx={{
-        width: "820px",
-        height: "740px",
-        backgroundColor: "#EDECEC",
-        borderRadius: "15px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-around",
-        alignItems: "center",
-        transform: "scale(0.95)",
-        transformOrigin: "center",
-        paddingY: "2px",
-        position: "relative",
-      }}
-    >
-      {onClose && (
-        <IconButton
-          onClick={handleCloseRequest}
-          title="بستن"
-          size="small"
-          sx={{
-            position: "absolute",
-            top: 10,
-            left: 10,
-            zIndex: 20,
-            color: "#FFF",
-            backgroundColor: "inherit",
-            borderRadius: "8px",
-            "&:hover": { backgroundColor: "#D32F2F" },
-          }}
-        >
-          <img
-            src={assets.svg.close}
-            alt="close"
-            style={{ width: 25, height: 25 }}
-          />
-        </IconButton>
-      )}
+  const ClockVisualizer = ({ range1, range2, range3 }) => {
+    const getCoords = (hour, radius) => {
+      const angle = (hour / 24) * 360 - 90;
+      const rad = (angle * Math.PI) / 180;
+      return {
+        x: 65 + radius * Math.cos(rad),
+        y: 65 + radius * Math.sin(rad),
+      };
+    };
 
-      <Stack spacing={1.5} sx={{ width: "450px" }}>
-        <TimeRangeInput
-          label="بازه ۱"
-          rangeValue={range1}
-          setRangeValue={setRange1}
-          displayRange={`${toPersianDigits(range2)} - ${toPersianDigits(range1)}`}
-          isLoading={isRangeLoading && !rangeData}
-        />
-        <TimeRangeInput
-          label="بازه ۲"
-          rangeValue={range2}
-          setRangeValue={setRange2}
-          displayRange={`${toPersianDigits(range3)} - ${toPersianDigits(range2)}`}
-          isLoading={isRangeLoading && !rangeData}
-        />
-        <TimeRangeInput
-          label="بازه ۳"
-          rangeValue={range3}
-          setRangeValue={setRange3}
-          displayRange={`${toPersianDigits(range1)} - ${toPersianDigits(range3)}`}
-          isLoading={isRangeLoading && !rangeData}
-        />
-      </Stack>
+    const h1 = Number(range1) || 0;
+    const h2 = Number(range2) || 0;
+    const h3 = Number(range3) || 0;
 
+    const getArcPath = (startH, endH, radius) => {
+      if (startH === endH) return "";
+      let diff = endH - startH;
+      if (diff < 0) diff += 24;
+      if (diff === 0) return "";
+
+      const start = getCoords(startH, radius);
+      const end = getCoords(endH, radius);
+      const largeArcFlag = diff > 12 ? 1 : 0;
+
+      return `M 65 65 L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
+    };
+
+    const hours = Array.from({ length: 24 }, (_, i) => i);
+    const labels = [
+      { hour: 24, text: "۲۴" },
+      { hour: 6, text: "۶" },
+      { hour: 12, text: "۱۲" },
+      { hour: 18, text: "۱۸" },
+    ];
+
+    return (
       <Box
         sx={{
-          width: "765px",
-          height: "560px",
+          width: 145,
+          height: 145,
           display: "flex",
-          flexDirection: "column",
-          alignItems: "end",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "50%",
+          border: "0.5px solid #9F9F9F",
+          boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 5px 2px",
         }}
       >
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <path d={getArcPath(h1, h2, 45)} fill="rgba(33, 150, 243, 0.2)" />
+          <path d={getArcPath(h2, h3, 45)} fill="rgba(76, 175, 80, 0.2)" />
+          <path d={getArcPath(h3, h1, 45)} fill="rgba(255, 152, 0, 0.2)" />
+
+          {hours.map((h) => {
+            const isMainHour = h % 6 === 0;
+            const start = getCoords(h, 45);
+            const end = getCoords(h, isMainHour ? 37 : 42);
+            return (
+              <line
+                key={h}
+                x1={start.x}
+                y1={start.y}
+                x2={end.x}
+                y2={end.y}
+                stroke={isMainHour ? "#9F9F9F" : "#D3D3D3"}
+                strokeWidth={isMainHour ? 2 : 1}
+              />
+            );
+          })}
+
+          {labels.map(({ hour, text }) => {
+            const pos = getCoords(hour === 24 ? 0 : hour, 56);
+            return (
+              <text
+                key={hour}
+                x={pos.x}
+                y={pos.y}
+                fill="#3A3A3A"
+                fontSize="11"
+                fontFamily="IRANSANS"
+                textAnchor="middle"
+                dominantBaseline="central"
+              >
+                {text}
+              </text>
+            );
+          })}
+
+          <circle cx="65" cy="65" r="3" fill="#3A3A3A" />
+
+          {/* بازه ۱ */}
+          <line
+            x1="65"
+            y1="65"
+            x2={getCoords(h1, 35).x}
+            y2={getCoords(h1, 35).y}
+            stroke="#2196F3"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <circle
+            cx={getCoords(h1, 35).x}
+            cy={getCoords(h1, 35).y}
+            r="8"
+            fill="#2196F3"
+          />
+          <text
+            x={getCoords(h1, 35).x}
+            y={getCoords(h1, 35).y}
+            fill="#FFFFFF"
+            fontSize="10"
+            fontFamily="IRANSANS"
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {range1 ? toPersianDigits(range1) : ""}
+          </text>
+
+          {/* بازه ۲ */}
+          <line
+            x1="65"
+            y1="65"
+            x2={getCoords(h2, 35).x}
+            y2={getCoords(h2, 35).y}
+            stroke="#4CAF50"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <circle
+            cx={getCoords(h2, 35).x}
+            cy={getCoords(h2, 35).y}
+            r="8"
+            fill="#4CAF50"
+          />
+          <text
+            x={getCoords(h2, 35).x}
+            y={getCoords(h2, 35).y}
+            fill="#FFFFFF"
+            fontSize="10"
+            fontFamily="IRANSANS"
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {range2 ? toPersianDigits(range2) : ""}
+          </text>
+
+          {/* بازه ۳ */}
+          <line
+            x1="65"
+            y1="65"
+            x2={getCoords(h3, 35).x}
+            y2={getCoords(h3, 35).y}
+            stroke="#FF9800"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <circle
+            cx={getCoords(h3, 35).x}
+            cy={getCoords(h3, 35).y}
+            r="8"
+            fill="#FF9800"
+          />
+          <text
+            x={getCoords(h3, 35).x}
+            y={getCoords(h3, 35).y}
+            fill="#FFFFFF"
+            fontSize="10"
+            fontFamily="IRANSANS"
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {range3 ? toPersianDigits(range3) : ""}
+          </text>
+        </svg>
+      </Box>
+    );
+  };
+
+  return (
+    <>
+      <Container
+        sx={{
+          width: "820px",
+          height: "740px",
+          backgroundColor: "#EDECEC",
+          borderRadius: "15px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-around",
+          alignItems: "center",
+          transform: "scale(0.95)",
+          transformOrigin: "center",
+          paddingY: "2px",
+          position: "relative",
+        }}
+      >
+        {onClose && (
+          <IconButton
+            onClick={handleCloseRequest}
+            title="بستن"
+            size="small"
+            sx={{
+              position: "absolute",
+              top: 10,
+              left: 10,
+              zIndex: 20,
+              color: "#FFF",
+              backgroundColor: "inherit",
+              borderRadius: "8px",
+              "&:hover": { backgroundColor: "#D32F2F" },
+            }}
+          >
+            <img
+              src={assets.svg.close}
+              alt="close"
+              style={{ width: 25, height: 25 }}
+            />
+          </IconButton>
+        )}
         <Box
           sx={{
+            width: "765px",
             display: "flex",
-            flexDirection: "row-reverse",
-            justifyContent: "flex-start",
-            width: "550px",
+            justifyContent: "space-around",
+            alignItems: "center",
+            paddingX: 4,
           }}
         >
-          {buttons.map((label, index) => (
-            <Box
-              key={label}
-              onClick={() => handleTabSelect(label, index)}
-              sx={{
-                paddingX: "14px",
-                marginRight: index !== buttons.length - 1 ? "10px" : 0,
-                height: "46px",
-                borderRadius: "10px 10px 0 0",
-                backgroundColor: selected === label ? "#ffffff" : "#FFCB82",
-                cursor: isSaving ? "wait" : "pointer",
-                opacity: isSaving ? 0.7 : 1,
-                transition: "background-color 0.3s",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minWidth: "60px",
-                pointerEvents: isSaving ? "none" : "auto",
-              }}
-            >
-              <Typography
-                fontSize={15}
-                fontFamily={"IRANSANS"}
-                color={"#111111"}
-                fontWeight={selected === label ? "bold" : "normal"}
-              >
-                {label}
-              </Typography>
-            </Box>
-          ))}
+          <Stack spacing={1.5} sx={{ width: "480px" }}>
+            <TimeRangeInput
+              label="بازه ۱"
+              rangeValue={range1}
+              setRangeValue={setRange1}
+              displayRange={`${toPersianDigits(range2)} - ${toPersianDigits(range1)}`}
+              isLoading={isRangeLoading && !rangeData}
+              bgColor="#2196F3"
+              labelColor="#FFFFFF"
+            />
+            <TimeRangeInput
+              label="بازه ۲"
+              rangeValue={range2}
+              setRangeValue={setRange2}
+              displayRange={`${toPersianDigits(range3)} - ${toPersianDigits(range2)}`}
+              isLoading={isRangeLoading && !rangeData}
+              bgColor="#4CAF50"
+              labelColor="#FFFFFF"
+            />
+            <TimeRangeInput
+              label="بازه ۳"
+              rangeValue={range3}
+              setRangeValue={setRange3}
+              displayRange={`${toPersianDigits(range1)} - ${toPersianDigits(range3)}`}
+              isLoading={isRangeLoading && !rangeData}
+              bgColor="#FF9800"
+              labelColor="#FFFFFF"
+            />
+          </Stack>
+
+          <ClockVisualizer range1={range1} range2={range2} range3={range3} />
         </Box>
 
         <Box
           sx={{
             width: "765px",
-            height: "470px",
-            backgroundColor: "#ffffff",
-            borderRadius: "0 10px 10px 10px",
+            height: "560px",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            paddingY: "20px",
-            position: "relative",
-            overflow: "hidden",
+            alignItems: "end",
           }}
         >
-          {(showClimateLoading || showSpecialLoading) ? (
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                zIndex: 10,
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : (showClimateError || showSpecialError) ? (
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                zIndex: 10,
-              }}
-            >
-              <Typography color="error" fontFamily="IRANSANS">
-                خطا در بارگذاری اطلاعات
-              </Typography>
-            </Box>
-          ) : (
-            <>
-              {selected === "ویژه" ? (
-                <Box
-                  sx={{
-                    width: "90%",
-                    px: 4,
-                    height: "390px",
-                    overflow: "hidden",
-                    direction: "rtl",
-                    display: "flex",
-                    gap: 3,
-                  }}
-                >
-                  <Stack spacing={0.5} sx={{ width: "50%" }}>
-                    {specialSettingsConfig.slice(0, 7).map((field) => (
-                      <Box
-                        key={field.key}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          py: 0.5,
-                          px: 1,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: "8px",
-                          backgroundColor: "#fafafa",
-                        }}
-                      >
-                        <Typography
-                          fontFamily={"IRANSANS"}
-                          fontSize={12}
-                          color="#333"
-                        >
-                          {field.label}
-                        </Typography>
-                        <TextField
-                          size="small"
-                          variant="outlined"
-                          type="text"
-                          inputMode={field.isFloat ? "decimal" : "numeric"}
-                          value={toPersianDigits(specialSettings[field.key])}
-                          onChange={(e) => {
-                            const val = toEnglishDigits(e.target.value);
-                            if (
-                              val === "" ||
-                              val === "-" ||
-                              (field.isFloat
-                                ? /^-?\d*\.?\d*$/.test(val)
-                                : /^-?\d*$/.test(val))
-                            ) {
-                              handleSpecialSettingChange(field.key, val);
-                            }
-                          }}
-                          sx={{
-                            width: "70px",
-                            "& .MuiInputBase-input": {
-                              textAlign: "center",
-                              padding: "2px 4px",
-                              fontSize: "13px",
-                              fontFamily: "IRANSANS",
-                            },
-                          }}
-                        />
-                      </Box>
-                    ))}
-                  </Stack>
-
-                  <Stack spacing={0.5} sx={{ width: "50%" }}>
-                    {specialSettingsConfig.slice(7).map((field) => (
-                      <Box
-                        key={field.key}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          py: 0.5,
-                          px: 1,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: "8px",
-                          backgroundColor: "#fafafa",
-                        }}
-                      >
-                        <Typography
-                          fontFamily={"IRANSANS"}
-                          fontSize={12}
-                          color="#333"
-                        >
-                          {field.label}
-                        </Typography>
-                        <TextField
-                          size="small"
-                          variant="outlined"
-                          type="text"
-                          inputMode={field.isFloat ? "decimal" : "numeric"}
-                          value={toPersianDigits(specialSettings[field.key])}
-                          onChange={(e) => {
-                            const val = toEnglishDigits(e.target.value);
-                            if (
-                              val === "" ||
-                              val === "-" ||
-                              (field.isFloat
-                                ? /^-?\d*\.?\d*$/.test(val)
-                                : /^-?\d*$/.test(val))
-                            ) {
-                              handleSpecialSettingChange(field.key, val);
-                            }
-                          }}
-                          sx={{
-                            width: "70px",
-                            "& .MuiInputBase-input": {
-                              textAlign: "center",
-                              padding: "2px 4px",
-                              fontSize: "13px",
-                              fontFamily: "IRANSANS",
-                            },
-                          }}
-                        />
-                      </Box>
-                    ))}
-                  </Stack>
-                </Box>
-              ) : (
-                <Box sx={{ width: "733px", height: "390px", display: "flex" }}>
-                  <Stack width="356px" spacing={2} sx={{ display: "flex" }}>
-                    <Typography
-                      fontFamily={"IRANSANS"}
-                      fontSize={20}
-                      color="#000000"
-                      textAlign={"center"}
-                    >
-                      دما
-                    </Typography>
-                    <Box
-                      sx={{
-                        border: "0.5px solid #9F9F9F",
-                        borderRadius: "10px",
-                        padding: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-around",
-                        alignItems: "center",
-                        height: "100%",
-                      }}
-                    >
-                      <MinMaxInput
-                        label="بازه زمانی ۱"
-                        maxState={tempMax1}
-                        setMaxState={setTempMax1}
-                        minState={tempMin1}
-                        setMinState={setTempMin1}
-                      />
-                      <MinMaxInput
-                        label="بازه زمانی ۲"
-                        maxState={tempMax2}
-                        setMaxState={setTempMax2}
-                        minState={tempMin2}
-                        setMinState={setTempMin2}
-                      />
-                      <MinMaxInput
-                        label="بازه زمانی ۳"
-                        maxState={tempMax3}
-                        setMaxState={setTempMax3}
-                        minState={tempMin3}
-                        setMinState={setTempMin3}
-                      />
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          justifyContent: "center",
-                          width: "320px",
-                          marginTop: 2,
-                          gap: "2px",
-                        }}
-                      >
-                        {tempControllerList.slice(0, 5).map((ctrl) => (
-                          <ControllerStatus
-                            key={ctrl.key}
-                            label={ctrl.label}
-                            isActive={tempControllers[ctrl.key]}
-                            iconSrc={assets.svg.done}
-                            onClick={ctrl.onClick}
-                          />
-                        ))}
-                      </Box>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          justifyContent: "center",
-                          width: "320px",
-                          marginTop: 1,
-                          gap: "8px",
-                        }}
-                      >
-                        {tempControllerList.slice(5, 9).map((ctrl) => (
-                          <ControllerStatus
-                            key={ctrl.key}
-                            label={ctrl.label}
-                            isActive={tempControllers[ctrl.key]}
-                            iconSrc={assets.svg.done}
-                            onClick={ctrl.onClick}
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-                  </Stack>
-
-                  <Stack width="356px" spacing={2} sx={{ display: "flex" }}>
-                    <Typography
-                      fontFamily={"IRANSANS"}
-                      fontSize={20}
-                      color="#000000"
-                      textAlign={"center"}
-                    >
-                      رطوبت
-                    </Typography>
-                    <Box
-                      sx={{
-                        border: "0.5px solid #9F9F9F",
-                        borderRadius: "10px",
-                        padding: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-around",
-                        alignItems: "center",
-                        height: "100%",
-                      }}
-                    >
-                      <MinMaxInput
-                        label="بازه زمانی ۱"
-                        maxState={humMax1}
-                        setMaxState={sethumMax1}
-                        minState={humMin1}
-                        setMinState={setHumMin1}
-                      />
-                      <MinMaxInput
-                        label="بازه زمانی ۲"
-                        maxState={humMax2}
-                        setMaxState={sethumMax2}
-                        minState={humMin2}
-                        setMinState={setHumMin2}
-                      />
-                      <MinMaxInput
-                        label="بازه زمانی ۳"
-                        maxState={humMax3}
-                        setMaxState={sethumMax3}
-                        minState={humMin3}
-                        setMinState={setHumMin3}
-                      />
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          justifyContent: "center",
-                          width: "320px",
-                          marginTop: 2,
-                          gap: "8px",
-                        }}
-                      >
-                        {humControllerList.slice(0, 5).map((ctrl) => (
-                          <ControllerStatus
-                            key={ctrl.key}
-                            label={ctrl.label}
-                            isActive={humControllers[ctrl.key]}
-                            iconSrc={assets.svg.done}
-                            onClick={ctrl.onClick}
-                          />
-                        ))}
-                      </Box>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          justifyContent: "center",
-                          width: "320px",
-                          marginTop: 1,
-                          gap: "8px",
-                        }}
-                      >
-                        {humControllerList.slice(5, 9).map((ctrl) => (
-                          <ControllerStatus
-                            key={ctrl.key}
-                            label={ctrl.label}
-                            isActive={humControllers[ctrl.key]}
-                            iconSrc={assets.svg.done}
-                            onClick={ctrl.onClick}
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-                  </Stack>
-                </Box>
-              )}
-
-              <Button
-                variant="contained"
-                onClick={handleSave}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSave();
-                  }
-                }}
-                tabIndex={0}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row-reverse",
+              justifyContent: "flex-start",
+              width: "550px",
+            }}
+          >
+            {buttons.map((label, index) => (
+              <Box
+                key={label}
+                onClick={() => handleTabSelect(label, index)}
                 sx={{
-                  width: "110px",
-                  height: "56px",
-                  backgroundColor: "#FFCB82",
-                  borderRadius: "10px",
-                  color: "#111111",
-                  fontSize: 18,
-                  fontFamily: "IRANSANS",
+                  paddingX: "14px",
+                  marginRight: index !== buttons.length - 1 ? "10px" : 0,
+                  height: "46px",
+                  borderRadius: "10px 10px 0 0",
+                  backgroundColor: selected === label ? "#ffffff" : "#FFCB82",
+                  cursor: isSaving ? "wait" : "pointer",
+                  opacity: isSaving ? 0.7 : 1,
+                  transition: "background-color 0.3s",
                   display: "flex",
-                  justifyContent: "space-around",
                   alignItems: "center",
-                  marginTop: "auto",
-                  paddingX: 1,
-                  "&:hover": { backgroundColor: "#E0B571" },
+                  justifyContent: "center",
+                  minWidth: "60px",
+                  pointerEvents: isSaving ? "none" : "auto",
                 }}
               >
-                <img
-                  src={assets.svg.saveIcon}
-                  alt="ذخیره"
-                  style={{ height: "24px" }}
-                />{" "}
-                ذخیره
-              </Button>
-            </>
-          )}
-        </Box>
-      </Box>
-    </Container>
+                <Typography
+                  fontSize={15}
+                  fontFamily={"IRANSANS"}
+                  color={"#111111"}
+                  fontWeight={selected === label ? "bold" : "normal"}
+                >
+                  {label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
 
-    <Modal
-      open={unsavedDialogOpen}
-      onClose={closeUnsavedDialog}
-      aria-labelledby="unsaved-changes-dialog"
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 380,
-          bgcolor: "#FFFFFF",
-          borderRadius: "12px",
-          border: "0.5px solid #9F9F9F",
-          boxShadow: 24,
-          p: 3,
-          pt: 4,
-          direction: "rtl",
-        }}
+          <Box
+            sx={{
+              width: "765px",
+              height: "470px",
+              backgroundColor: "#ffffff",
+              borderRadius: "0 10px 10px 10px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              paddingY: "20px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {showClimateLoading || showSpecialLoading ? (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
+                  zIndex: 10,
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            ) : showClimateError || showSpecialError ? (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
+                  zIndex: 10,
+                }}
+              >
+                <Typography color="error" fontFamily="IRANSANS">
+                  خطا در بارگذاری اطلاعات
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                {selected === "ویژه" ? (
+                  <Box
+                    sx={{
+                      width: "90%",
+                      px: 4,
+                      height: "390px",
+                      overflow: "hidden",
+                      direction: "rtl",
+                      display: "flex",
+                      gap: 3,
+                    }}
+                  >
+                    <Stack spacing={0.5} sx={{ width: "50%" }}>
+                      {specialSettingsConfig.slice(0, 7).map((field) => (
+                        <Box
+                          key={field.key}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            py: 0.5,
+                            px: 1,
+                            border: "1px solid #e0e0e0",
+                            borderRadius: "8px",
+                            backgroundColor: "#fafafa",
+                          }}
+                        >
+                          <Typography
+                            fontFamily={"IRANSANS"}
+                            fontSize={12}
+                            color="#333"
+                          >
+                            {field.label}
+                          </Typography>
+                          <TextField
+                            size="small"
+                            variant="outlined"
+                            type="text"
+                            inputMode={field.isFloat ? "decimal" : "numeric"}
+                            value={toPersianDigits(specialSettings[field.key])}
+                            onChange={(e) => {
+                              const val = toEnglishDigits(e.target.value);
+                              if (
+                                val === "" ||
+                                val === "-" ||
+                                (field.isFloat
+                                  ? /^-?\d*\.?\d*$/.test(val)
+                                  : /^-?\d*$/.test(val))
+                              ) {
+                                handleSpecialSettingChange(field.key, val);
+                              }
+                            }}
+                            sx={{
+                              width: "70px",
+                              "& .MuiInputBase-input": {
+                                textAlign: "center",
+                                padding: "2px 4px",
+                                fontSize: "13px",
+                                fontFamily: "IRANSANS",
+                              },
+                            }}
+                          />
+                        </Box>
+                      ))}
+                    </Stack>
+
+                    <Stack spacing={0.5} sx={{ width: "50%" }}>
+                      {specialSettingsConfig.slice(7).map((field) => (
+                        <Box
+                          key={field.key}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            py: 0.5,
+                            px: 1,
+                            border: "1px solid #e0e0e0",
+                            borderRadius: "8px",
+                            backgroundColor: "#fafafa",
+                          }}
+                        >
+                          <Typography
+                            fontFamily={"IRANSANS"}
+                            fontSize={12}
+                            color="#333"
+                          >
+                            {field.label}
+                          </Typography>
+                          <TextField
+                            size="small"
+                            variant="outlined"
+                            type="text"
+                            inputMode={field.isFloat ? "decimal" : "numeric"}
+                            value={toPersianDigits(specialSettings[field.key])}
+                            onChange={(e) => {
+                              const val = toEnglishDigits(e.target.value);
+                              if (
+                                val === "" ||
+                                val === "-" ||
+                                (field.isFloat
+                                  ? /^-?\d*\.?\d*$/.test(val)
+                                  : /^-?\d*$/.test(val))
+                              ) {
+                                handleSpecialSettingChange(field.key, val);
+                              }
+                            }}
+                            sx={{
+                              width: "70px",
+                              "& .MuiInputBase-input": {
+                                textAlign: "center",
+                                padding: "2px 4px",
+                                fontSize: "13px",
+                                fontFamily: "IRANSANS",
+                              },
+                            }}
+                          />
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{ width: "733px", height: "390px", display: "flex" }}
+                  >
+                    <Stack width="356px" spacing={2} sx={{ display: "flex" }}>
+                      <Typography
+                        fontFamily={"IRANSANS"}
+                        fontSize={20}
+                        color="#000000"
+                        textAlign={"center"}
+                      >
+                        دما
+                      </Typography>
+                      <Box
+                        sx={{
+                          border: "0.5px solid #9F9F9F",
+                          borderRadius: "10px",
+                          padding: 2,
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-around",
+                          alignItems: "center",
+                          height: "100%",
+                        }}
+                      >
+                        <MinMaxInput
+                          label="بازه زمانی ۱"
+                          maxState={tempMax1}
+                          setMaxState={setTempMax1}
+                          minState={tempMin1}
+                          setMinState={setTempMin1}
+                        />
+                        <MinMaxInput
+                          label="بازه زمانی ۲"
+                          maxState={tempMax2}
+                          setMaxState={setTempMax2}
+                          minState={tempMin2}
+                          setMinState={setTempMin2}
+                        />
+                        <MinMaxInput
+                          label="بازه زمانی ۳"
+                          maxState={tempMax3}
+                          setMaxState={setTempMax3}
+                          minState={tempMin3}
+                          setMinState={setTempMin3}
+                        />
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: "center",
+                            width: "320px",
+                            marginTop: 2,
+                            gap: "2px",
+                          }}
+                        >
+                          {tempControllerList.slice(0, 5).map((ctrl) => (
+                            <ControllerStatus
+                              key={ctrl.key}
+                              label={ctrl.label}
+                              isActive={tempControllers[ctrl.key]}
+                              iconSrc={assets.svg.done}
+                              onClick={ctrl.onClick}
+                            />
+                          ))}
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: "center",
+                            width: "320px",
+                            marginTop: 1,
+                            gap: "8px",
+                          }}
+                        >
+                          {tempControllerList.slice(5, 9).map((ctrl) => (
+                            <ControllerStatus
+                              key={ctrl.key}
+                              label={ctrl.label}
+                              isActive={tempControllers[ctrl.key]}
+                              iconSrc={assets.svg.done}
+                              onClick={ctrl.onClick}
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    </Stack>
+
+                    <Stack width="356px" spacing={2} sx={{ display: "flex" }}>
+                      <Typography
+                        fontFamily={"IRANSANS"}
+                        fontSize={20}
+                        color="#000000"
+                        textAlign={"center"}
+                      >
+                        رطوبت
+                      </Typography>
+                      <Box
+                        sx={{
+                          border: "0.5px solid #9F9F9F",
+                          borderRadius: "10px",
+                          padding: 2,
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-around",
+                          alignItems: "center",
+                          height: "100%",
+                        }}
+                      >
+                        <MinMaxInput
+                          label="بازه زمانی ۱"
+                          maxState={humMax1}
+                          setMaxState={sethumMax1}
+                          minState={humMin1}
+                          setMinState={setHumMin1}
+                        />
+                        <MinMaxInput
+                          label="بازه زمانی ۲"
+                          maxState={humMax2}
+                          setMaxState={sethumMax2}
+                          minState={humMin2}
+                          setMinState={setHumMin2}
+                        />
+                        <MinMaxInput
+                          label="بازه زمانی ۳"
+                          maxState={humMax3}
+                          setMaxState={sethumMax3}
+                          minState={humMin3}
+                          setMinState={setHumMin3}
+                        />
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: "center",
+                            width: "320px",
+                            marginTop: 2,
+                            gap: "8px",
+                          }}
+                        >
+                          {humControllerList.slice(0, 5).map((ctrl) => (
+                            <ControllerStatus
+                              key={ctrl.key}
+                              label={ctrl.label}
+                              isActive={humControllers[ctrl.key]}
+                              iconSrc={assets.svg.done}
+                              onClick={ctrl.onClick}
+                            />
+                          ))}
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: "center",
+                            width: "320px",
+                            marginTop: 1,
+                            gap: "8px",
+                          }}
+                        >
+                          {humControllerList.slice(5, 9).map((ctrl) => (
+                            <ControllerStatus
+                              key={ctrl.key}
+                              label={ctrl.label}
+                              isActive={humControllers[ctrl.key]}
+                              iconSrc={assets.svg.done}
+                              onClick={ctrl.onClick}
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </Box>
+                )}
+
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSave();
+                    }
+                  }}
+                  tabIndex={0}
+                  sx={{
+                    width: "110px",
+                    height: "56px",
+                    backgroundColor: "#FFCB82",
+                    borderRadius: "10px",
+                    color: "#111111",
+                    fontSize: 18,
+                    fontFamily: "IRANSANS",
+                    display: "flex",
+                    justifyContent: "space-around",
+                    alignItems: "center",
+                    marginTop: "auto",
+                    paddingX: 1,
+                    "&:hover": { backgroundColor: "#E0B571" },
+                  }}
+                >
+                  <img
+                    src={assets.svg.saveIcon}
+                    alt="ذخیره"
+                    style={{ height: "24px" }}
+                  />{" "}
+                  ذخیره
+                </Button>
+              </>
+            )}
+          </Box>
+        </Box>
+      </Container>
+
+      <Modal
+        open={unsavedDialogOpen}
+        onClose={closeUnsavedDialog}
+        aria-labelledby="unsaved-changes-dialog"
       >
-        <IconButton
-          onClick={closeUnsavedDialog}
-          title="بستن"
-          size="small"
+        <Box
           sx={{
             position: "absolute",
-            top: 8,
-            left: 8,
-            color: "#FFF",
-            backgroundColor: "inherit",
-            borderRadius: "8px",
-            "&:hover": { backgroundColor: "#D32F2F" },
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 380,
+            bgcolor: "#FFFFFF",
+            borderRadius: "12px",
+            border: "0.5px solid #9F9F9F",
+            boxShadow: 24,
+            p: 3,
+            pt: 4,
+            direction: "rtl",
           }}
         >
-          <img
-            src={assets.svg.close}
-            alt="close"
-            style={{ width: 14, height: 14 }}
-          />
-        </IconButton>
-
-        <Typography
-          fontFamily="IRANSANS"
-          fontSize={16}
-          textAlign="center"
-          sx={{ mb: 3, px: 1 }}
-        >
-          تغییرات ذخیره نشده‌اند. می‌خواهید ذخیره کنید؟
-        </Typography>
-
-        <Stack direction="row" spacing={2} justifyContent="space-around">
-          <Button
-            variant="outlined"
-            onClick={handleDiscardChanges}
-            disabled={isSaving}
+          <IconButton
+            onClick={closeUnsavedDialog}
+            title="بستن"
+            size="small"
             sx={{
-              fontFamily: "IRANSANS",
-              minWidth: 100,
-              borderColor: "#9F9F9F",
-              color: "#333",
+              position: "absolute",
+              top: 8,
+              left: 8,
+              color: "#FFF",
+              backgroundColor: "inherit",
+              borderRadius: "8px",
+              "&:hover": { backgroundColor: "#D32F2F" },
             }}
           >
-            خیر
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSaveAndContinue}
-            disabled={isSaving}
-            sx={{
-              fontFamily: "IRANSANS",
-              minWidth: 120,
-              backgroundColor: "#FFCB82",
-              color: "#111",
-              "&:hover": { backgroundColor: "#E0B571" },
-            }}
+            <img
+              src={assets.svg.close}
+              alt="close"
+              style={{ width: 14, height: 14 }}
+            />
+          </IconButton>
+
+          <Typography
+            fontFamily="IRANSANS"
+            fontSize={16}
+            textAlign="center"
+            sx={{ mb: 3, px: 1 }}
           >
-            {isSaving ? "..." : "بله، ذخیره کن"}
-          </Button>
-        </Stack>
-      </Box>
-    </Modal>
+            تغییرات ذخیره نشده‌اند. می‌خواهید ذخیره کنید؟
+          </Typography>
+
+          <Stack direction="row" spacing={2} justifyContent="space-around">
+            <Button
+              variant="outlined"
+              onClick={handleDiscardChanges}
+              disabled={isSaving}
+              sx={{
+                fontFamily: "IRANSANS",
+                minWidth: 100,
+                borderColor: "#9F9F9F",
+                color: "#333",
+              }}
+            >
+              خیر
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveAndContinue}
+              disabled={isSaving}
+              sx={{
+                fontFamily: "IRANSANS",
+                minWidth: 120,
+                backgroundColor: "#FFCB82",
+                color: "#111",
+                "&:hover": { backgroundColor: "#E0B571" },
+              }}
+            >
+              {isSaving ? "..." : "بله، ذخیره کن"}
+            </Button>
+          </Stack>
+        </Box>
+      </Modal>
     </>
   );
 };

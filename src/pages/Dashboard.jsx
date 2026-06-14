@@ -8,6 +8,7 @@ import { Container, Typography, CircularProgress, Alert, Box, Paper } from "@mui
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus, getIrrigationTanksStatus } from "../api/dashboardApi";
+import { queryKeys } from "../api/queryKeys";
 
 const Dashboard = () => {
   sessionStorage.setItem("sample", 2);
@@ -17,22 +18,22 @@ const Dashboard = () => {
     data: mixTankData,
     isLoading: isMixTankLoading,
     isError: isMixTankError,
-    error: mixTankError,
   } = useQuery({
-    queryKey: ["mixTankStatus"],
+    queryKey: queryKeys.mixTankStatus(),
     queryFn: getMixTankStatus,
     refetchInterval: 5000,
+    placeholderData: (previousData) => previousData,
   });
 
   const {
     data: storagesList,
     isLoading: isStoragesLoading,
     isError: isStoragesError,
-    error: storagesError,
   } = useQuery({
-    queryKey: ["irrigationTanks"],
+    queryKey: queryKeys.irrigationTanks(),
     queryFn: getIrrigationTanksStatus,
     refetchInterval: 5000,
+    placeholderData: (previousData) => previousData,
     select: (data) => {
       if (!data || typeof data !== "object") return [];
       return Object.entries(data)
@@ -88,7 +89,7 @@ const Dashboard = () => {
           >
             فرایند ساخت محلول
           </Typography>
-          {isMixTankLoading ? (
+          {isMixTankLoading && !mixTankData ? (
             <Paper
               elevation={3}
               sx={{
@@ -104,10 +105,8 @@ const Dashboard = () => {
             >
               <CircularProgress />
             </Paper>
-          ) : isMixTankError ? (
-            <Alert severity="error">
-              خطا: {mixTankError.message}
-            </Alert>
+          ) : isMixTankError && !mixTankData ? (
+            <Alert severity="error">خطا در دریافت اطلاعات مخزن</Alert>
           ) : (
             <PhEcControlCard
               contents={mixTankData?.contents}
@@ -140,7 +139,7 @@ const Dashboard = () => {
             >
               وضعیت محلول
             </Typography>
-            {isMixTankLoading ? (
+            {isMixTankLoading && !mixTankData ? (
               <Paper
                 sx={{
                   width: "350px",
@@ -155,7 +154,7 @@ const Dashboard = () => {
               >
                 <CircularProgress size={30} />
               </Paper>
-            ) : isMixTankError ? (
+            ) : isMixTankError && !mixTankData ? (
               <Alert severity="error" sx={{ fontSize: "0.8rem" }}>
                 خطا در دریافت اطلاعات
               </Alert>
@@ -179,7 +178,7 @@ const Dashboard = () => {
               {" "}
               مخازن آبیاری
             </Typography>
-            {isStoragesLoading ? (
+            {isStoragesLoading && !storagesList?.length ? (
               <Paper
                 sx={{
                   width: "340px",
@@ -194,7 +193,7 @@ const Dashboard = () => {
               >
                 <CircularProgress size={30} />
               </Paper>
-            ) : isStoragesError ? (
+            ) : isStoragesError && !storagesList?.length ? (
               <Alert severity="error" sx={{ fontSize: "0.8rem" }}>
                 خطا در دریافت اطلاعات
               </Alert>

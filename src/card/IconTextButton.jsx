@@ -7,12 +7,11 @@ const IconTextButton = ({
   bgColor = '#fff',
   textColor = '#333',
   onClick,
-  // --- ورودی‌های جدید با مقادیر پیش‌فرض (اختیاری) ---
   width = 'auto', // عرض
   height = 'auto', // ارتفاع
-  iconPosition = 'left', // موقعیت آیکون
-  borderColor, // رنگ کادر (پیش‌فرض undefined)
-  sx = {} // استایل‌های اضافی
+  iconPosition = 'left',
+  borderColor,
+  sx = {} 
 }) => {
   return (
     <ButtonBase
