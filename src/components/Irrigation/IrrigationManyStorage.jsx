@@ -386,6 +386,8 @@ const IrrigationManyStorage = () => {
     },
   });
 
+  const tankIds = [1, 2, 3, 4];
+
   const slide = (direction) => {
     const el = scrollRef.current;
     if (el) {
@@ -397,7 +399,30 @@ const IrrigationManyStorage = () => {
     }
   };
 
-  const tankIds = [1, 2, 3, 4];
+  const updateScrollButtons = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+    const scrollPos = Math.abs(el.scrollLeft);
+
+    setCanScrollLeft(scrollPos > 1);
+    setCanScrollRight(scrollPos < maxScroll - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    updateScrollButtons();
+    el.addEventListener("scroll", updateScrollButtons, { passive: true });
+    window.addEventListener("resize", updateScrollButtons);
+
+    return () => {
+      el.removeEventListener("scroll", updateScrollButtons);
+      window.removeEventListener("resize", updateScrollButtons);
+    };
+  }, [updateScrollButtons, tankIds.length]);
 
   // Helper to extract HH:mm:ss from a time string
   const getCleanTime = (timeStr) => {
@@ -584,7 +609,8 @@ const IrrigationManyStorage = () => {
           height: "680px",
           display: "flex",
           flexDirection: "row-reverse",
-          overflowX: "hidden",
+          overflowX: "auto",
+          overflowY: "hidden",
           alignItems: "center",
           scrollSnapType: "x mandatory",
           scrollBehavior: "smooth",
@@ -593,6 +619,9 @@ const IrrigationManyStorage = () => {
           transformOrigin: "center",
           marginTop: "-50px",
           marginBottom: "-50px",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          "&::-webkit-scrollbar": { display: "none" },
         }}
       >
         {tankIds.map((id) => {
@@ -839,6 +868,9 @@ const IrrigationManyStorage = () => {
                   overflowY: "auto",
                   overflowX: "hidden",
                   pr: 1,
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  "&::-webkit-scrollbar": { display: "none" },
                 }}
               >
                 <TransitionGroup>

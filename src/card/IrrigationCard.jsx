@@ -319,9 +319,13 @@ const IrrigationCard = ({
           sx={{
             flexGrow: 1,
             overflowY: "auto",
+            overflowX: "hidden",
             display: "flex",
             flexDirection: "column",
             gap: 1,
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
           {irrigationScheduleItems.length > 0 ? (

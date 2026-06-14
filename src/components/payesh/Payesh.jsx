@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Box,
   Button,
@@ -68,6 +68,15 @@ const StatusIndicators = ({ states }) => (
   </Box>
 );
 
+const normalizeExclusivePair = (opening, closing) => {
+  const isOpening = Boolean(opening);
+  const isClosing = Boolean(closing);
+  if (isOpening && isClosing) {
+    return { opening: true, closing: false };
+  }
+  return { opening: isOpening, closing: isClosing };
+};
+
 const Payesh = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -87,6 +96,59 @@ const Payesh = () => {
     queryFn: () => getOperatorStatus(zone),
     refetchInterval: 30_000,
   });
+
+  const operatorStatusSyncLockRef = useRef(0);
+  const operatorStatusInvalidateTimerRef = useRef(null);
+
+  const debouncedInvalidateOperatorStatus = useCallback(() => {
+    if (operatorStatusInvalidateTimerRef.current) {
+      clearTimeout(operatorStatusInvalidateTimerRef.current);
+    }
+    operatorStatusInvalidateTimerRef.current = setTimeout(() => {
+      operatorStatusSyncLockRef.current = 0;
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.operatorStatus(zone),
+      });
+    }, 1200);
+  }, [queryClient, zone]);
+
+  const patchOperatorStatusCache = useCallback(
+    (patch) => {
+      operatorStatusSyncLockRef.current += 1;
+      queryClient.setQueryData(queryKeys.operatorStatus(zone), (old) =>
+        old ? { ...old, ...patch } : old,
+      );
+      debouncedInvalidateOperatorStatus();
+    },
+    [queryClient, zone, debouncedInvalidateOperatorStatus],
+  );
+
+  const sendExclusiveOperatorPair = useCallback(
+    async (prefix, nextState) => {
+      patchOperatorStatusCache({
+        [`${prefix}_opening`]: nextState.opening,
+        [`${prefix}_closing`]: nextState.closing,
+      });
+
+      try {
+        await Promise.all(
+          ["opening", "closing"].map((action) =>
+            sendOperatorCommandApi({
+              operator: `${prefix}_${action}`,
+              zone,
+              on_off: nextState[action] ? "on" : "off",
+            }),
+          ),
+        );
+      } catch {
+        operatorStatusSyncLockRef.current = 0;
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.operatorStatus(zone),
+        });
+      }
+    },
+    [patchOperatorStatusCache, queryClient, zone],
+  );
 
   const updateModeMutation = useMutation({
     mutationFn: (newMode) => updateOperatorMode({ is_auto: newMode, zone }),
@@ -116,10 +178,23 @@ const Payesh = () => {
 
   const operatorCommandMutation = useMutation({
     mutationFn: (data) => sendOperatorCommandApi(data),
-    onSettled: () => {
-      queryClient.invalidateQueries({
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({
         queryKey: queryKeys.operatorStatus(zone),
       });
+      const previous = queryClient.getQueryData(queryKeys.operatorStatus(zone));
+      queryClient.setQueryData(queryKeys.operatorStatus(zone), (old) =>
+        old ? { ...old, [data.operator]: data.on_off === "on" } : old,
+      );
+      operatorStatusSyncLockRef.current += 1;
+      debouncedInvalidateOperatorStatus();
+      return { previous };
+    },
+    onError: (_err, _data, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.operatorStatus(zone), context.previous);
+      }
+      operatorStatusSyncLockRef.current = 0;
     },
   });
 
@@ -253,13 +328,12 @@ const Payesh = () => {
 
   const toggleHatch = (action) => {
     setHatchStates((prev) => {
-      const newState = !prev[action];
-      const operatorName = `hatch_${action}`;
-      sendOperatorCommand(operatorName, newState);
-      return {
-        ...prev,
-        [action]: newState,
-      };
+      const opposite = action === "opening" ? "closing" : "opening";
+      const next = prev[action]
+        ? { opening: opposite === "opening", closing: opposite === "closing" }
+        : { opening: action === "opening", closing: action === "closing" };
+      void sendExclusiveOperatorPair("hatch", next);
+      return next;
     });
   };
 
@@ -278,13 +352,12 @@ const Payesh = () => {
 
   const toggleShade = (action) => {
     setShadeStates((prev) => {
-      const newState = !prev[action];
-      const operatorName = `shade_${action}`;
-      sendOperatorCommand(operatorName, newState);
-      return {
-        ...prev,
-        [action]: newState,
-      };
+      const opposite = action === "opening" ? "closing" : "opening";
+      const next = prev[action]
+        ? { opening: opposite === "opening", closing: opposite === "closing" }
+        : { opening: action === "opening", closing: action === "closing" };
+      void sendExclusiveOperatorPair("shade", next);
+      return next;
     });
   };
 
@@ -330,7 +403,7 @@ const Payesh = () => {
   }, [operatorModeData]);
 
   useEffect(() => {
-    if (!operatorStatusData) return;
+    if (!operatorStatusData || operatorStatusSyncLockRef.current > 0) return;
     const data = operatorStatusData;
     setExhaustFanStates({
       fan1: data.exhaust_fan_1 || false,
@@ -345,14 +418,12 @@ const Payesh = () => {
     });
     setPadPumpState(data.pad_pump || false);
     setFoggerState(data.fogger || false);
-    setHatchStates({
-      opening: data.hatch_opening || false,
-      closing: data.hatch_closing || false,
-    });
-    setShadeStates({
-      opening: data.shade_opening || false,
-      closing: data.shade_closing || false,
-    });
+    setHatchStates(
+      normalizeExclusivePair(data.hatch_opening, data.hatch_closing),
+    );
+    setShadeStates(
+      normalizeExclusivePair(data.shade_opening, data.shade_closing),
+    );
     setHeaterStates({
       hiter1: data.hiter_1 || false,
       hiter2: data.hiter_2 || false,
@@ -406,24 +477,24 @@ const Payesh = () => {
   };
 
   const getShadeIcon = () => {
-    const isAnyOn = shadeStates.opening || shadeStates.closing;
+    const isOpen = shadeStates.opening;
     if (!activity) {
       // Auto Mode
-      return isAnyOn ? assets.img.pardeGreenAn : assets.img.pardeRedAn;
+      return isOpen ? assets.img.pardeGreenAn : assets.img.pardeRedAn;
     } else {
       // Manual Mode
-      return isAnyOn ? assets.img.pardeAn : assets.img.parde;
+      return isOpen ? assets.img.pardeAn : assets.img.parde;
     }
   };
 
   const getHatchIcon = () => {
-    const isAnyOn = hatchStates.opening || hatchStates.closing;
+    const isOpen = hatchStates.opening;
     if (!activity) {
       // Auto Mode
-      return isAnyOn ? assets.img.daricheGreenAn : assets.img.daricheRedAn;
+      return isOpen ? assets.img.daricheGreenAn : assets.img.daricheRedAn;
     } else {
       // Manual Mode
-      return isAnyOn ? assets.img.daricheAn : assets.img.dariche;
+      return isOpen ? assets.img.daricheAn : assets.img.dariche;
     }
   };
 
@@ -932,9 +1003,7 @@ const Payesh = () => {
                 />
               </Box>
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                <StatusIndicators
-                  states={[shadeStates.opening, shadeStates.closing]}
-                />
+                <StatusIndicators states={[shadeStates.opening]} />
                 <img
                   src={getShadeIcon()}
                   alt=""
@@ -943,9 +1012,7 @@ const Payesh = () => {
                 />
               </Box>
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                <StatusIndicators
-                  states={[hatchStates.opening, hatchStates.closing]}
-                />
+                <StatusIndicators states={[hatchStates.opening]} />
                 <img
                   src={getHatchIcon()}
                   alt=""

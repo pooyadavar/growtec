@@ -19,8 +19,9 @@ function App() {
       <Outlet />
       <Navbar />
       <Routes>
-        <Route path="/" element={<Feeding />} />
+        <Route path="/" element={<Navigate to="/Home" replace />} />
         <Route path="/Home" element={<Dashboard />} />
+        <Route path="/Feeding" element={<Feeding />} />
         <Route path="/irrigation" element={<Irrigation />} /> 
         <Route path="/payesh" element={<Payesh />} />
         <Route path="/payesh-time-plans" element={<PayeshTimePlansPage />} />
@@ -28,7 +29,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/feeding-history" element={<FeedingHistoryPage />} />
         <Route path="/feeding-settings" element={<FeedingSettingsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/Home" replace />} />
       </Routes>
     </div>
   );

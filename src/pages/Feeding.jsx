@@ -57,7 +57,7 @@ const Feeding = () => {
   } = useQuery({
     queryKey: queryKeys.mixTankStatus(),
     queryFn: getMixTankStatus,
-    refetchInterval: 5000,
+    refetchInterval: 2000,
     placeholderData: (previousData) => previousData,
   });
 

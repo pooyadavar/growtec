@@ -709,6 +709,7 @@ const FeedingStatusBar = () => {
             }}
           >
             <Box
+              className="plans-modal-scroll"
               sx={{
                 width: "90%",
                 maxWidth: "850px",
@@ -718,6 +719,19 @@ const FeedingStatusBar = () => {
                 borderRadius: "10px",
                 overflowY: "auto",
                 padding: "10px",
+                scrollbarWidth: "auto",
+                scrollbarColor: "#6a6a6a #EBEBEB",
+                "&::-webkit-scrollbar": { width: "25px" },
+                "&::-webkit-scrollbar-track": {
+                  background: "#EBEBEB",
+                  borderRadius: "8px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  background: "#6a6a6a",
+                  borderRadius: "8px",
+                  border: "4px solid #EBEBEB",
+                  "&:hover": { background: "#444444" },
+                },
               }}
             >
               <TransitionGroup>

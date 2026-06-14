@@ -45,12 +45,7 @@ const Navbar = () => {
   const classes = useStyles();
   const location = useLocation();
 
-  const isActive = (path) => {
-    if (location.pathname === '/' && path === '/Home') {
-      return true;
-    }
-    return location.pathname.startsWith(path);
-  };
+  const isActive = (path) => location.pathname.startsWith(path);
 
   return (
     <Container
