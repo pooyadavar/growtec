@@ -117,6 +117,24 @@ const assets = {
     pardeGreen: require("./image/ICONS/pardehGreen.png"),
     daricheGreen: require("./image/ICONS/daricheGreen.png"),
     mehPashGreen: require("./image/ICONS/mehpashGreen.png"),
+    colorGreen: {
+      fan1: require("./image/COLOR-ICONS/green-icons/fan1.png"),
+      fan2: require("./image/COLOR-ICONS/green-icons/fan2.png"),
+      bokhari: require("./image/COLOR-ICONS/green-icons/بخاری.png"),
+      pad: require("./image/COLOR-ICONS/green-icons/پد سلولزی.png"),
+      parde: require("./image/COLOR-ICONS/green-icons/پرده شید.png"),
+      dariche: require("./image/COLOR-ICONS/green-icons/دریچه سقفی.png"),
+      mehPash: require("./image/COLOR-ICONS/green-icons/مه پاش.png"),
+    },
+    colorRed: {
+      fan1: require("./image/COLOR-ICONS/red-icons/fan.png"),
+      fan2: require("./image/COLOR-ICONS/red-icons/fan2.png"),
+      bokhari: require("./image/COLOR-ICONS/red-icons/بخاری.png"),
+      pad: require("./image/COLOR-ICONS/red-icons/پد سلولزی.png"),
+      parde: require("./image/COLOR-ICONS/red-icons/پرده شید.png"),
+      dariche: require("./image/COLOR-ICONS/red-icons/دریچه سقفی.png"),
+      mehPash: require("./image/COLOR-ICONS/red-icons/مه پاش.png"),
+    },
   },
 };
 export default assets;

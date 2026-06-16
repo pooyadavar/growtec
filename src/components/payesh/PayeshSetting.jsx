@@ -31,7 +31,8 @@ import {
 } from "../../api/climateApi";
 import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
+import { flushSync } from "react-dom";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 const TimeRangeInput = ({
@@ -230,7 +231,13 @@ const MinMaxInput = ({
   );
 };
 
-const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
+const ControllerStatus = ({
+  label,
+  isActive,
+  iconSrc,
+  onClick,
+  useRedTick = false,
+}) => {
   return (
     <Box
       onClick={onClick}
@@ -248,22 +255,34 @@ const ControllerStatus = ({ label, isActive, iconSrc, onClick }) => {
         sx={{
           width: "25px",
           height: "25px",
-          border: "0.5px solid #9F9F9F",
+          border: useRedTick && isActive ? "1px solid #FF6B6B" : "0.5px solid #9F9F9F",
           borderRadius: "10px",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: isActive ? "#379E79" : "#FFFFFF",
+          backgroundColor: isActive && !useRedTick ? "#379E79" : "#FFFFFF",
           transition: "background-color 0.3s",
         }}
       >
-        {isActive && (
-          <img
-            src={iconSrc}
-            alt="Done"
-            style={{ width: "15px", height: "15px" }}
-          />
-        )}
+        {isActive &&
+          (useRedTick ? (
+            <Typography
+              sx={{
+                color: "#FF6B6B",
+                fontSize: 18,
+                lineHeight: 1,
+                fontWeight: "bold",
+              }}
+            >
+              ✓
+            </Typography>
+          ) : (
+            <img
+              src={iconSrc}
+              alt="Done"
+              style={{ width: "15px", height: "15px" }}
+            />
+          ))}
       </Box>
       <Typography
         fontFamily={"IRANSANS"}
@@ -313,6 +332,88 @@ const mapSpecialParametersToForm = (data = {}) =>
     return acc;
   }, {});
 
+const DEFAULT_TEMP_CONTROLLERS = {
+  circulating_fan_1: false,
+  circulating_fan_2: false,
+  exhaust_fan_1: false,
+  exhaust_fan_2: false,
+  exhaust_fan_3: false,
+  heater_1: false,
+  heater_2: false,
+  pump_pad: false,
+  roof_hatch: false,
+  force_turn_off_exhaust_fans: false,
+};
+
+const DEFAULT_HUM_CONTROLLERS = {
+  exhaust_fan_1: false,
+  exhaust_fan_2: false,
+  fogger: false,
+  pump_pad_off: false,
+  roof_hatch: false,
+};
+
+const CLIMATE_FORM_FIELDS = [
+  "tempMax1",
+  "tempMin1",
+  "tempMax2",
+  "tempMin2",
+  "tempMax3",
+  "tempMin3",
+  "humMax1",
+  "humMin1",
+  "humMax2",
+  "humMin2",
+  "humMax3",
+  "humMin3",
+];
+
+const normalizeOperatorFlags = (raw = {}, defaults = {}) =>
+  Object.keys(defaults).reduce((acc, key) => {
+    const value = raw[key];
+    acc[key] = value === true || value === 1 || value === "1";
+    return acc;
+  }, {});
+
+const climateFormFromQuery = (queryData) => {
+  if (!queryData) return null;
+  const { tempRes, humRes, opRes, humOpRes } = queryData;
+  const str = (value) =>
+    value !== undefined && value !== null ? String(value) : "";
+  return {
+    tempMax1: str(tempRes?.["1"]?.maximum),
+    tempMin1: str(tempRes?.["1"]?.minimum),
+    tempMax2: str(tempRes?.["2"]?.maximum),
+    tempMin2: str(tempRes?.["2"]?.minimum),
+    tempMax3: str(tempRes?.["3"]?.maximum),
+    tempMin3: str(tempRes?.["3"]?.minimum),
+    humMax1: str(humRes?.["1"]?.maximum),
+    humMin1: str(humRes?.["1"]?.minimum),
+    humMax2: str(humRes?.["2"]?.maximum),
+    humMin2: str(humRes?.["2"]?.minimum),
+    humMax3: str(humRes?.["3"]?.maximum),
+    humMin3: str(humRes?.["3"]?.minimum),
+    tempControllers: normalizeOperatorFlags(opRes, DEFAULT_TEMP_CONTROLLERS),
+    humControllers: normalizeOperatorFlags(humOpRes, DEFAULT_HUM_CONTROLLERS),
+  };
+};
+
+const CONTROLLERS_PER_ROW = 5;
+
+const chunkControllerList = (list, size = CONTROLLERS_PER_ROW) =>
+  Array.from({ length: Math.ceil(list.length / size) }, (_, index) =>
+    list.slice(index * size, index * size + size),
+  );
+
+const controllerRowSx = {
+  display: "grid",
+  gridTemplateColumns: `repeat(${CONTROLLERS_PER_ROW}, 60px)`,
+  justifyContent: "center",
+  width: "100%",
+  maxWidth: "320px",
+  gap: "4px",
+};
+
 const PayeshSetting = ({ zone, onClose }) => {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState("A");
@@ -358,9 +459,8 @@ const PayeshSetting = ({ zone, onClose }) => {
     heater_2: false,
     pump_pad: false,
     roof_hatch: false,
+    force_turn_off_exhaust_fans: false,
   });
-
-  const [tabStates, setTabStates] = useState({});
 
   const [specialSettings, setSpecialSettings] = useState(() =>
     mapSpecialParametersToForm(),
@@ -368,10 +468,10 @@ const PayeshSetting = ({ zone, onClose }) => {
 
   const initialRangeRef = useRef(null);
   const initialSpecialRef = useRef(null);
-  const initialTempRangeRef = useRef(null);
-  const initialHumRangeRef = useRef(null);
-  const initialTempOpRef = useRef(null);
-  const initialHumOpRef = useRef(null);
+  const baselineByPartRef = useRef({});
+  const tabDraftsRef = useRef({});
+  const specialDraftRef = useRef(null);
+  const hydratedPartsRef = useRef(new Set());
 
   const normalizeRange = (arr) => arr.map((x) => parseInt(x || 0));
   const formatValue = useCallback((value) => parseFloat(value || 0), []);
@@ -394,13 +494,111 @@ const PayeshSetting = ({ zone, onClose }) => {
   );
 
   const areOperatorsEqual = (op1, op2) => {
-    if (!op1 || !op2) return false;
-    const keys = Object.keys(op1);
-    for (let key of keys) {
-      if (op1[key] !== op2[key]) return false;
+    if (!op1 || !op2) return true;
+    const keys = new Set([...Object.keys(op1), ...Object.keys(op2)]);
+    for (const key of keys) {
+      if (Boolean(op1[key]) !== Boolean(op2[key])) return false;
     }
     return true;
   };
+
+  const climateFormsEqual = useCallback((formA, formB) => {
+    if (!formA || !formB) return true;
+    for (const field of CLIMATE_FORM_FIELDS) {
+      if (String(formA[field] ?? "") !== String(formB[field] ?? "")) {
+        return false;
+      }
+    }
+    return (
+      areOperatorsEqual(formA.tempControllers, formB.tempControllers) &&
+      areOperatorsEqual(formA.humControllers, formB.humControllers)
+    );
+  }, []);
+
+  const captureClimateForm = useCallback(
+    () => ({
+      tempMax1,
+      tempMin1,
+      tempMax2,
+      tempMin2,
+      tempMax3,
+      tempMin3,
+      humMax1,
+      humMin1,
+      humMax2,
+      humMin2,
+      humMax3,
+      humMin3,
+      tempControllers: { ...tempControllers },
+      humControllers: { ...humControllers },
+    }),
+    [
+      tempMax1,
+      tempMin1,
+      tempMax2,
+      tempMin2,
+      tempMax3,
+      tempMin3,
+      humMax1,
+      humMin1,
+      humMax2,
+      humMin2,
+      humMax3,
+      humMin3,
+      tempControllers,
+      humControllers,
+    ],
+  );
+
+  const applyClimateForm = useCallback((form) => {
+    if (!form) return;
+    setTempMax1(form.tempMax1);
+    setTempMin1(form.tempMin1);
+    setTempMax2(form.tempMax2);
+    setTempMin2(form.tempMin2);
+    setTempMax3(form.tempMax3);
+    setTempMin3(form.tempMin3);
+    sethumMax1(form.humMax1);
+    setHumMin1(form.humMin1);
+    sethumMax2(form.humMax2);
+    setHumMin2(form.humMin2);
+    sethumMax3(form.humMax3);
+    setHumMin3(form.humMin3);
+    setTempControllers({ ...form.tempControllers });
+    setHumControllers({ ...form.humControllers });
+  }, []);
+
+  const getClimateFormForPart = useCallback(
+    (targetPart) => {
+      if (tabDraftsRef.current[targetPart]) {
+        return tabDraftsRef.current[targetPart];
+      }
+      const cached = queryClient.getQueryData(
+        queryKeys.climateSettings(zone, targetPart),
+      );
+      return climateFormFromQuery(cached);
+    },
+    [queryClient, zone],
+  );
+
+  const seedClimateBaselines = useCallback(() => {
+    [1, 2, 3, 4].forEach((climatePart) => {
+      const cached = queryClient.getQueryData(
+        queryKeys.climateSettings(zone, climatePart),
+      );
+      const form = climateFormFromQuery(cached);
+      if (!form) return;
+
+      if (!baselineByPartRef.current[climatePart]) {
+        baselineByPartRef.current[climatePart] = form;
+      }
+
+      const draft = tabDraftsRef.current[climatePart];
+      if (draft && climateFormsEqual(draft, form)) {
+        delete tabDraftsRef.current[climatePart];
+      }
+    });
+  }, [queryClient, zone, climateFormsEqual]);
 
   const humidityObject = useMemo(
     () => ({
@@ -439,17 +637,21 @@ const PayeshSetting = ({ zone, onClose }) => {
     }
   }, [rangeData]);
 
-  const {
-    data: queryData,
-    isLoading: isClimateLoading,
-    isError: isClimateError,
-  } = useQuery({
-    queryKey: queryKeys.climateSettings(zone, part),
-    queryFn: () => getClimateSettings(zone, part),
-    staleTime: 5 * 60 * 1000,
-    enabled: selected !== "ویژه",
-    placeholderData: (previousData) => previousData,
+  const climatePartQueries = useQueries({
+    queries: [1, 2, 3, 4].map((climatePart) => ({
+      queryKey: queryKeys.climateSettings(zone, climatePart),
+      queryFn: () => getClimateSettings(zone, climatePart),
+      staleTime: 5 * 60 * 1000,
+    })),
   });
+
+  const queryData = climatePartQueries[part - 1]?.data;
+  const isClimateLoading = climatePartQueries.some(
+    (climateQuery) => climateQuery.isLoading && !climateQuery.data,
+  );
+  const isClimateError = climatePartQueries.some(
+    (climateQuery) => climateQuery.isError && !climateQuery.data,
+  );
 
   const {
     data: specialParamsData,
@@ -459,96 +661,97 @@ const PayeshSetting = ({ zone, onClose }) => {
     queryKey: queryKeys.climateSpecialParameters(),
     queryFn: getSpecialParameters,
     staleTime: 5 * 60 * 1000,
-    enabled: selected === "ویژه",
     placeholderData: (previousData) => previousData,
   });
+
+  const currentPartData = climatePartQueries[part - 1]?.data;
+
+  useEffect(() => {
+    seedClimateBaselines();
+  }, [climatePartQueries, seedClimateBaselines]);
 
   useEffect(() => {
     if (!specialParamsData) return;
     const formState = mapSpecialParametersToForm(specialParamsData);
-    setSpecialSettings(formState);
+    if (!specialDraftRef.current) {
+      setSpecialSettings(formState);
+    }
     initialSpecialRef.current = buildSpecialParametersPayload(formState);
   }, [specialParamsData]);
 
   useEffect(() => {
-    if (queryData) {
-      const { tempRes, humRes, opRes, humOpRes } = queryData;
-
-      if (tabStates[part]) {
-        const cached = tabStates[part];
-        setTempMax1(cached.tempMax1);
-        setTempMin1(cached.tempMin1);
-        setTempMax2(cached.tempMax2);
-        setTempMin2(cached.tempMin2);
-        setTempMax3(cached.tempMax3);
-        setTempMin3(cached.tempMin3);
-        sethumMax1(cached.humMax1);
-        setHumMin1(cached.humMin1);
-        sethumMax2(cached.humMax2);
-        setHumMin2(cached.humMin2);
-        sethumMax3(cached.humMax3);
-        setHumMin3(cached.humMin3);
-        setTempControllers(cached.tempControllers);
-        setHumControllers(cached.humControllers);
-
-        if (tempRes)
-          initialTempRangeRef.current = normalizeClimateRange(tempRes);
-        if (humRes) initialHumRangeRef.current = normalizeClimateRange(humRes);
-        if (opRes)
-          initialTempOpRef.current = { ...cached.tempControllers, ...opRes };
-        if (humOpRes)
-          initialHumOpRef.current = { ...cached.humControllers, ...humOpRes };
-      } else {
-        if (tempRes) {
-          setTempMax1(tempRes["1"]?.maximum ?? "");
-          setTempMin1(tempRes["1"]?.minimum ?? "");
-          setTempMax2(tempRes["2"]?.maximum ?? "");
-          setTempMin2(tempRes["2"]?.minimum ?? "");
-          setTempMax3(tempRes["3"]?.maximum ?? "");
-          setTempMin3(tempRes["3"]?.minimum ?? "");
-          initialTempRangeRef.current = normalizeClimateRange(tempRes);
-        }
-
-        if (humRes) {
-          sethumMax1(humRes["1"]?.maximum ?? "");
-          setHumMin1(humRes["1"]?.minimum ?? "");
-          sethumMax2(humRes["2"]?.maximum ?? "");
-          setHumMin2(humRes["2"]?.minimum ?? "");
-          sethumMax3(humRes["3"]?.maximum ?? "");
-          setHumMin3(humRes["3"]?.minimum ?? "");
-          initialHumRangeRef.current = normalizeClimateRange(humRes);
-        }
-
-        if (opRes) {
-          setTempControllers((prev) => {
-            const newState = { ...prev, ...opRes };
-            initialTempOpRef.current = newState;
-            return newState;
-          });
-        }
-
-        if (humOpRes) {
-          setHumControllers((prev) => {
-            const newState = { ...prev, ...humOpRes };
-            initialHumOpRef.current = newState;
-            return newState;
-          });
-        }
-      }
+    if (selected === "ویژه" || tabDraftsRef.current[part]) return;
+    if (!currentPartData || hydratedPartsRef.current.has(part)) return;
+    const form = climateFormFromQuery(currentPartData);
+    if (form) {
+      applyClimateForm(form);
+      hydratedPartsRef.current.add(part);
     }
-  }, [queryData, part]);
+  }, [part, selected, currentPartData, applyClimateForm]);
 
   const handleSpecialSettingChange = (code, value) => {
     setSpecialSettings((prev) => ({ ...prev, [code]: value }));
   };
 
+  const renderSpecialSettingField = (field) => (
+    <Box
+      key={field.key}
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        py: 0.5,
+        px: 1,
+        border: "1px solid #e0e0e0",
+        borderRadius: "8px",
+        backgroundColor: "#fafafa",
+      }}
+    >
+      <Typography fontFamily={"IRANSANS"} fontSize={12} color="#333">
+        {field.label}
+      </Typography>
+      <TextField
+        size="small"
+        variant="outlined"
+        type="text"
+        inputMode={field.isFloat ? "decimal" : "numeric"}
+        value={toPersianDigits(specialSettings[field.key])}
+        onChange={(e) => {
+          const val = toEnglishDigits(e.target.value);
+          if (
+            val === "" ||
+            val === "-" ||
+            (field.isFloat
+              ? /^-?\d*\.?\d*$/.test(val)
+              : /^-?\d*$/.test(val))
+          ) {
+            handleSpecialSettingChange(field.key, val);
+          }
+        }}
+        sx={{
+          width: "70px",
+          "& .MuiInputBase-input": {
+            textAlign: "center",
+            padding: "2px 4px",
+            fontSize: "13px",
+            fontFamily: "IRANSANS",
+          },
+        }}
+      />
+    </Box>
+  );
+
   const hasCurrentTabChanges = useCallback(() => {
     if (selected === "ویژه") {
+      if (!initialSpecialRef.current) return false;
       const payload = buildSpecialParametersPayload(specialSettings);
       return (
         JSON.stringify(payload) !== JSON.stringify(initialSpecialRef.current)
       );
     }
+
+    const baseline = baselineByPartRef.current[part];
+    if (!baseline || !initialRangeRef.current) return false;
 
     const currentRange = normalizeRange([range1, range2, range3]);
     if (
@@ -557,42 +760,16 @@ const PayeshSetting = ({ zone, onClose }) => {
       return true;
     }
 
-    const currentTempRange = normalizeClimateRange(tempObject);
-    if (
-      JSON.stringify(currentTempRange) !==
-      JSON.stringify(initialTempRangeRef.current)
-    ) {
-      return true;
-    }
-
-    const currentHumRange = normalizeClimateRange(humidityObject);
-    if (
-      JSON.stringify(currentHumRange) !==
-      JSON.stringify(initialHumRangeRef.current)
-    ) {
-      return true;
-    }
-
-    if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
-      return true;
-    }
-
-    if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
-      return true;
-    }
-
-    return false;
+    return !climateFormsEqual(captureClimateForm(), baseline);
   }, [
     selected,
+    part,
     specialSettings,
     range1,
     range2,
     range3,
-    tempObject,
-    humidityObject,
-    tempControllers,
-    humControllers,
-    normalizeClimateRange,
+    captureClimateForm,
+    climateFormsEqual,
   ]);
 
   const saveCurrentTab = async ({ silent = false } = {}) => {
@@ -608,6 +785,7 @@ const PayeshSetting = ({ zone, onClose }) => {
       try {
         await updateSpecialParameters(payload);
         initialSpecialRef.current = { ...payload };
+        specialDraftRef.current = null;
         queryClient.invalidateQueries({
           queryKey: queryKeys.climateSpecialParameters(),
         });
@@ -641,9 +819,17 @@ const PayeshSetting = ({ zone, onClose }) => {
     }
 
     const currentTempRange = normalizeClimateRange(tempObject);
+    const baseline = baselineByPartRef.current[part];
     if (
+      baseline &&
       JSON.stringify(currentTempRange) !==
-      JSON.stringify(initialTempRangeRef.current)
+        JSON.stringify(
+          normalizeClimateRange({
+            1: { minimum: baseline.tempMin1, maximum: baseline.tempMax1 },
+            2: { minimum: baseline.tempMin2, maximum: baseline.tempMax2 },
+            3: { minimum: baseline.tempMin3, maximum: baseline.tempMax3 },
+          }),
+        )
     ) {
       promises.push(
         updateTemperatureRange({
@@ -656,8 +842,15 @@ const PayeshSetting = ({ zone, onClose }) => {
 
     const currentHumRange = normalizeClimateRange(humidityObject);
     if (
+      baseline &&
       JSON.stringify(currentHumRange) !==
-      JSON.stringify(initialHumRangeRef.current)
+        JSON.stringify(
+          normalizeClimateRange({
+            1: { minimum: baseline.humMin1, maximum: baseline.humMax1 },
+            2: { minimum: baseline.humMin2, maximum: baseline.humMax2 },
+            3: { minimum: baseline.humMin3, maximum: baseline.humMax3 },
+          }),
+        )
     ) {
       promises.push(
         updateHumidityRange({
@@ -668,7 +861,10 @@ const PayeshSetting = ({ zone, onClose }) => {
       );
     }
 
-    if (!areOperatorsEqual(tempControllers, initialTempOpRef.current)) {
+    if (
+      baseline &&
+      !areOperatorsEqual(tempControllers, baseline.tempControllers)
+    ) {
       promises.push(
         updateTemperatureRangeOperator({
           temperature_range_operator: tempControllers,
@@ -678,7 +874,10 @@ const PayeshSetting = ({ zone, onClose }) => {
       );
     }
 
-    if (!areOperatorsEqual(humControllers, initialHumOpRef.current)) {
+    if (
+      baseline &&
+      !areOperatorsEqual(humControllers, baseline.humControllers)
+    ) {
       promises.push(
         updateHumidityRangeOperator({
           humidity_range_operator: humControllers,
@@ -704,15 +903,23 @@ const PayeshSetting = ({ zone, onClose }) => {
       });
 
       initialRangeRef.current = currentRange;
-      initialTempRangeRef.current = currentTempRange;
-      initialHumRangeRef.current = currentHumRange;
-      initialTempOpRef.current = { ...tempControllers };
-      initialHumOpRef.current = { ...humControllers };
+      const savedForm = captureClimateForm();
+      baselineByPartRef.current[part] = savedForm;
+      delete tabDraftsRef.current[part];
 
-      setTabStates((prev) => {
-        const next = { ...prev };
-        delete next[part];
-        return next;
+      queryClient.setQueryData(queryKeys.climateSettings(zone, part), {
+        tempRes: {
+          1: { maximum: savedForm.tempMax1, minimum: savedForm.tempMin1 },
+          2: { maximum: savedForm.tempMax2, minimum: savedForm.tempMin2 },
+          3: { maximum: savedForm.tempMax3, minimum: savedForm.tempMin3 },
+        },
+        humRes: {
+          1: { maximum: savedForm.humMax1, minimum: savedForm.humMin1 },
+          2: { maximum: savedForm.humMax2, minimum: savedForm.humMin2 },
+          3: { maximum: savedForm.humMax3, minimum: savedForm.humMin3 },
+        },
+        opRes: savedForm.tempControllers,
+        humOpRes: savedForm.humControllers,
       });
 
       if (!silent) toast.success("داده‌ها با موفقیت ذخیره شدند.");
@@ -728,28 +935,46 @@ const PayeshSetting = ({ zone, onClose }) => {
 
   const switchToTab = (label, index) => {
     if (selected !== "ویژه") {
-      setTabStates((prev) => ({
-        ...prev,
-        [part]: {
-          tempMax1,
-          tempMin1,
-          tempMax2,
-          tempMin2,
-          tempMax3,
-          tempMin3,
-          humMax1,
-          humMin1,
-          humMax2,
-          humMin2,
-          humMax3,
-          humMin3,
-          tempControllers,
-          humControllers,
-        },
-      }));
+      const baseline = baselineByPartRef.current[part];
+      if (baseline) {
+        const current = captureClimateForm();
+        if (!climateFormsEqual(current, baseline)) {
+          tabDraftsRef.current[part] = current;
+        } else {
+          delete tabDraftsRef.current[part];
+        }
+      }
+    } else if (initialSpecialRef.current) {
+      const payload = buildSpecialParametersPayload(specialSettings);
+      if (
+        JSON.stringify(payload) !== JSON.stringify(initialSpecialRef.current)
+      ) {
+        specialDraftRef.current = { ...specialSettings };
+      } else {
+        specialDraftRef.current = null;
+      }
     }
-    setSelected(label);
-    if (label !== "ویژه") setPart(index + 1);
+
+    if (label === "ویژه") {
+      flushSync(() => {
+        setSelected(label);
+        if (specialDraftRef.current) {
+          setSpecialSettings(specialDraftRef.current);
+        } else if (specialParamsData) {
+          setSpecialSettings(mapSpecialParametersToForm(specialParamsData));
+        }
+      });
+      return;
+    }
+
+    const newPart = index + 1;
+    const nextForm = getClimateFormForPart(newPart);
+    flushSync(() => {
+      if (nextForm) applyClimateForm(nextForm);
+      setPart(newPart);
+      setSelected(label);
+    });
+    hydratedPartsRef.current.add(newPart);
   };
 
   const closeUnsavedDialog = () => {
@@ -794,6 +1019,21 @@ const PayeshSetting = ({ zone, onClose }) => {
   };
 
   const handleDiscardChanges = () => {
+    if (selected === "ویژه") {
+      specialDraftRef.current = null;
+      if (specialParamsData) {
+        setSpecialSettings(mapSpecialParametersToForm(specialParamsData));
+      }
+    } else {
+      delete tabDraftsRef.current[part];
+      const baseline = baselineByPartRef.current[part];
+      if (baseline) applyClimateForm(baseline);
+      if (initialRangeRef.current && rangeData) {
+        setRange1(String(rangeData[0] ?? ""));
+        setRange2(String(rangeData[1] ?? ""));
+        setRange3(String(rangeData[2] ?? ""));
+      }
+    }
     completePendingAction();
   };
 
@@ -809,9 +1049,15 @@ const PayeshSetting = ({ zone, onClose }) => {
   };
 
   const toggleTempController = (key) =>
-    setTempControllers((prev) => ({ ...prev, [key]: !prev[key] }));
+    setTempControllers((prev) => ({
+      ...prev,
+      [key]: !Boolean(prev[key]),
+    }));
   const toggleHumController = (key) =>
-    setHumControllers((prev) => ({ ...prev, [key]: !prev[key] }));
+    setHumControllers((prev) => ({
+      ...prev,
+      [key]: !Boolean(prev[key]),
+    }));
 
   const tempControllerList = [
     {
@@ -858,6 +1104,12 @@ const PayeshSetting = ({ zone, onClose }) => {
       label: "دریچه",
       key: "roof_hatch",
       onClick: () => toggleTempController("roof_hatch"),
+    },
+    {
+      label: "روشن نشدن فن",
+      key: "force_turn_off_exhaust_fans",
+      onClick: () => toggleTempController("force_turn_off_exhaust_fans"),
+      useRedTick: true,
     },
   ];
 
@@ -1273,111 +1525,15 @@ const PayeshSetting = ({ zone, onClose }) => {
                     }}
                   >
                     <Stack spacing={0.5} sx={{ width: "50%" }}>
-                      {specialSettingsConfig.slice(0, 7).map((field) => (
-                        <Box
-                          key={field.key}
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            py: 0.5,
-                            px: 1,
-                            border: "1px solid #e0e0e0",
-                            borderRadius: "8px",
-                            backgroundColor: "#fafafa",
-                          }}
-                        >
-                          <Typography
-                            fontFamily={"IRANSANS"}
-                            fontSize={12}
-                            color="#333"
-                          >
-                            {field.label}
-                          </Typography>
-                          <TextField
-                            size="small"
-                            variant="outlined"
-                            type="text"
-                            inputMode={field.isFloat ? "decimal" : "numeric"}
-                            value={toPersianDigits(specialSettings[field.key])}
-                            onChange={(e) => {
-                              const val = toEnglishDigits(e.target.value);
-                              if (
-                                val === "" ||
-                                val === "-" ||
-                                (field.isFloat
-                                  ? /^-?\d*\.?\d*$/.test(val)
-                                  : /^-?\d*$/.test(val))
-                              ) {
-                                handleSpecialSettingChange(field.key, val);
-                              }
-                            }}
-                            sx={{
-                              width: "70px",
-                              "& .MuiInputBase-input": {
-                                textAlign: "center",
-                                padding: "2px 4px",
-                                fontSize: "13px",
-                                fontFamily: "IRANSANS",
-                              },
-                            }}
-                          />
-                        </Box>
-                      ))}
+                      {specialSettingsConfig
+                        .slice(0, 7)
+                        .map(renderSpecialSettingField)}
                     </Stack>
 
                     <Stack spacing={0.5} sx={{ width: "50%" }}>
-                      {specialSettingsConfig.slice(7).map((field) => (
-                        <Box
-                          key={field.key}
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            py: 0.5,
-                            px: 1,
-                            border: "1px solid #e0e0e0",
-                            borderRadius: "8px",
-                            backgroundColor: "#fafafa",
-                          }}
-                        >
-                          <Typography
-                            fontFamily={"IRANSANS"}
-                            fontSize={12}
-                            color="#333"
-                          >
-                            {field.label}
-                          </Typography>
-                          <TextField
-                            size="small"
-                            variant="outlined"
-                            type="text"
-                            inputMode={field.isFloat ? "decimal" : "numeric"}
-                            value={toPersianDigits(specialSettings[field.key])}
-                            onChange={(e) => {
-                              const val = toEnglishDigits(e.target.value);
-                              if (
-                                val === "" ||
-                                val === "-" ||
-                                (field.isFloat
-                                  ? /^-?\d*\.?\d*$/.test(val)
-                                  : /^-?\d*$/.test(val))
-                              ) {
-                                handleSpecialSettingChange(field.key, val);
-                              }
-                            }}
-                            sx={{
-                              width: "70px",
-                              "& .MuiInputBase-input": {
-                                textAlign: "center",
-                                padding: "2px 4px",
-                                fontSize: "13px",
-                                fontFamily: "IRANSANS",
-                              },
-                            }}
-                          />
-                        </Box>
-                      ))}
+                      {specialSettingsConfig
+                        .slice(7)
+                        .map(renderSpecialSettingField)}
                     </Stack>
                   </Box>
                 ) : (
@@ -1426,46 +1582,28 @@ const PayeshSetting = ({ zone, onClose }) => {
                           minState={tempMin3}
                           setMinState={setTempMin3}
                         />
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            width: "320px",
-                            marginTop: 2,
-                            gap: "2px",
-                          }}
-                        >
-                          {tempControllerList.slice(0, 5).map((ctrl) => (
-                            <ControllerStatus
-                              key={ctrl.key}
-                              label={ctrl.label}
-                              isActive={tempControllers[ctrl.key]}
-                              iconSrc={assets.svg.done}
-                              onClick={ctrl.onClick}
-                            />
-                          ))}
-                        </Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            width: "320px",
-                            marginTop: 1,
-                            gap: "8px",
-                          }}
-                        >
-                          {tempControllerList.slice(5, 9).map((ctrl) => (
-                            <ControllerStatus
-                              key={ctrl.key}
-                              label={ctrl.label}
-                              isActive={tempControllers[ctrl.key]}
-                              iconSrc={assets.svg.done}
-                              onClick={ctrl.onClick}
-                            />
-                          ))}
-                        </Box>
+                        {chunkControllerList(tempControllerList).map(
+                          (row, rowIndex) => (
+                            <Box
+                              key={`temp-controllers-${rowIndex}`}
+                              sx={{
+                                ...controllerRowSx,
+                                marginTop: rowIndex === 0 ? 2 : 1,
+                              }}
+                            >
+                              {row.map((ctrl) => (
+                                <ControllerStatus
+                                  key={ctrl.key}
+                                  label={ctrl.label}
+                                  isActive={tempControllers[ctrl.key]}
+                                  iconSrc={assets.svg.done}
+                                  onClick={ctrl.onClick}
+                                  useRedTick={ctrl.useRedTick}
+                                />
+                              ))}
+                            </Box>
+                          ),
+                        )}
                       </Box>
                     </Stack>
 
@@ -1511,46 +1649,27 @@ const PayeshSetting = ({ zone, onClose }) => {
                           minState={humMin3}
                           setMinState={setHumMin3}
                         />
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            width: "320px",
-                            marginTop: 2,
-                            gap: "8px",
-                          }}
-                        >
-                          {humControllerList.slice(0, 5).map((ctrl) => (
-                            <ControllerStatus
-                              key={ctrl.key}
-                              label={ctrl.label}
-                              isActive={humControllers[ctrl.key]}
-                              iconSrc={assets.svg.done}
-                              onClick={ctrl.onClick}
-                            />
-                          ))}
-                        </Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            width: "320px",
-                            marginTop: 1,
-                            gap: "8px",
-                          }}
-                        >
-                          {humControllerList.slice(5, 9).map((ctrl) => (
-                            <ControllerStatus
-                              key={ctrl.key}
-                              label={ctrl.label}
-                              isActive={humControllers[ctrl.key]}
-                              iconSrc={assets.svg.done}
-                              onClick={ctrl.onClick}
-                            />
-                          ))}
-                        </Box>
+                        {chunkControllerList(humControllerList).map(
+                          (row, rowIndex) => (
+                            <Box
+                              key={`hum-controllers-${rowIndex}`}
+                              sx={{
+                                ...controllerRowSx,
+                                marginTop: rowIndex === 0 ? 2 : 1,
+                              }}
+                            >
+                              {row.map((ctrl) => (
+                                <ControllerStatus
+                                  key={ctrl.key}
+                                  label={ctrl.label}
+                                  isActive={humControllers[ctrl.key]}
+                                  iconSrc={assets.svg.done}
+                                  onClick={ctrl.onClick}
+                                />
+                              ))}
+                            </Box>
+                          ),
+                        )}
                       </Box>
                     </Stack>
                   </Box>

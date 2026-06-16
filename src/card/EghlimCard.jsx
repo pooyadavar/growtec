@@ -36,6 +36,9 @@ const EghlimCard = ({
   // اگر دیتا فچ شد از آن استفاده می‌کنیم، در غیر این صورت از پراپ والد
   const isAuto = fetchedIsAuto !== null ? fetchedIsAuto : parentIsAuto;
 
+  const getDeviceIcon = (isOn, greenAn, colorGreen, manualOn, manualOff) =>
+    isAuto ? (isOn ? greenAn : colorGreen) : isOn ? manualOn : manualOff;
+
   return (
     <Box
       sx={{
@@ -86,65 +89,79 @@ const EghlimCard = ({
           }}
         >
           <img
-            src={
-              isAuto
-                ? (fan1 ? assets.img.fan1GreenAn : assets.img.fan1RedAn)
-                : (fan1 ? assets.img.fan1An : assets.img.fan1)
-            }
+            src={getDeviceIcon(
+              fan1,
+              assets.img.fan1GreenAn,
+              assets.img.colorGreen.fan1,
+              assets.img.fan1An,
+              assets.img.fan1,
+            )}
             alt="fan1"
             width={"24px"}
           />
           <img
-            src={
-              isAuto
-                ? (pad ? assets.img.padGreenAn : assets.img.padRedAn)
-                : (pad ? assets.img.padAN : assets.img.pad)
-            }
+            src={getDeviceIcon(
+              pad,
+              assets.img.padGreenAn,
+              assets.img.colorGreen.pad,
+              assets.img.padAN,
+              assets.img.pad,
+            )}
             alt="pad"
             width={"24px"}
           />
           <img
-            src={
-              isAuto
-                ? (fan2 ? assets.img.fan2GreenAn : assets.img.fan2RedAn)
-                : (fan2 ? assets.img.fan2An : assets.img.fan2)
-            }
+            src={getDeviceIcon(
+              fan2,
+              assets.img.fan2GreenAn,
+              assets.img.colorGreen.fan2,
+              assets.img.fan2An,
+              assets.img.fan2,
+            )}
             alt="fan2"
             width={"24px"}
           />
           <img
-            src={
-              isAuto
-                ? (dariche ? assets.img.daricheGreenAn : assets.img.daricheRedAn)
-                : (dariche ? assets.img.daricheAn : assets.img.dariche)
-            }
+            src={getDeviceIcon(
+              dariche,
+              assets.img.daricheGreenAn,
+              assets.img.colorGreen.dariche,
+              assets.img.daricheAn,
+              assets.img.dariche,
+            )}
             alt="dariche"
             width={"24px"}
           />
           <img
-            src={
-              isAuto
-                ? (mehpash ? assets.img.mehPashGreenAn : assets.img.mehPashRedAn)
-                : (mehpash ? assets.img.mehPashAn : assets.img.mehPash)
-            }
+            src={getDeviceIcon(
+              mehpash,
+              assets.img.mehPashGreenAn,
+              assets.img.colorGreen.mehPash,
+              assets.img.mehPashAn,
+              assets.img.mehPash,
+            )}
             alt="mehpash"
             width={"24px"}
           />
           <img
-            src={
-              isAuto
-                ? (bokhari ? assets.img.bokhariGreenAn : assets.img.bokhariRedAn)
-                : (bokhari ? assets.img.bokhariAn : assets.img.bokhari)
-            }
+            src={getDeviceIcon(
+              bokhari,
+              assets.img.bokhariGreenAn,
+              assets.img.colorGreen.bokhari,
+              assets.img.bokhariAn,
+              assets.img.bokhari,
+            )}
             alt="bokhari"
             width={"24px"}
           />
           <img
-            src={
-              isAuto
-                ? (parde ? assets.img.pardeGreenAn : assets.img.pardeRedAn)
-                : (parde ? assets.img.pardeAn : assets.img.parde)
-            }
+            src={getDeviceIcon(
+              parde,
+              assets.img.pardeGreenAn,
+              assets.img.colorGreen.parde,
+              assets.img.pardeAn,
+              assets.img.parde,
+            )}
             alt="parde"
             width={"24px"}
           />

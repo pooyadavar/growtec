@@ -435,78 +435,57 @@ const Payesh = () => {
   const getExhaustFanIcon = () => {
     const isAnyOn = Object.values(exhaustFanStates).some((s) => s);
     if (!activity) {
-      // Auto Mode
-      return isAnyOn ? assets.img.fan1GreenAn : assets.img.fan1RedAn;
-    } else {
-      // Manual Mode
-      return isAnyOn ? assets.img.fan1An : assets.img.fan1;
+      return isAnyOn ? assets.img.fan1GreenAn : assets.img.colorGreen.fan1;
     }
+    return isAnyOn ? assets.img.fan1An : assets.img.fan1;
   };
 
   const getCirculationFanIcon = () => {
     const isAnyOn = Object.values(circulationFanStates).some((s) => s);
     if (!activity) {
-      // Auto Mode
-      return isAnyOn ? assets.img.fan2GreenAn : assets.img.fan2RedAn;
-    } else {
-      // Manual Mode
-      return isAnyOn ? assets.img.fan2An : assets.img.fan2;
+      return isAnyOn ? assets.img.fan2GreenAn : assets.img.colorGreen.fan2;
     }
+    return isAnyOn ? assets.img.fan2An : assets.img.fan2;
   };
 
   const getHeaterIcon = () => {
     const isAnyOn = Object.values(heaterStates).some((s) => s);
     if (!activity) {
-      // Auto Mode
-      return isAnyOn ? assets.img.bokhariGreenAn : assets.img.bokhariRedAn;
-    } else {
-      // Manual Mode
-      return isAnyOn ? assets.img.bokhariAn : assets.img.bokhari;
+      return isAnyOn ? assets.img.bokhariGreenAn : assets.img.colorGreen.bokhari;
     }
+    return isAnyOn ? assets.img.bokhariAn : assets.img.bokhari;
   };
 
   const getPadIcon = () => {
-    const isAnyOn = padPumpState; // padPumpState is already a boolean
+    const isAnyOn = padPumpState;
     if (!activity) {
-      // Auto Mode
-      return isAnyOn ? assets.img.padGreenAn : assets.img.padRedAn;
-    } else {
-      // Manual Mode
-      return isAnyOn ? assets.img.padAN : assets.img.pad;
+      return isAnyOn ? assets.img.padGreenAn : assets.img.colorGreen.pad;
     }
+    return isAnyOn ? assets.img.padAN : assets.img.pad;
   };
 
   const getShadeIcon = () => {
     const isOpen = shadeStates.opening;
     if (!activity) {
-      // Auto Mode
-      return isOpen ? assets.img.pardeGreenAn : assets.img.pardeRedAn;
-    } else {
-      // Manual Mode
-      return isOpen ? assets.img.pardeAn : assets.img.parde;
+      return isOpen ? assets.img.pardeGreenAn : assets.img.colorGreen.parde;
     }
+    return isOpen ? assets.img.pardeAn : assets.img.parde;
   };
 
   const getHatchIcon = () => {
     const isOpen = hatchStates.opening;
     if (!activity) {
-      // Auto Mode
-      return isOpen ? assets.img.daricheGreenAn : assets.img.daricheRedAn;
-    } else {
-      // Manual Mode
-      return isOpen ? assets.img.daricheAn : assets.img.dariche;
+      return isOpen ? assets.img.daricheGreenAn : assets.img.colorGreen.dariche;
     }
+    return isOpen ? assets.img.daricheAn : assets.img.dariche;
   };
 
   const getFoggerIcon = () => {
-    const isAnyOn = foggerState; // foggerState is already a boolean
+    const isAnyOn = foggerState;
     if (!activity) {
-      // Auto Mode
-      return isAnyOn ? assets.img.mehPashGreenAn : assets.img.mehPashRedAn;
-    } else {
-      // Manual Mode
-      return isAnyOn ? assets.img.mehPashAn : assets.img.mehPash;
+      return isAnyOn ? assets.img.mehPashGreenAn : assets.img.colorGreen.mehPash;
     }
+    return isAnyOn ? assets.img.mehPashAn : assets.img.mehPash;
   };
 
   const { data: temperaturePartStatus = "" } = useQuery({
