@@ -18,22 +18,22 @@ const Dashboard = () => {
     data: mixTankData,
     isLoading: isMixTankLoading,
     isError: isMixTankError,
+    isRefetchError: isMixTankRefetchError,
   } = useQuery({
     queryKey: queryKeys.mixTankStatus(),
     queryFn: getMixTankStatus,
     refetchInterval: 2000,
-    placeholderData: (previousData) => previousData,
   });
 
   const {
     data: storagesList,
     isLoading: isStoragesLoading,
     isError: isStoragesError,
+    isRefetchError: isStoragesRefetchError,
   } = useQuery({
     queryKey: queryKeys.irrigationTanks(),
     queryFn: getIrrigationTanksStatus,
     refetchInterval: 5000,
-    placeholderData: (previousData) => previousData,
     select: (data) => {
       if (!data || typeof data !== "object") return [];
       return Object.entries(data)
@@ -44,6 +44,11 @@ const Dashboard = () => {
         .filter((item) => item.max_volume != null);
     },
   });
+
+  const mixTankFetchFailed = isMixTankError || isMixTankRefetchError;
+  const mixTankInitialLoading = isMixTankLoading && !mixTankData;
+  const storagesFetchFailed = isStoragesError || isStoragesRefetchError;
+  const storagesInitialLoading = isStoragesLoading && !storagesList?.length;
 
   const handleEcChange = (event) => {
     setEcTarget(event.target.value);
@@ -89,7 +94,7 @@ const Dashboard = () => {
           >
             فرایند ساخت محلول
           </Typography>
-          {isMixTankLoading && !mixTankData ? (
+          {mixTankInitialLoading ? (
             <Paper
               elevation={3}
               sx={{
@@ -105,7 +110,7 @@ const Dashboard = () => {
             >
               <CircularProgress />
             </Paper>
-          ) : isMixTankError && !mixTankData ? (
+          ) : mixTankFetchFailed ? (
             <Alert severity="error">خطا در دریافت اطلاعات مخزن</Alert>
           ) : (
             <PhEcControlCard
@@ -139,7 +144,7 @@ const Dashboard = () => {
             >
               وضعیت محلول
             </Typography>
-            {isMixTankLoading && !mixTankData ? (
+            {mixTankInitialLoading ? (
               <Paper
                 sx={{
                   width: "350px",
@@ -154,7 +159,7 @@ const Dashboard = () => {
               >
                 <CircularProgress size={30} />
               </Paper>
-            ) : isMixTankError && !mixTankData ? (
+            ) : mixTankFetchFailed ? (
               <Alert severity="error" sx={{ fontSize: "0.8rem" }}>
                 خطا در دریافت اطلاعات
               </Alert>
@@ -178,7 +183,7 @@ const Dashboard = () => {
               {" "}
               مخازن آبیاری
             </Typography>
-            {isStoragesLoading && !storagesList?.length ? (
+            {storagesInitialLoading ? (
               <Paper
                 sx={{
                   width: "340px",
@@ -193,7 +198,7 @@ const Dashboard = () => {
               >
                 <CircularProgress size={30} />
               </Paper>
-            ) : isStoragesError && !storagesList?.length ? (
+            ) : storagesFetchFailed ? (
               <Alert severity="error" sx={{ fontSize: "0.8rem" }}>
                 خطا در دریافت اطلاعات
               </Alert>

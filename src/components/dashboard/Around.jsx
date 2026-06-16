@@ -36,6 +36,7 @@ const Around = () => {
     data: outsideData,
     isLoading,
     isError,
+    isRefetchError,
     error,
   } = useQuery({
         queryKey: ["outsideCliment"],
@@ -43,7 +44,10 @@ const Around = () => {
         refetchInterval: 5000,
       });
 
-  if (isLoading || !outsideData) {
+  const fetchFailed = isError || isRefetchError;
+  const initialLoading = isLoading && !outsideData;
+
+  if (initialLoading) {
     return (
       <Container
         sx={{
@@ -56,8 +60,7 @@ const Around = () => {
     );
   }
 
-
-  if (isError) {
+  if (fetchFailed) {
     return (
       <Container
         sx={{
@@ -67,7 +70,7 @@ const Around = () => {
         }}
       >
         <Typography fontFamily={"IRANSANS"} color="error">
-          خطا: {error.message}
+          خطا: {error?.message || "خطا در دریافت اطلاعات"}
         </Typography>
       </Container>
     );

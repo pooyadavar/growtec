@@ -10,9 +10,12 @@ input,
 textarea,
 [contenteditable="true"],
 .MuiInputBase-input,
-.MuiSelect-select {
+.MuiSelect-select,
+.login-fields input,
+.login-fields .MuiInputBase-input {
   user-select: text !important;
   -webkit-user-select: text !important;
+  pointer-events: auto !important;
 }
 @font-face {
   font-family: IRANSANS;

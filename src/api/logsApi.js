@@ -1,20 +1,13 @@
-import axios from "axios";
 import apiClient from "./apiClient";
 
 export const getClimateTemperatureHumidityLogs = async (zone, retries = 3) => {
-  const baseURL = apiClient.defaults?.baseURL;
-
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const response = await axios.post(
-        `${baseURL}/log/climate/temperature-humidity/`,
+      return await apiClient.post(
+        "/log/climate/temperature-humidity/",
         { zone },
-        {
-          timeout: 180000,
-          headers: { "Content-Type": "application/json" },
-        },
+        { timeout: 180000 },
       );
-      return response.data;
     } catch (error) {
       if (attempt === retries) throw error;
       await new Promise((resolve) => setTimeout(resolve, 5000 * attempt));

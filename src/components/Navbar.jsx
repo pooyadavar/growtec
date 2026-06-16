@@ -1,8 +1,17 @@
 import React from "react";
-import { AppBar, Toolbar, Button, Container } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Button,
+  Container,
+  Tooltip,
+} from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import assets from "../assets";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+const LOGIN_REQUIRED_TOOLTIP = "ابتدا باید وارد شوید";
 
 const useStyles = makeStyles(() => ({
   appBar: {
@@ -41,11 +50,78 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
+const NavTab = ({
+  to,
+  label,
+  icon,
+  alt,
+  isActive,
+  requiresAuth = true,
+  classes,
+}) => {
+  const { isAuthenticated } = useAuth();
+  const canAccess = !requiresAuth || isAuthenticated;
+
+  const activeSx = isActive
+    ? {
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+        transform: "scale(1.05)",
+        transition: "all 0.3s ease-in-out",
+        borderRadius: "8px",
+      }
+    : {};
+
+  if (canAccess) {
+    return (
+      <Button
+        component={Link}
+        to={to}
+        variant="text"
+        className={classes.navItem}
+        sx={activeSx}
+      >
+        <img src={icon} alt={alt} className={classes.iconImage} />
+        {label}
+      </Button>
+    );
+  }
+
+  return (
+    <Tooltip title={LOGIN_REQUIRED_TOOLTIP} arrow placement="bottom">
+      <span>
+        <Button
+          variant="text"
+          className={classes.navItem}
+          disabled
+          sx={{
+            opacity: 0.55,
+            cursor: "not-allowed",
+          }}
+        >
+          <img src={icon} alt={alt} className={classes.iconImage} />
+          {label}
+        </Button>
+      </span>
+    </Tooltip>
+  );
+};
+
 const Navbar = () => {
   const classes = useStyles();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
 
   const isActive = (path) => location.pathname.startsWith(path);
+
+  const handleAuthAction = () => {
+    if (isAuthenticated) {
+      logout();
+      navigate("/Home", { replace: true });
+      return;
+    }
+    navigate("/login");
+  };
 
   return (
     <Container
@@ -64,8 +140,7 @@ const Navbar = () => {
               style={{ scale: "1.3" }}
             />
             <Button
-              component={Link}
-              to={"/login"}
+              onClick={handleAuthAction}
               variant="text"
               className={classes.navItem}
               sx={{
@@ -73,108 +148,86 @@ const Navbar = () => {
                 borderRadius: "4px",
                 ...(isActive("/login") && {
                   backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  transform: 'scale(1.05)',
-                  transition: 'all 0.3s ease-in-out',
+                  transform: "scale(1.05)",
+                  transition: "all 0.3s ease-in-out",
                 }),
               }}
             >
-              <img src={assets.svg.lock} alt="Sign" className={classes.iconImage} />
-              ورود
+              <img
+                src={assets.svg.lock}
+                alt="Sign"
+                className={classes.iconImage}
+              />
+              {isAuthenticated ? "خروج" : "ورود"}
             </Button>
           </div>
           <div className={classes.itemHandler}>
-            <Button
-              component={Link}
-              to={"/Home"}
-              variant="text"
-              className={classes.navItem}
-              sx={{
-                ...(isActive("/Home") && {
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  transform: 'scale(1.05)',
-                  transition: 'all 0.3s ease-in-out',
-                  borderRadius: "8px",
-                }),
-              }}
+            <NavTab
+              to="/Home"
+              label="خانه"
+              icon={assets.svg.homeIcon}
+              alt="home"
+              isActive={isActive("/Home")}
+              requiresAuth={false}
+              classes={classes}
+            />
+            <NavTab
+              to="/Feeding"
+              label="تغذیه"
+              icon={assets.svg.feeding}
+              alt="feeding"
+              isActive={isActive("/Feeding")}
+              classes={classes}
+            />
+            <NavTab
+              to="/irrigation"
+              label="آبیاری"
+              icon={assets.svg.water}
+              alt="water"
+              isActive={isActive("/irrigation")}
+              classes={classes}
+            />
+            <NavTab
+              to="/payesh"
+              label="اقلیم"
+              icon={assets.svg.monitoring}
+              alt="Growtec"
+              isActive={isActive("/payesh")}
+              classes={classes}
+            />
+            <NavTab
+              to="/admin-settings"
+              label="تنظیمات"
+              icon={assets.svg.setting}
+              alt="setting"
+              isActive={isActive("/admin-settings")}
+              classes={classes}
+            />
+            <Tooltip
+              title={isAuthenticated ? "" : LOGIN_REQUIRED_TOOLTIP}
+              arrow
+              placement="bottom"
+              disableHoverListener={isAuthenticated}
+              disableFocusListener={isAuthenticated}
             >
-              <img src={assets.svg.homeIcon} alt="home" className={classes.iconImage} />
-              خانه
-            </Button>
-            <Button
-              component={Link}
-              to={"/Feeding"}
-              variant="text"
-              className={classes.navItem}
-              sx={{
-                ...(isActive("/Feeding") && {
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  transform: 'scale(1.05)',
-                  transition: 'all 0.3s ease-in-out',
-                  borderRadius: "8px",
-                }),
-              }}
-            >
-              <img src={assets.svg.feeding} alt="feeding" className={classes.iconImage} />
-              تغذیه
-            </Button>
-            <Button
-              component={Link}
-              to={"/irrigation"}
-              variant="text"
-              className={classes.navItem}
-              sx={{
-                ...(isActive("/irrigation") && {
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  transform: 'scale(1.05)',
-                  transition: 'all 0.3s ease-in-out',
-                  borderRadius: "8px",
-                }),
-              }}
-            >
-              <img src={assets.svg.water} alt="water" className={classes.iconImage} />
-              آبیاری
-            </Button>
-            <Button
-              component={Link}
-              to={"/payesh"}
-              variant="text"
-              className={classes.navItem}
-              sx={{
-                ...(isActive("/payesh") && {
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  transform: 'scale(1.05)',
-                  transition: 'all 0.3s ease-in-out',
-                  borderRadius: "8px",
-                }),
-              }}
-            >
-              <img src={assets.svg.monitoring} alt="Growtec" className={classes.iconImage} />
-              اقلیم
-            </Button>
-            <Button
-              component={Link}
-              to={"/admin-settings"}
-              variant="text"
-              className={classes.navItem}
-              sx={{
-                ...(isActive("/admin-settings") && {
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  transform: 'scale(1.05)',
-                  transition: 'all 0.3s ease-in-out',
-                  borderRadius: "8px",
-                }),
-              }}
-            >
-              <img src={assets.svg.setting} alt="setting" className={classes.iconImage} />
-              تنظیمات
-            </Button>
-            <Button
-              variant="text"
-              className={classes.navItem}
-            >
-              <img src={assets.svg.history} alt="history" className={classes.iconImage} />
-              تاریخچه
-            </Button>
+              <span>
+                <Button
+                  variant="text"
+                  className={classes.navItem}
+                  disabled={!isAuthenticated}
+                  sx={{
+                    opacity: isAuthenticated ? 1 : 0.55,
+                  }}
+                >
+                  <img
+                    src={assets.svg.history}
+                    alt="history"
+                    className={classes.iconImage}
+                  />
+                  تاریخچه
+                </Button>
+              </span>
+            </Tooltip>
           </div>
         </Toolbar>
       </AppBar>

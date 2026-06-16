@@ -44,11 +44,14 @@ const Eghlim = () => {
     scrollContainerRef.current.scrollLeft = scrollLeftState.current - walk;
   };
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, isRefetchError, error } = useQuery({
     queryKey: ["insideClimentAll"],
     queryFn: getInsideCliment,
     refetchInterval: 5000,
   });
+
+  const fetchFailed = isError || isRefetchError;
+  const initialLoading = isLoading && !data;
 
   const zones = React.useMemo(() => {
     if (!data) return [];
@@ -76,7 +79,7 @@ const Eghlim = () => {
     overflow: "hidden",
   };
 
-  if (isLoading) {
+  if (initialLoading) {
     return (
       <Container className="eghlim" sx={baseStyles}>
         <CircularProgress />
@@ -84,7 +87,7 @@ const Eghlim = () => {
     );
   }
 
-  if (isError) {
+  if (fetchFailed) {
     return (
       <Container className="eghlim" sx={baseStyles}>
         <Typography fontFamily={"IRANSANS"} color="error">
