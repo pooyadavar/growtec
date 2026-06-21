@@ -60,23 +60,28 @@ const Around = () => {
     );
   }
 
-  if (fetchFailed) {
+  if (fetchFailed || !outsideData) {
     return (
       <Container
         sx={{
           ...containerStyles,
           alignItems: "center",
-          textAlign: "center"
+          textAlign: "center",
+          px: 1,
         }}
       >
-        <Typography fontFamily={"IRANSANS"} color="error">
-          خطا: {error?.message || "خطا در دریافت اطلاعات"}
+        <Typography fontFamily={"IRANSANS"} color="error" fontSize={12}>
+          {fetchFailed
+            ? `خطا: ${error?.message || "خطا در دریافت اطلاعات"}`
+            : "داده‌ای موجود نیست"}
         </Typography>
       </Container>
     );
   }
 
-  const { temperature: temp, light, wind } = outsideData;
+  const temp = Number(outsideData.temperature ?? 0);
+  const light = Number(outsideData.light ?? 0);
+  const wind = Number(outsideData.wind ?? 0);
 
   return (
     <Container sx={containerStyles}>

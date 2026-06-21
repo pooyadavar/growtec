@@ -10,7 +10,7 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import ModalCloseButton from "../common/ModalCloseButton";
 import assets from "../../assets";
 import { useQuery } from "@tanstack/react-query";
 import { getErrorCodes } from "../../api/dashboardApi";
@@ -194,13 +194,79 @@ const ErrorComponent = () => {
           borderRadius: "10px",
           boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
           overflow: "hidden",
-          // جلوگیری از سلکت شدن متن در کل کانتینر
           userSelect: "none",
           WebkitUserSelect: "none",
           MozUserSelect: "none",
           msUserSelect: "none",
         }}
       >
+        <Box
+          sx={{
+            display: "flex",
+            width: "90%",
+            gap: 2,
+            justifyContent: "center",
+            alignItems: "center",
+            alignSelf: "center",
+            flexShrink: 0,
+            pt: 1,
+            px: "4px",
+          }}
+        >
+          <Box
+            sx={{
+              width: "64px",
+              height: "24px",
+              backgroundColor: "#FFCB82",
+              border: "0.5px solid #9F9F9F",
+              borderRadius: "5px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: "IRANSANS",
+                fontSize: "12px",
+                textAlign: "center",
+              }}
+            >
+              کد خطا
+            </Typography>
+          </Box>
+
+          <Box
+            component="img"
+            src={assets.svg.line}
+            alt=""
+            sx={{ height: "24px", flexShrink: 0 }}
+          />
+
+          <Box
+            sx={{
+              width: "64px",
+              height: "24px",
+              backgroundColor: "#FFCB82",
+              border: "0.5px solid #9F9F9F",
+              borderRadius: "5px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: "IRANSANS",
+                fontSize: "12px",
+                textAlign: "center",
+              }}
+            >
+              زمان
+            </Typography>
+          </Box>
+        </Box>
+
         <Box
           ref={scrollRef}
           onMouseDown={handleMouseDown}
@@ -212,13 +278,15 @@ const ErrorComponent = () => {
             width: "90%",
             gap: 2,
             justifyContent: "center",
-            flexGrow: 1,
+            alignSelf: "center",
+            flex: "1 1 0",
+            minHeight: 0,
             overflowY: "auto",
             overflowX: "hidden",
-            padding: "0 4px",
-            cursor: "grab", // نشانگر موس برای قابلیت کشیدن
+            padding: "4px",
+            cursor: "grab",
             "&:active": {
-              cursor: "grabbing", // نشانگر موس وقتی کلیک نگه داشته شده
+              cursor: "grabbing",
             },
             "&::-webkit-scrollbar": {
               width: "4px",
@@ -235,41 +303,15 @@ const ErrorComponent = () => {
             },
           }}
         >
-          <div
+          <Box
             className="errorMessage"
-            style={{
+            sx={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              paddingTop: "5px",
-              pointerEvents: "none", // جلوگیری از تداخل المان‌های داخلی با اسکرول
+              pointerEvents: "none",
             }}
           >
-            <div
-              style={{
-                width: "64px",
-                height: "24px",
-                backgroundColor: "#FFCB82",
-                border: "0.5px solid #9F9F9F",
-                borderRadius: "5px",
-                margin: "0 0 1rem 0",
-                position: "sticky",
-                top: 0,
-                zIndex: 1,
-                pointerEvents: "auto",
-              }}
-            >
-              <Typography
-                sx={{
-                  fontFamily: "IRANSANS",
-                  fontSize: "12px",
-                  textAlign: "center",
-                }}
-              >
-                کد خطا
-              </Typography>
-            </div>
-
             {groupedErrors.length > 0 ? (
               groupedErrors.map((log, index) => (
                 <Typography
@@ -288,49 +330,24 @@ const ErrorComponent = () => {
                 خطایی یافت نشد.
               </Typography>
             )}
-          </div>
+          </Box>
 
-          <img 
-             src={assets.svg.line} 
-             alt="" 
-             style={{ pointerEvents: "none" }} // جلوگیری از درگ شدن خود عکس
+          <Box
+            component="img"
+            src={assets.svg.line}
+            alt=""
+            sx={{ pointerEvents: "none", flexShrink: 0 }}
           />
 
-          <div
+          <Box
             className="errorTime"
-            style={{
+            sx={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              paddingTop: "5px",
-              pointerEvents: "none", // جلوگیری از تداخل
+              pointerEvents: "none",
             }}
           >
-            <div
-              style={{
-                width: "64px",
-                height: "24px",
-                backgroundColor: "#FFCB82",
-                border: "0.5px solid #9F9F9F",
-                borderRadius: "5px",
-                margin: "0 0 1rem 0",
-                position: "sticky",
-                top: 0,
-                zIndex: 1,
-                pointerEvents: "auto",
-              }}
-            >
-              <Typography
-                sx={{
-                  fontFamily: "IRANSANS",
-                  fontSize: "12px",
-                  textAlign: "center",
-                }}
-              >
-                زمان
-              </Typography>
-            </div>
-
             {groupedErrors.length > 0 ? (
               groupedErrors.map((log, index) => (
                 <Typography
@@ -351,7 +368,7 @@ const ErrorComponent = () => {
                 زمانی یافت نشد.
               </Typography>
             )}
-          </div>
+          </Box>
         </Box>
 
         <Box
@@ -403,54 +420,54 @@ const ErrorComponent = () => {
               لیست کامل خطاها
             </Typography>
 
-            <IconButton onClick={handleClose}>
-              <CloseIcon />
-            </IconButton>
+            <ModalCloseButton onClick={handleClose} />
           </Box>
 
           <Divider sx={{ mb: 2 }} />
 
-          {/* Header Row */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderBottom: "2px solid #ccc",
-              pb: 1,
-              mb: 1,
-              backgroundColor: "#f5f5f5",
-              p: 1,
-              borderRadius: "5px",
-            }}
-          >
-            <Typography
-              fontFamily="IRANSANS"
-              width="10%"
-              textAlign="center"
-              fontWeight="bold"
+          <Box sx={{ overflowY: "auto", flex: "1 1 0", minHeight: 0, pr: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderBottom: "2px solid #ccc",
+                pb: 1,
+                mb: 1,
+                backgroundColor: "#f5f5f5",
+                p: 1,
+                borderRadius: "5px",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+              }}
             >
-              کد
-            </Typography>
-            <Typography
-              fontFamily="IRANSANS"
-              width="60%"
-              textAlign="center"
-              fontWeight="bold"
-            >
-              توضیحات
-            </Typography>
-            <Typography
-              fontFamily="IRANSANS"
-              width="30%"
-              textAlign="center"
-              fontWeight="bold"
-            >
-              زمان
-            </Typography>
-          </Box>
+              <Typography
+                fontFamily="IRANSANS"
+                width="10%"
+                textAlign="center"
+                fontWeight="bold"
+              >
+                کد
+              </Typography>
+              <Typography
+                fontFamily="IRANSANS"
+                width="60%"
+                textAlign="center"
+                fontWeight="bold"
+              >
+                توضیحات
+              </Typography>
+              <Typography
+                fontFamily="IRANSANS"
+                width="30%"
+                textAlign="center"
+                fontWeight="bold"
+              >
+                زمان
+              </Typography>
+            </Box>
 
-          <Box sx={{ overflowY: "auto", flexGrow: 1, pr: 1 }}>
             {groupedErrors.length > 0 ? (
               groupedErrors.map((log, index) => (
                 <Box

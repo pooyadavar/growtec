@@ -9,24 +9,31 @@ import {
   Tab,
   Select,
   MenuItem,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import assets from "../../assets";
+import ModalCloseButton from "../common/ModalCloseButton";
 import {
   getAllConfig,
   updateIrrigationConfig,
   updateSolubleConfig,
   updateClimateConfig,
+  getAccounts,
+  createAccount,
+  deleteAccount,
 } from "../../api/configApi";
 import { queryKeys } from "../../api/queryKeys";
 import { parseAdminConfig } from "../../lib/configHelpers";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { showErrorToast } from "../../utils/appToast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
-// =====================================================================
-// کامپوننت‌های ردیفی (برای تب‌های آبیاری و تغذیه)
-// =====================================================================
 const FormRow = ({ label, name, value, onChange }) => (
   <Box
     sx={{
@@ -45,11 +52,11 @@ const FormRow = ({ label, name, value, onChange }) => (
       variant="outlined"
       size="small"
       name={name}
-      value={toPersianDigits(value)} // همیشه فارسی نمایش می‌دهد
+      value={toPersianDigits(value)}
       onChange={(e) =>
         onChange({ target: { name, value: toEnglishDigits(e.target.value) } })
-      } // همیشه انگلیسی ذخیره می‌کند
-      inputProps={{ inputMode: "decimal" }} // جایگزین type="number"
+      }
+      inputProps={{ inputMode: "decimal" }}
       sx={{
         width: "120px",
         backgroundColor: "#FFFFFF",
@@ -64,9 +71,6 @@ const FormRow = ({ label, name, value, onChange }) => (
   </Box>
 );
 
-// =====================================================================
-// کامپوننت‌های افقی/ستونی (مخصوص تب اقلیم)
-// =====================================================================
 const VerticalSelect = ({ label, name, value, onChange, maxCount }) => (
   <Box
     sx={{
@@ -201,11 +205,11 @@ const VerticalInput = ({ label, name, value, onChange }) => (
       variant="outlined"
       size="small"
       name={name}
-      value={toPersianDigits(value)} // همیشه فارسی نمایش می‌دهد
+      value={toPersianDigits(value)}
       onChange={(e) =>
         onChange({ target: { name, value: toEnglishDigits(e.target.value) } })
       }
-      inputProps={{ inputMode: "decimal" }} // جایگزین type="number"
+      inputProps={{ inputMode: "decimal" }}
       sx={{
         width: "90px",
         backgroundColor: "#FFFFFF",
@@ -221,7 +225,6 @@ const VerticalInput = ({ label, name, value, onChange }) => (
   </Box>
 );
 
-// تولید استیت‌های پیش‌فرض برای ۵ زون اقلیم
 const getInitialClimateState = () => {
   let state = {};
   for (let i = 1; i <= 5; i++) {
@@ -237,6 +240,450 @@ const getInitialClimateState = () => {
   return state;
 };
 
+const accountFieldSx = {
+  width: "100%",
+  backgroundColor: "#FFFFFF",
+  borderRadius: "5px",
+  "& .MuiInputBase-input": {
+    fontFamily: "IRANSANS",
+    textAlign: "right",
+    padding: "10px",
+  },
+  "& .MuiInputLabel-root": {
+    fontFamily: "IRANSANS",
+    right: 27,
+    left: "auto",
+    transformOrigin: "top right",
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    textAlign: "right",
+  },
+};
+
+
+const AccountManagementTab = () => {
+  const queryClient = useQueryClient();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteUser, setPendingDeleteUser] = useState(null);
+  const scrollContainerRef = useRef(null);
+  const isDown = useRef(false);
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+  const scrollTopState = useRef(0);
+
+  const handleMouseDown = (e) => {
+    if (!scrollContainerRef.current) return;
+    isDown.current = true;
+    isDragging.current = false;
+    startY.current = e.pageY - scrollContainerRef.current.offsetTop;
+    scrollTopState.current = scrollContainerRef.current.scrollTop;
+  };
+
+  const handleMouseLeave = () => {
+    isDown.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDown.current = false;
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDown.current || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const y = e.pageY - scrollContainerRef.current.offsetTop;
+    const walk = (y - startY.current) * 1.5;
+
+    if (Math.abs(walk) > 5) {
+      isDragging.current = true;
+    }
+
+    scrollContainerRef.current.scrollTop = scrollTopState.current - walk;
+  };
+
+  const handleTouchStart = (e) => {
+    isDragging.current = false;
+    startY.current = e.touches[0].pageY;
+  };
+
+  const handleTouchMove = (e) => {
+    const y = e.touches[0].pageY;
+    if (Math.abs(y - startY.current) > 5) {
+      isDragging.current = true;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
+  };
+
+  const {
+    data: accountsData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: queryKeys.configAccounts(),
+    queryFn: getAccounts,
+  });
+
+  const users = accountsData?.users ?? [];
+
+  useEffect(() => {
+    if (isError) {
+      showErrorToast(
+        `خطا در دریافت حساب‌ها: ${error?.message || "خطای ناشناخته"}`,
+        "admin-accounts-error",
+      );
+    }
+  }, [isError, error]);
+
+  const createMutation = useMutation({
+    mutationFn: createAccount,
+    onSuccess: () => {
+      toast.success("حساب کاربری با موفقیت ایجاد شد.");
+      setUsername("");
+      setPassword("");
+      setPasswordConfirm("");
+      queryClient.invalidateQueries({ queryKey: queryKeys.configAccounts() });
+    },
+    onError: (err) => {
+      const message =
+        err?.response?.data?.detail ||
+        err?.response?.data?.username?.[0] ||
+        err?.response?.data?.password?.[0] ||
+        "خطا در ایجاد حساب کاربری";
+      toast.error(message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => {
+      toast.success("حساب کاربری حذف شد.");
+      setDeleteDialogOpen(false);
+      setPendingDeleteUser(null);
+      queryClient.invalidateQueries({ queryKey: queryKeys.configAccounts() });
+    },
+    onError: () => {
+      toast.error("خطا در حذف حساب کاربری");
+    },
+  });
+
+  const handleCreateAccount = () => {
+    if (!username.trim() || !password.trim() || !passwordConfirm.trim()) {
+      toast.error("همه فیلدها را پر کنید.");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      toast.error("رمز عبور و تکرار آن یکسان نیست.");
+      return;
+    }
+
+    createMutation.mutate({
+      username: username.trim(),
+      password,
+      password_confirm: passwordConfirm,
+    });
+  };
+
+  const handleDeleteAccount = (userId, userName) => {
+    if (isDragging.current) return;
+    setPendingDeleteUser({ id: userId, username: userName });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCancelDelete = () => {
+    if (deleteMutation.isPending) return;
+    setDeleteDialogOpen(false);
+    setPendingDeleteUser(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!pendingDeleteUser) return;
+    deleteMutation.mutate(pendingDeleteUser.id);
+  };
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flex: "1 1 0",
+        minHeight: 0,
+        height: "100%",
+        gap: 2,
+        overflow: "hidden",
+      }}
+    >
+      <Typography
+        fontFamily="IRANSANS"
+        fontSize={16}
+        fontWeight="bold"
+        color="#333"
+        flexShrink={0}
+      >
+        لیست حساب‌های کاربری
+      </Typography>
+
+      <Box
+        ref={scrollContainerRef}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onDragStart={(e) => e.preventDefault()}
+        sx={{
+          flex: "1 1 0",
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          backgroundColor: "#FFFFFF",
+          border: "0.5px solid #9F9F9F",
+          borderRadius: "10px",
+          p: 2,
+          cursor: "grab",
+          "&:active": { cursor: "grabbing" },
+          userSelect: "none",
+          touchAction: "pan-y",
+          WebkitOverflowScrolling: "touch",
+          "&::-webkit-scrollbar": {
+            display: "block",
+            width: "25px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "#EBEBEB",
+            borderRadius: "8px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "#6a6a6a",
+            borderRadius: "8px",
+            border: "4px solid #EBEBEB",
+            "&:hover": {
+              background: "#444444",
+            },
+          },
+        }}
+      >
+        {isLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress size={28} />
+          </Box>
+        ) : isError ? (
+          <Typography fontFamily="IRANSANS" textAlign="center" color="#777" fontSize={14}>
+            امکان بارگذاری لیست وجود ندارد.
+          </Typography>
+        ) : users.length === 0 ? (
+          <Typography fontFamily="IRANSANS" textAlign="center" color="#777">
+            حساب کاربری ثبت نشده است.
+          </Typography>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              width: "100%",
+              pointerEvents: "none",
+            }}
+          >
+            {users.map((user) => (
+              <Box
+                key={user.id}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  border: "1px solid #E0E0E0",
+                  borderRadius: "8px",
+                  px: 2,
+                  py: 1.2,
+                  backgroundColor: "#FAFAFA",
+                  flexShrink: 0,
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                  MozUserSelect: "none",
+                  msUserSelect: "none",
+                }}
+              >
+                <Typography fontFamily="IRANSANS" fontSize={15}>
+                  {user.username}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => handleDeleteAccount(user.id, user.username)}
+                  sx={{
+                    fontFamily: "IRANSANS",
+                    minWidth: 72,
+                    pointerEvents: "auto",
+                  }}
+                >
+                  حذف
+                </Button>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      <Box
+        sx={{
+          border: "1px solid #90CAF9",
+          borderRadius: "10px",
+          p: 2,
+          backgroundColor: "inherit",
+          flexShrink: 0,
+        }}
+      >
+        <Typography
+          fontFamily="IRANSANS"
+          fontWeight="bold"
+          fontSize={15}
+          color="#1565C0"
+          mb={2}
+        >
+          ایجاد حساب جدید
+        </Typography>
+        <Grid container spacing={2} direction={"rtl"}>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              size="small"
+              label="نام کاربری"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              sx={accountFieldSx}
+              InputLabelProps={{ sx: { fontFamily: "IRANSANS" } }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              size="small"
+              type="password"
+              label="رمز عبور"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              sx={accountFieldSx}
+              InputLabelProps={{ sx: { fontFamily: "IRANSANS" } }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              size="small"
+              type="password"
+              label="تکرار رمز عبور"
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+              sx={accountFieldSx}
+              InputLabelProps={{ sx: { fontFamily: "IRANSANS" } }}
+            />
+          </Grid>
+        </Grid>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Button
+            onClick={handleCreateAccount}
+            disabled={createMutation.isPending}
+            sx={{
+              width: "246px",
+              height: "50px",
+              backgroundColor: "#6CCDB0",
+              display: "flex",
+              justifyContent: "space-around",
+              paddingX: "10px",
+              borderRadius: "10px",
+              "&:hover": { backgroundColor: "#5bbd9e" },
+            }}
+          >
+            <img src={assets.svg.setting2} alt="" />
+            <Typography fontFamily="IRANSANS" fontSize={17} color="#000000">
+              {createMutation.isPending ? "در حال ایجاد..." : "ایجاد حساب"}
+            </Typography>
+          </Button>
+        </Box>
+      </Box>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCancelDelete}
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            minWidth: 320,
+            fontFamily: "IRANSANS",
+            position: "relative",
+            pt: 1,
+          },
+        }}
+      >
+        <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 1 }}>
+          <ModalCloseButton onClick={handleCancelDelete} />
+        </Box>
+        <DialogTitle
+          sx={{ fontFamily: "IRANSANS", fontSize: 18, textAlign: "center" }}
+        >
+          حذف حساب کاربری
+        </DialogTitle>
+        <DialogContent>
+          <Typography
+            fontFamily="IRANSANS"
+            fontSize={14}
+            color="#555"
+            textAlign="center"
+          >
+            آیا مطمئن هستید که حساب «{pendingDeleteUser?.username}» حذف شود؟
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center", gap: 1, pb: 2, px: 3 }}>
+          <Button
+            onClick={handleCancelDelete}
+            variant="outlined"
+            disabled={deleteMutation.isPending}
+            sx={{
+              fontFamily: "IRANSANS",
+              minWidth: 100,
+              borderColor: "#9F9F9F",
+              color: "#555",
+            }}
+          >
+            انصراف
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            disabled={deleteMutation.isPending}
+            sx={{
+              fontFamily: "IRANSANS",
+              minWidth: 100,
+              backgroundColor: "#D32F2F",
+              "&:hover": { backgroundColor: "#B71C1C" },
+            }}
+          >
+            {deleteMutation.isPending ? "در حال حذف..." : "حذف"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
+
+// =====================================================================
+// کامپوننت اصلی تنظیمات ادمین
+// =====================================================================
 const AdminSetting = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(0);
@@ -300,10 +747,12 @@ const AdminSetting = () => {
       for (let i = 1; i <= 5; i++) {
         payload.zones[i.toString()] = {
           number_of_exhaust_fans:
-            Number(currentSettings[`climate_z${i}_number_of_exhaust_fans`]) || 0,
-          number_of_circulating_fans:
-            Number(currentSettings[`climate_z${i}_number_of_circulating_fans`]) ||
+            Number(currentSettings[`climate_z${i}_number_of_exhaust_fans`]) ||
             0,
+          number_of_circulating_fans:
+            Number(
+              currentSettings[`climate_z${i}_number_of_circulating_fans`],
+            ) || 0,
           pump_pad: Boolean(currentSettings[`climate_z${i}_pump_pad`]),
           heater: Boolean(currentSettings[`climate_z${i}_heater`]),
           roof_hatch: Boolean(currentSettings[`climate_z${i}_roof_hatch`]),
@@ -353,11 +802,12 @@ const AdminSetting = () => {
         sx={{
           width: "100%",
           height: "100%",
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
         }}
       >
-        {/* هدر */}
+        {/* هدر صفحه ادمین */}
         <Box
           sx={{
             width: "246px",
@@ -378,10 +828,11 @@ const AdminSetting = () => {
           </Typography>
         </Box>
 
-        {/* بدنه اصلی */}
+        {/* بدنه اصلی تب‌ها */}
         <Box
           sx={{
             flex: 1,
+            minHeight: 0,
             backgroundColor: "#F5F5F5",
             borderRadius: "10px",
             boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
@@ -420,12 +871,14 @@ const AdminSetting = () => {
               <Tab label="آبیاری" />
               <Tab label="تغذیه" />
               <Tab label="اقلیم" />
+              <Tab label="مدیریت حساب‌ها" />
             </Tabs>
           </Box>
 
           <Box
             sx={{
               flex: 1,
+              minHeight: 0,
               px: 4,
               py: 3,
               display: "flex",
@@ -479,6 +932,7 @@ const AdminSetting = () => {
                 >
                   <Button
                     onClick={handleSave}
+                    disabled={saveMutation.isPending}
                     sx={{
                       width: "246px",
                       height: "50px",
@@ -496,7 +950,9 @@ const AdminSetting = () => {
                       fontSize={17}
                       color="#000000"
                     >
-                      ذخیره تنظیمات آبیاری
+                      {saveMutation.isPending
+                        ? "در حال ذخیره..."
+                        : "ذخیره تنظیمات آبیاری"}
                     </Typography>
                   </Button>
                 </Box>
@@ -542,6 +998,7 @@ const AdminSetting = () => {
                 >
                   <Button
                     onClick={handleSave}
+                    disabled={saveMutation.isPending}
                     sx={{
                       width: "246px",
                       height: "50px",
@@ -559,7 +1016,9 @@ const AdminSetting = () => {
                       fontSize={17}
                       color="#000000"
                     >
-                      ذخیره تنظیمات تغذیه
+                      {saveMutation.isPending
+                        ? "در حال ذخیره..."
+                        : "ذخیره تنظیمات تغذیه"}
                     </Typography>
                   </Button>
                 </Box>
@@ -762,6 +1221,7 @@ const AdminSetting = () => {
                 >
                   <Button
                     onClick={handleSave}
+                    disabled={saveMutation.isPending}
                     sx={{
                       width: "246px",
                       height: "50px",
@@ -779,12 +1239,16 @@ const AdminSetting = () => {
                       fontSize={17}
                       color="#000000"
                     >
-                      ذخیره تنظیمات اقلیم
+                      {saveMutation.isPending
+                        ? "در حال ذخیره..."
+                        : "ذخیره تنظیمات اقلیم"}
                     </Typography>
                   </Button>
                 </Box>
               </Box>
             )}
+
+            {activeTab === 3 && <AccountManagementTab />}
           </Box>
         </Box>
       </Box>

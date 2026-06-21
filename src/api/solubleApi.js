@@ -51,25 +51,39 @@ export const getMixTankStatus = async () => {
 const STOCK_PERCENT_KEYS = Array.from({ length: 10 }, (_, i) =>
   String(i + 1),
 );
+const STOCK_PERCENT_ZERO_KEYS = ["11", "12", "13"];
+
+const formatProgramDecimal = (value, fallback = 0) => {
+  if (value === null || value === undefined || value === "") return fallback;
+
+  const num = Number(value);
+  if (Number.isNaN(num)) return fallback;
+  if (Number.isInteger(num)) return num;
+
+  return parseFloat(num.toFixed(2));
+};
 
 export const normalizeFoodstuffProgram = (response) => {
   const data =
     response?.foodstuff_preparation_program ??
-    response?.foodstuf_preparation_program ??
+    response?.foodstuff_preparation_program ??
     response ??
     {};
 
   const stockPercent = {};
   STOCK_PERCENT_KEYS.forEach((key) => {
-    stockPercent[key] = data?.stock_percent?.[key] ?? 0;
+    stockPercent[key] = formatProgramDecimal(data?.stock_percent?.[key], 0);
   });
 
   return {
-    target_ec: data?.target_ec ?? 0,
-    ec_acceptable_error: data?.ec_acceptable_error ?? 0,
-    target_ph: data?.target_ph ?? 0,
-    ph_acceptable_error: data?.ph_acceptable_error ?? 0,
-    ec_correction_coefficient: data?.ec_correction_coefficient ?? 0,
+    target_ec: formatProgramDecimal(data?.target_ec, 0),
+    ec_acceptable_error: formatProgramDecimal(data?.ec_acceptable_error, 0),
+    target_ph: formatProgramDecimal(data?.target_ph, 0),
+    ph_acceptable_error: formatProgramDecimal(data?.ph_acceptable_error, 0),
+    ec_correction_coefficient: formatProgramDecimal(
+      data?.ec_correction_coefficient,
+      0,
+    ),
     stock_percent: stockPercent,
   };
 };
@@ -77,17 +91,23 @@ export const normalizeFoodstuffProgram = (response) => {
 export const buildFoodstuffProgramPayload = (programNumber, program) => {
   const stockPercent = {};
   STOCK_PERCENT_KEYS.forEach((key) => {
-    stockPercent[key] = Number(program?.stock_percent?.[key] ?? 0);
+    stockPercent[key] = formatProgramDecimal(program?.stock_percent?.[key], 0);
+  });
+  STOCK_PERCENT_ZERO_KEYS.forEach((key) => {
+    stockPercent[key] = 0;
   });
 
   return {
     program_number: programNumber,
-    foodstuf_preparation_program: {
-      target_ec: Number(program?.target_ec ?? 0),
-      ec_acceptable_error: Number(program?.ec_acceptable_error ?? 0),
-      target_ph: Number(program?.target_ph ?? 0),
-      ph_acceptable_error: Number(program?.ph_acceptable_error ?? 0),
-      ec_correction_coefficient: Number(program?.ec_correction_coefficient ?? 0),
+    foodstuff_preparation_program: {
+      target_ec: formatProgramDecimal(program?.target_ec, 0),
+      ec_acceptable_error: formatProgramDecimal(program?.ec_acceptable_error, 0),
+      target_ph: formatProgramDecimal(program?.target_ph, 0),
+      ph_acceptable_error: formatProgramDecimal(program?.ph_acceptable_error, 0),
+      ec_correction_coefficient: formatProgramDecimal(
+        program?.ec_correction_coefficient,
+        0,
+      ),
       stock_percent: stockPercent,
     },
   };

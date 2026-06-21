@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Typography, Box, Container, Divider, Modal } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton";
+import ModalCloseButton from "../common/ModalCloseButton";
 import assets from "../../assets";
 import { Scale } from "@mui/icons-material";
 import CalculateIcon from "@mui/icons-material/Calculate";
@@ -235,7 +236,10 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
       </Box>
 
       <Modal open={modalOpen} onClose={handleModalClose} aria-labelledby="settings-modal-title">
-        <Box sx={modalStyle}>
+        <Box sx={{ ...modalStyle, position: "relative" }}>
+          <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}>
+            <ModalCloseButton onClick={handleModalClose} />
+          </Box>
             {/* Simplified modal content for now, matching IrrigationOneStorage structure */}
              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: "200px", pt: 2, justifyContent: "space-between" }}>
                 <Box sx={{ width: "180px", height: "37px", borderRadius: "10px", border: "0.5px solid #9F9F9F", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#FFFFFF", flexDirection: "row-reverse" }}>

@@ -25,6 +25,7 @@ export const queryKeys = {
   operatorSchedules: (zone) => ["operatorSchedules", zone],
   operatorLogs: (zone) => ["operatorLogs", zone],
   adminConfig: () => ["adminConfig"],
+  configAccounts: () => ["configAccounts"],
   solubleEcPhLog: (sensorId) => ["solubleEcPhLog", sensorId],
   solubleEcPhTemperature: () => ["solubleEcPhTemperature"],
   mixTankStatusDetail: () => ["mixTankStatusDetail"],

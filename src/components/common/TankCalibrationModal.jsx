@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography, Button, Modal } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import assets from "../../assets";
+import ModalCloseButton from "./ModalCloseButton";
 import { calibratePressureSensor } from "../../api/calibrationApi";
 import { getIrrigationTanksStatus } from "../../api/dashboardApi";
 import { queryKeys } from "../../api/queryKeys";
@@ -125,6 +125,8 @@ const TankCalibrationModal = ({
           height: "auto",
           maxHeight: "90vh",
           overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-y",
           boxShadow: 24,
           p: 3,
           display: "flex",
@@ -144,12 +146,7 @@ const TankCalibrationModal = ({
           <Typography fontFamily="IRANSANS" fontSize={18} fontWeight="bold">
             کالیبراسیون سطح مخزن {toPersianDigits(displayNumber)}
           </Typography>
-          <img
-            src={assets.svg.close}
-            alt="close"
-            onClick={handleClose}
-            style={{ cursor: "pointer", width: "20px", height: "20px" }}
-          />
+          <ModalCloseButton onClick={handleClose} />
         </Box>
 
         <Box

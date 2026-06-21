@@ -19,11 +19,13 @@ const Eghlim = () => {
   const scrollContainerRef = React.useRef(null);
 
   const isDown = React.useRef(false);
+  const isDragging = React.useRef(false);
   const startX = React.useRef(0);
   const scrollLeftState = React.useRef(0);
 
   const handleMouseDown = (e) => {
     isDown.current = true;
+    isDragging.current = false;
     startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
     scrollLeftState.current = scrollContainerRef.current.scrollLeft;
   };
@@ -34,6 +36,9 @@ const Eghlim = () => {
 
   const handleMouseUp = () => {
     isDown.current = false;
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
   };
 
   const handleMouseMove = (e) => {
@@ -41,7 +46,30 @@ const Eghlim = () => {
     e.preventDefault();
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
     const walk = (x - startX.current) * 1.5;
+
+    if (Math.abs(walk) > 5) {
+      isDragging.current = true;
+    }
+
     scrollContainerRef.current.scrollLeft = scrollLeftState.current - walk;
+  };
+
+  const handleTouchStart = (e) => {
+    isDragging.current = false;
+    startX.current = e.touches[0].pageX;
+  };
+
+  const handleTouchMove = (e) => {
+    const x = e.touches[0].pageX;
+    if (Math.abs(x - startX.current) > 5) {
+      isDragging.current = true;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      isDragging.current = false;
+    }, 50);
   };
 
   const { data, isLoading, isError, isRefetchError, error } = useQuery({
@@ -105,6 +133,10 @@ const Eghlim = () => {
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onDragStart={(e) => e.preventDefault()}
       sx={{
         width: "730px",
         height: "210px",
@@ -121,8 +153,8 @@ const Eghlim = () => {
         overflowX: "auto",
         scrollPaddingLeft: "12px",
         userSelect: "none",
-        touchAction: "none",
-        // scrollSnapType رو حذف کردیم تا حرکت پله‌ای از بین بره
+        touchAction: "pan-x",
+        WebkitOverflowScrolling: "touch",
 
         "&::-webkit-scrollbar": {
           display: "block",

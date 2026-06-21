@@ -8,7 +8,7 @@ import {
   TextField,
   IconButton,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import ModalCloseButton from "../common/ModalCloseButton";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { AgCharts } from "ag-charts-react";
@@ -250,18 +250,7 @@ const CalibrationModalContent = ({
           <Typography fontFamily="IRANSANS" fontWeight="bold" fontSize={16}>
             کالیبراسیون: {sensorName}
           </Typography>
-          <IconButton
-            onClick={onClose}
-            sx={{
-              color: "#fff",
-              bgcolor: "#e57373",
-              borderRadius: "4px",
-              padding: "2px",
-              "&:hover": { bgcolor: "#ef5350" },
-            }}
-          >
-            <CloseIcon sx={{ fontSize: "18px" }} />
-          </IconButton>
+          <ModalCloseButton onClick={onClose} />
         </Box>
 
         <Box sx={{ display: "flex", justifyContent: "left", gap: 1, mb: 0 }}>

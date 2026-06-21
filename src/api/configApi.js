@@ -32,3 +32,15 @@ export const updateSolubleConfig = async (payload) => {
 export const updateClimateConfig = async (payload) => {
   return apiClient.put("/config/climate/", payload);
 };
+
+export const getAccounts = async () => {
+  return apiClient.get("/config/account/");
+};
+
+export const createAccount = async (payload) => {
+  return apiClient.post("/config/account/", payload);
+};
+
+export const deleteAccount = async (id) => {
+  return apiClient.delete("/config/account/", { data: { id } });
+};

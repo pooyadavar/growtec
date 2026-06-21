@@ -138,32 +138,33 @@ const FeedingHistoryPage = ({ onClose, isModal = false }) => {
         px: isModal ? "0 !important" : undefined,
       }}
     >
-      {/* --- هدر (سربرگ) --- */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          borderColor: "divider",
-          direction: "ltr",
-          pb: 0,
-          mb: 2,
-        }}
-      >
-        <IconButton
-          onClick={handleBackClick}
-          title="بستن"
-          size="small"
+      {!isModal && (
+        <Box
           sx={{
-            color: "#FFF",
-            backgroundColor: "red",
-            borderRadius: "8px",
-            "&:hover": { backgroundColor: "#D32F2F" },
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            borderColor: "divider",
+            direction: "ltr",
+            pb: 0,
+            mb: 2,
           }}
         >
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Box>
+          <IconButton
+            onClick={handleBackClick}
+            title="بستن"
+            size="small"
+            sx={{
+              color: "#FFF",
+              backgroundColor: "red",
+              borderRadius: "8px",
+              "&:hover": { backgroundColor: "#D32F2F" },
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
 
       <Paper
         elevation={3}
@@ -174,6 +175,7 @@ const FeedingHistoryPage = ({ onClose, isModal = false }) => {
           flexDirection: "column",
           borderRadius: "10px",
           overflow: "hidden",
+          marginTop: "40px",
         }}
       >
         {/* --- محتوای صفحه --- */}
@@ -181,7 +183,7 @@ const FeedingHistoryPage = ({ onClose, isModal = false }) => {
           sx={{
             flexGrow: 1,
             overflowY: "auto",
-            p: { xs: 1, md: 2 },
+            p: { xs: 1, md: 1 },
             direction: "rtl",
           }}
         >
@@ -203,7 +205,7 @@ const FeedingHistoryPage = ({ onClose, isModal = false }) => {
               values={historyData.map((item) => item.log_data?.reported_stock_injection_count)}
             />
             <PlanColumn
-              number="حجن ساخت محلول"
+              number="حجم ساخت محلول"
               values={historyData.map((item) => item.log_data?.reported_volume)}
             />
             <PlanColumn

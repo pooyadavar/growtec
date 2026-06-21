@@ -4,11 +4,10 @@ import {
   Box,
   Paper,
   Typography,
-  IconButton,
   Modal,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import CloseIcon from "@mui/icons-material/Close";
+import ModalCloseButton from "../common/ModalCloseButton";
 import { getMixTankStatus } from "../../api/solubleApi";
 import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits } from "../../utils/persianDigits";
@@ -105,9 +104,7 @@ const StatusModal = ({ open, onClose, title }) => {
           >
             {title || "جزئیات وضعیت"}
           </Typography>
-          <IconButton onClick={onClose} sx={{ p: 0.5 }}>
-            <CloseIcon />
-          </IconButton>
+          <ModalCloseButton onClick={onClose} />
         </Box>
 
         {/* Headers */}

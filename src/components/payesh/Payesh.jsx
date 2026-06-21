@@ -13,6 +13,7 @@ import {
 import assets from "../../assets";
 import { AgCharts } from "ag-charts-react";
 import PayeshSetting from "./PayeshSetting";
+import ModalCloseButton from "../common/ModalCloseButton";
 import IconTextButton from "../../card/IconTextButton";
 import { useNavigate } from "react-router-dom";
 import {
@@ -75,6 +76,16 @@ const normalizeExclusivePair = (opening, closing) => {
     return { opening: true, closing: false };
   }
   return { opening: isOpening, closing: isClosing };
+};
+
+const getNextExclusivePairState = (prev, action) => {
+  if (prev[action]) {
+    return { opening: false, closing: false };
+  }
+  return {
+    opening: action === "opening",
+    closing: action === "closing",
+  };
 };
 
 const Payesh = () => {
@@ -328,10 +339,7 @@ const Payesh = () => {
 
   const toggleHatch = (action) => {
     setHatchStates((prev) => {
-      const opposite = action === "opening" ? "closing" : "opening";
-      const next = prev[action]
-        ? { opening: opposite === "opening", closing: opposite === "closing" }
-        : { opening: action === "opening", closing: action === "closing" };
+      const next = getNextExclusivePairState(prev, action);
       void sendExclusiveOperatorPair("hatch", next);
       return next;
     });
@@ -352,10 +360,7 @@ const Payesh = () => {
 
   const toggleShade = (action) => {
     setShadeStates((prev) => {
-      const opposite = action === "opening" ? "closing" : "opening";
-      const next = prev[action]
-        ? { opening: opposite === "opening", closing: opposite === "closing" }
-        : { opening: action === "opening", closing: action === "closing" };
+      const next = getNextExclusivePairState(prev, action);
       void sendExclusiveOperatorPair("shade", next);
       return next;
     });
@@ -1211,12 +1216,7 @@ const Payesh = () => {
             <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
               کنترل فن‌های اگزاست
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="Close"
-              style={{ cursor: "pointer", width: "30px", height: "30px" }}
-              onClick={() => setExhaustFanModalOpen(false)}
-            />
+            <ModalCloseButton onClick={() => setExhaustFanModalOpen(false)} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {[1, 2, 3, 4, 5].map((num) => (
@@ -1279,12 +1279,7 @@ const Payesh = () => {
             <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
               کنترل فن‌های سیرکوله
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="Close"
-              style={{ cursor: "pointer", width: "30px", height: "30px" }}
-              onClick={() => setCirculationFanModalOpen(false)}
-            />
+            <ModalCloseButton onClick={() => setCirculationFanModalOpen(false)} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {[1, 2].map((num) => (
@@ -1347,12 +1342,7 @@ const Payesh = () => {
             <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
               کنترل پمپ پد
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="Close"
-              style={{ cursor: "pointer", width: "30px", height: "30px" }}
-              onClick={() => setPadPumpModalOpen(false)}
-            />
+            <ModalCloseButton onClick={() => setPadPumpModalOpen(false)} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box
@@ -1408,12 +1398,7 @@ const Payesh = () => {
             <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
               کنترل مه پاش
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="Close"
-              style={{ cursor: "pointer", width: "30px", height: "30px" }}
-              onClick={() => setFoggerModalOpen(false)}
-            />
+            <ModalCloseButton onClick={() => setFoggerModalOpen(false)} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box
@@ -1469,12 +1454,7 @@ const Payesh = () => {
             <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
               کنترل دریچه
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="Close"
-              style={{ cursor: "pointer", width: "30px", height: "30px" }}
-              onClick={() => setHatchModalOpen(false)}
-            />
+            <ModalCloseButton onClick={() => setHatchModalOpen(false)} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {["opening", "closing"].map((action) => (
@@ -1537,12 +1517,7 @@ const Payesh = () => {
             <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
               کنترل پرده
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="Close"
-              style={{ cursor: "pointer", width: "30px", height: "30px" }}
-              onClick={() => setShadeModalOpen(false)}
-            />
+            <ModalCloseButton onClick={() => setShadeModalOpen(false)} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {["opening", "closing"].map((action) => (
@@ -1605,12 +1580,7 @@ const Payesh = () => {
             <Typography variant="h6" fontFamily="IRANSANS" fontWeight="bold">
               کنترل هیترها
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="Close"
-              style={{ cursor: "pointer", width: "30px", height: "30px" }}
-              onClick={() => setHeaterModalOpen(false)}
-            />
+            <ModalCloseButton onClick={() => setHeaterModalOpen(false)} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {[1, 2, 3, 4].map((num) => (

@@ -26,8 +26,8 @@ import {
 import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import TimeInput from "../common/TimeInput";
+import ModalCloseButton from "../common/ModalCloseButton";
 
-// کامپوننت سطر
 const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, isNew }) => {
   const [isChanging, setIsChanging] = useState(false);
 
@@ -679,6 +679,7 @@ const FeedingStatusBar = () => {
             style={{
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "center",
               width: "95%",
             }}
           >
@@ -691,13 +692,7 @@ const FeedingStatusBar = () => {
             >
               برنامه زمانی ساخت محلول
             </Typography>
-            <img
-              className="close-btn"
-              src={assets.svg.close}
-              alt="close"
-              onClick={handleModalPlansClose}
-              style={{ cursor: "pointer" }}
-            />
+            <ModalCloseButton onClick={handleModalPlansClose} />
           </div>
 
           <div

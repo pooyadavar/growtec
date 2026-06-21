@@ -10,6 +10,7 @@ import { makeStyles } from "@mui/styles";
 import assets from "../assets";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { UserAccountMenu, LoginNavButton } from "./UserAccountMenu";
 
 const LOGIN_REQUIRED_TOOLTIP = "ابتدا باید وارد شوید";
 
@@ -110,16 +111,11 @@ const Navbar = () => {
   const classes = useStyles();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const isActive = (path) => location.pathname.startsWith(path);
 
-  const handleAuthAction = () => {
-    if (isAuthenticated) {
-      logout();
-      navigate("/Home", { replace: true });
-      return;
-    }
+  const handleLoginClick = () => {
     navigate("/login");
   };
 
@@ -139,27 +135,15 @@ const Navbar = () => {
               alt="Growtec"
               style={{ scale: "1.3" }}
             />
-            <Button
-              onClick={handleAuthAction}
-              variant="text"
-              className={classes.navItem}
-              sx={{
-                marginRight: "2rem",
-                borderRadius: "4px",
-                ...(isActive("/login") && {
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  transform: "scale(1.05)",
-                  transition: "all 0.3s ease-in-out",
-                }),
-              }}
-            >
-              <img
-                src={assets.svg.lock}
-                alt="Sign"
-                className={classes.iconImage}
+            {isAuthenticated ? (
+              <UserAccountMenu classes={classes} />
+            ) : (
+              <LoginNavButton
+                isActive={isActive("/login")}
+                classes={classes}
+                onClick={handleLoginClick}
               />
-              {isAuthenticated ? "خروج" : "ورود"}
-            </Button>
+            )}
           </div>
           <div className={classes.itemHandler}>
             <NavTab

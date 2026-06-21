@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Typography, Box, Modal, CircularProgress } from "@mui/material";
 import assets from "../assets/index";
+import ModalCloseButton from "../components/common/ModalCloseButton";
 import { useQuery } from "@tanstack/react-query";
 import { getIrrigationSchedules } from "../api/irrigationApi";
 import { queryKeys } from "../api/queryKeys";
@@ -235,17 +236,7 @@ const StorageCard = ({
             >
               جدول آبیاری - مخزن زون {toPersianDigits(zone)}
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="close"
-              onClick={handleClose}
-              style={{
-                cursor: "pointer",
-                width: "20px",
-                height: "20px",
-                opacity: 0.7,
-              }}
-            />
+            <ModalCloseButton onClick={handleClose} />
           </div>
 
           {/* هدر جدول (با عرض منعطف) */}

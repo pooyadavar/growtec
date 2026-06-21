@@ -20,6 +20,7 @@ import { getMixTankStatus } from "../api/dashboardApi";
 import FeedingHistoryPage from "./FeedingHistoryPage";
 import FeedingSettingsPage from "./FeedingSettingsPage";
 import TankCalibrationModal from "../components/common/TankCalibrationModal";
+import ModalCloseButton from "../components/common/ModalCloseButton";
 import { MIX_TANK_API_NUMBER } from "../utils/tankMapping";
 import { queryKeys } from "../api/queryKeys";
 
@@ -293,7 +294,10 @@ const Feeding = () => {
         aria-labelledby="feeding-history-modal-title"
       >
         <Box sx={modalFrameStyle}>
-          <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
+          <Box sx={{ position: "absolute", top: 10, left: 10, zIndex: 2 }}>
+            <ModalCloseButton onClick={() => setIsHistoryModalOpen(false)} />
+          </Box>
+          <Box sx={{ width: "100%", height: "100%", overflow: "auto", pt: 1 }}>
             <FeedingHistoryPage
               isModal
               onClose={() => setIsHistoryModalOpen(false)}
@@ -307,7 +311,10 @@ const Feeding = () => {
         aria-labelledby="feeding-settings-modal-title"
       >
         <Box sx={settingsModalFrameStyle}>
-          <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
+          <Box sx={{ position: "absolute", top: 10, left: 10, zIndex: 2 }}>
+            <ModalCloseButton onClick={() => setIsSettingsModalOpen(false)} />
+          </Box>
+          <Box sx={{ width: "100%", height: "100%", overflow: "auto", pt: 1 }}>
             <FeedingSettingsPage
               isModal
               onClose={() => setIsSettingsModalOpen(false)}

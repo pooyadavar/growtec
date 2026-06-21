@@ -11,7 +11,7 @@ import {
   Container, 
 } from "@mui/material";
 import { styled } from "@mui/system";
-import CloseIcon from "@mui/icons-material/Close";
+import ModalCloseButton from "../common/ModalCloseButton";
 import assets from "../../assets"; 
 import { getFoodstuffSchedule } from "../../api/solubleApi";
 import { queryKeys } from "../../api/queryKeys";
@@ -124,9 +124,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
             >
               وضعیت ساخت محلول
             </Typography>
-            <IconButton onClick={onClose} sx={{ p: 0.5 }}>
-              <CloseIcon />
-            </IconButton>
+            <ModalCloseButton onClick={onClose} />
           </Box>
 
           <Box

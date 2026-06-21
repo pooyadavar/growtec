@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import * as React from "react";
 import IconTextButton from "../../card/IconTextButton";
+import ModalCloseButton from "../common/ModalCloseButton";
 import assets from "../../assets";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
@@ -355,12 +356,7 @@ const Control = () => {
             <Typography fontFamily={"IRANSANS"} fontSize={14} fontWeight="bold">
               تزریق دستی
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="close"
-              onClick={handleInjectionClose}
-              style={{ cursor: "pointer", width: "16px", height: "16px" }}
-            />
+            <ModalCloseButton onClick={handleInjectionClose} />
           </Box>
 
           <Box
@@ -562,12 +558,7 @@ const Control = () => {
             <Typography fontFamily={"IRANSANS"} fontSize={14} fontWeight="bold">
               ساخت محلول دستی
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="close"
-              onClick={handleCreateClose}
-              style={{ cursor: "pointer", width: "16px", height: "16px" }}
-            />
+            <ModalCloseButton onClick={handleCreateClose} />
           </Box>
           <Box
             style={{
@@ -728,12 +719,7 @@ const Control = () => {
             <Typography fontFamily={"IRANSANS"} fontSize={16} fontWeight="bold">
               تخلیه دستی مخزن
             </Typography>
-            <img
-              src={assets.svg.close}
-              alt="close"
-              onClick={handleClearClose}
-              style={{ cursor: "pointer", width: "16px", height: "16px" }}
-            />
+            <ModalCloseButton onClick={handleClearClose} />
           </Box>
           <Box
             style={{
@@ -873,12 +859,7 @@ const Control = () => {
               flexDirection: "row-reverse",
             }}
           >
-            <img
-              src={assets.svg.close}
-              alt="close"
-              onClick={handleCalibrationClose}
-              style={{ cursor: "pointer", width: "24px", height: "24px" }}
-            />
+            <ModalCloseButton onClick={handleCalibrationClose} />
             <Typography fontFamily={"IRANSANS"} fontSize={16} fontWeight="bold">
               کالیبراسیون دوزینگ پمپ
             </Typography>
@@ -1076,6 +1057,7 @@ export const ModalA = ({ open, onClose }) => {
           <Typography fontFamily={"IRANSANS"} fontSize={16} fontWeight="bold">
             کالیبراسیون سطح
           </Typography>
+          <ModalCloseButton onClick={onClose} />
         </Box>
         <Box
           sx={{

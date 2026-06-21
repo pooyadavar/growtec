@@ -13,6 +13,7 @@ import { getIrrigationTanksStatusLogs } from "../../api/irrigationApi";
 import { toPersianDigits } from "../../utils/persianDigits";
 import { styled } from "@mui/system";
 import Calculator from "../tools/Calculator";
+import ModalCloseButton from "../common/ModalCloseButton";
 
 const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
   height: "40px",
@@ -588,6 +589,9 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         aria-labelledby="calculator-modal-title"
       >
         <Box sx={calculatorModalStyle}>
+          <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}>
+            <ModalCloseButton onClick={handleCalculatorModalClose} />
+          </Box>
           <Calculator onClose={handleCalculatorModalClose} />
         </Box>
       </Modal>

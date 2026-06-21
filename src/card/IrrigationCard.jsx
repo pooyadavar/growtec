@@ -316,6 +316,9 @@ const IrrigationCard = ({
         }}
       >
         <Box
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
           sx={{
             flexGrow: 1,
             overflowY: "auto",
@@ -323,6 +326,9 @@ const IrrigationCard = ({
             display: "flex",
             flexDirection: "column",
             gap: 1,
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-y",
+            overscrollBehavior: "contain",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             "&::-webkit-scrollbar": { display: "none" },

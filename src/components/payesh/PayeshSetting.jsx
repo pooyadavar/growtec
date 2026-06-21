@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 
 import assets from "../../assets";
+import ModalCloseButton from "../common/ModalCloseButton";
 import {
   getRangeStartTime,
   getClimateSettings,
@@ -31,6 +32,7 @@ import {
 } from "../../api/climateApi";
 import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
+import { showErrorToast } from "../../utils/appToast";
 import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { flushSync } from "react-dom";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
@@ -1149,6 +1151,18 @@ const PayeshSetting = ({ zone, onClose }) => {
   const showSpecialError =
     isSpecialError && !specialParamsData && selected === "ویژه";
 
+  useEffect(() => {
+    if (showClimateError) {
+      showErrorToast("خطا در بارگذاری اطلاعات اقلیم", "payesh-climate-error");
+    }
+  }, [showClimateError]);
+
+  useEffect(() => {
+    if (showSpecialError) {
+      showErrorToast("خطا در بارگذاری تنظیمات ویژه", "payesh-special-error");
+    }
+  }, [showSpecialError]);
+
   const ClockVisualizer = ({ range1, range2, range3 }) => {
     const getCoords = (hour, radius) => {
       const angle = (hour / 24) * 360 - 90;
@@ -1347,27 +1361,10 @@ const PayeshSetting = ({ zone, onClose }) => {
         }}
       >
         {onClose && (
-          <IconButton
+          <ModalCloseButton
             onClick={handleCloseRequest}
-            title="بستن"
-            size="small"
-            sx={{
-              position: "absolute",
-              top: 10,
-              left: 10,
-              zIndex: 20,
-              color: "#FFF",
-              backgroundColor: "inherit",
-              borderRadius: "8px",
-              "&:hover": { backgroundColor: "#D32F2F" },
-            }}
-          >
-            <img
-              src={assets.svg.close}
-              alt="close"
-              style={{ width: 25, height: 25 }}
-            />
-          </IconButton>
+            sx={{ position: "absolute", top: 10, left: 10, zIndex: 20 }}
+          />
         )}
         <Box
           sx={{
@@ -1490,25 +1487,6 @@ const PayeshSetting = ({ zone, onClose }) => {
                 }}
               >
                 <CircularProgress />
-              </Box>
-            ) : showClimateError || showSpecialError ? (
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                  zIndex: 10,
-                }}
-              >
-                <Typography color="error" fontFamily="IRANSANS">
-                  خطا در بارگذاری اطلاعات
-                </Typography>
               </Box>
             ) : (
               <>
@@ -1735,26 +1713,10 @@ const PayeshSetting = ({ zone, onClose }) => {
             direction: "rtl",
           }}
         >
-          <IconButton
+          <ModalCloseButton
             onClick={closeUnsavedDialog}
-            title="بستن"
-            size="small"
-            sx={{
-              position: "absolute",
-              top: 8,
-              left: 8,
-              color: "#FFF",
-              backgroundColor: "inherit",
-              borderRadius: "8px",
-              "&:hover": { backgroundColor: "#D32F2F" },
-            }}
-          >
-            <img
-              src={assets.svg.close}
-              alt="close"
-              style={{ width: 14, height: 14 }}
-            />
-          </IconButton>
+            sx={{ position: "absolute", top: 8, left: 8 }}
+          />
 
           <Typography
             fontFamily="IRANSANS"

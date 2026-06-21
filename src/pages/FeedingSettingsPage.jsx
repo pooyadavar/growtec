@@ -312,7 +312,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
       <Box
         sx={
           isModal
-            ? { transform: { xs: "scale(0.94)", md: "scale(0.92)" }, transformOrigin: "top center", width: "100%", mx: "auto", pt: 0.5, overflowX: "hidden" }
+            ? { width: "100%", mx: "auto", pt: 0.5, overflowX: "hidden" }
             : undefined
         }
       >
@@ -321,9 +321,11 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
           <Typography fontFamily="IRANSANS" fontWeight="bold" fontSize="1.2rem" sx={{ color: "#333" }}>
             تنظیمات ساخت محلول
           </Typography>
-          <IconButton onClick={handleBackClick} title="بستن" size="small" sx={{ color: "#FFF", backgroundColor: "red", borderRadius: "8px", "&:hover": { backgroundColor: "#D32F2F" } }}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
+          {!isModal && (
+            <IconButton onClick={handleBackClick} title="بستن" size="small" sx={{ color: "#FFF", backgroundColor: "red", borderRadius: "8px", "&:hover": { backgroundColor: "#D32F2F" } }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          )}
         </Box>
 
         <Paper elevation={3} sx={{ height: "auto", maxHeight: "calc(100vh - 32px)", display: "flex", flexDirection: "column", borderRadius: "10px", overflow: "hidden" }}>

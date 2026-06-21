@@ -24,6 +24,7 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import IrrigationCard from "../../card/IrrigationCard";
 import IconTextButton from "../../card/IconTextButton";
+import ModalCloseButton from "../common/ModalCloseButton";
 import assets from "../../assets";
 import SaveIcon from "@mui/icons-material/Save";
 import { styled } from "@mui/system";
@@ -683,6 +684,9 @@ const IrrigationManyStorage = () => {
         aria-labelledby="settings-modal-title"
       >
         <Box sx={modalStyle}>
+          <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}>
+            <ModalCloseButton onClick={handleModalClose} />
+          </Box>
           {/* Sidebar (Buttons) */}
           <Box
             sx={{

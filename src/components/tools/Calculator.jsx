@@ -11,6 +11,7 @@ import {
 
 // آیکون‌های مورد نیاز
 import CloseIcon from "@mui/icons-material/Close";
+import ModalCloseButton from "../common/ModalCloseButton";
 import SaveIcon from "@mui/icons-material/SaveOutlined";
 import CalculateIcon from "@mui/icons-material/CalculateOutlined";
 import SwapCallsIcon from "@mui/icons-material/SwapCalls";
@@ -94,9 +95,7 @@ export default function IrrigationCalculatorPage({ onClose }) {
     >
       {/* هدر دکمه ضربدر */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
-        <IconButton onClick={onClose} sx={{ color: "#000" }}>
-          <CloseIcon />
-        </IconButton>
+        <ModalCloseButton onClick={onClose} />
       </Box>
 
       <Grid container spacing={2} sx={{ maxWidth: "1100px", margin: "0 auto" }}>
