@@ -35,7 +35,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "node server/saveIrrigationProgram.js & react-scripts start",
+    "save-server": "node server/saveIrrigationProgram.js",
     "build": "react-scripts build",
     "preview": "npx serve -s build -l 3000",
     "test": "react-scripts test",

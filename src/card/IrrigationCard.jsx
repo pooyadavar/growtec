@@ -1,9 +1,11 @@
 import * as React from "react";
-import { Typography, Box, Paper, Divider, Button } from "@mui/material";
+import { Typography, Box, Paper, Divider, Button, Modal } from "@mui/material";
 import { AgCharts } from "ag-charts-react";
 import assets from "../assets/index";
 import IconTextButton from "./IconTextButton";
 import TankCalibrationModal from "../components/common/TankCalibrationModal";
+import Calculator from "../components/tools/Calculator";
+import ModalCloseButton from "../components/common/ModalCloseButton";
 import { uiIrrigationTankToApi, apiIrrigationTankToUi } from "../utils/tankMapping";
 import { toPersianDigits } from "../utils/persianDigits";
 
@@ -19,8 +21,8 @@ const IrrigationCard = ({
   onClickSettings,
   irrigationScheduleItems = [],
 }) => {
-  // استیت مودال کالیبراسیون
   const [isModalAOpen, setIsModalAOpen] = React.useState(false);
+  const [isCalculatorModalOpen, setIsCalculatorModalOpen] = React.useState(false);
   const apiTankNumber = uiIrrigationTankToApi(storageNumber);
 
   const formatTime = (timeString) => {
@@ -134,6 +136,28 @@ const IrrigationCard = ({
   const handleCloseModalA = (e) => {
     if (e) e.stopPropagation();
     setIsModalAOpen(false);
+  };
+
+  const handleCloseCalculatorModal = (e) => {
+    if (e) e.stopPropagation();
+    setIsCalculatorModalOpen(false);
+  };
+
+  const calculatorModalStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "90%",
+    height: "90%",
+    bgcolor: "#F0F0F0",
+    border: "0.5px solid #000",
+    boxShadow: 24,
+    p: 2,
+    borderRadius: "15px",
+    display: "block",
+    overflow: "hidden",
+    fontFamily: "IRANSANS",
   };
 
   return (
@@ -560,61 +584,92 @@ const IrrigationCard = ({
           sx={{
             width: "100%",
             display: "flex",
-            justifyContent: "space-between",
+            flexDirection: "column",
             gap: 1,
             mt: "auto",
             pt: 1,
           }}
         >
-          <Button
-            variant="contained"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsModalAOpen(true);
-            }}
+          <Box
             sx={{
-              flex: 1,
-              height: "55px",
-              backgroundColor: "#6CCDB0",
-              color: "#000",
-              fontFamily: "IRANSANS",
-              fontSize: "14px",
-              fontWeight: "bold",
-              borderRadius: "8px",
-              boxShadow: "none",
-              "&:hover": { backgroundColor: "#5bbd9e", boxShadow: "none" },
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 1,
             }}
           >
-            کالیبره مخزن
-          </Button>
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsModalAOpen(true);
+              }}
+              sx={{
+                flex: 1,
+                height: "55px",
+                backgroundColor: "#6CCDB0",
+                color: "#000",
+                fontFamily: "IRANSANS",
+                fontSize: "14px",
+                fontWeight: "bold",
+                borderRadius: "8px",
+                boxShadow: "none",
+                "&:hover": { backgroundColor: "#5bbd9e", boxShadow: "none" },
+              }}
+            >
+              کالیبره مخزن
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onClickSettings) onClickSettings(e);
+              }}
+              sx={{
+                flex: 1,
+                height: "55px",
+                backgroundColor: "#FFCB82",
+                color: "#000",
+                fontFamily: "IRANSANS",
+                fontSize: "14px",
+                fontWeight: "bold",
+                borderRadius: "8px",
+                boxShadow: "none",
+                display: "flex",
+                gap: 1,
+                "&:hover": { backgroundColor: "#eeb569", boxShadow: "none" },
+              }}
+            >
+              <img
+                src={assets.svg.setting2}
+                alt="settings"
+                style={{ width: "18px", height: "18px" }}
+              />
+              تنظیمات
+            </Button>
+          </Box>
 
           <Button
             variant="contained"
             onClick={(e) => {
               e.stopPropagation();
-              if (onClickSettings) onClickSettings(e);
+              setIsCalculatorModalOpen(true);
             }}
             sx={{
-              flex: 1,
+              width: "100%",
               height: "55px",
-              backgroundColor: "#FFCB82",
-              color: "#000",
+              backgroundColor: "#FF9933",
+              color: "#fff",
               fontFamily: "IRANSANS",
               fontSize: "14px",
               fontWeight: "bold",
               borderRadius: "8px",
               boxShadow: "none",
-              display: "flex",
-              gap: 1,
-              "&:hover": { backgroundColor: "#eeb569", boxShadow: "none" },
+              "&:hover": { backgroundColor: "#d67c22", boxShadow: "none" },
             }}
           >
-            <img
-              src={assets.svg.setting2}
-              alt="settings"
-              style={{ width: "18px", height: "18px" }}
-            />
-            تنظیمات
+            ماشین حساب آبیاری
           </Button>
         </Box>
       </Box>
@@ -630,6 +685,20 @@ const IrrigationCard = ({
         fallbackVolume={storageCapacity}
         fallbackMaxVolume={maxStorageCapacity}
       />
+
+      <Modal
+        open={isCalculatorModalOpen}
+        onClose={handleCloseCalculatorModal}
+        aria-labelledby="irrigation-calculator-modal"
+        disableScrollLock
+      >
+        <Box sx={calculatorModalStyle} onClick={(e) => e.stopPropagation()}>
+          <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}>
+            <ModalCloseButton onClick={handleCloseCalculatorModal} />
+          </Box>
+          <Calculator onClose={handleCloseCalculatorModal} />
+        </Box>
+      </Modal>
     </Paper>
   );
 };

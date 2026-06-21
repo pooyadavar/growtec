@@ -1,26 +1,16 @@
-import React, { useState } from "react";
-import {
-  Box,
-  TextField,
-  Typography,
-  Grid,
-  Select,
-  MenuItem,
-  IconButton,
-} from "@mui/material";
-
-// آیکون‌های مورد نیاز
-import CloseIcon from "@mui/icons-material/Close";
-import ModalCloseButton from "../common/ModalCloseButton";
+import React, { useEffect, useState } from "react";
+import { Box, TextField, Typography, Grid } from "@mui/material";
 import SaveIcon from "@mui/icons-material/SaveOutlined";
 import CalculateIcon from "@mui/icons-material/CalculateOutlined";
 import SwapCallsIcon from "@mui/icons-material/SwapCalls";
+import CloseIcon from "@mui/icons-material/Close";
+import toast from "react-hot-toast";
 
-// ایمپورت کامپوننت اختصاصی خودت (مسیر رو چک کن)
 import IconTextButton from "../../card/IconTextButton";
-import { toPersianDigits } from "../../utils/persianDigits";
+import TimeInput from "../common/TimeInput";
+import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import { saveIrrigationProgramToFile } from "../../utils/saveIrrigationProgram";
 
-// ثابت‌های طراحی برای حفظ یکپارچگی
 const COLORS = {
   amber: "#FFCB82",
   green: "#86CCB2",
@@ -29,7 +19,10 @@ const COLORS = {
   white: "#FFFFFF",
 };
 
+const IRAN_SANS = { fontFamily: "IRANSANS" };
+
 const inputStyles = {
+  ...IRAN_SANS,
   "& .MuiOutlinedInput-root": {
     borderRadius: "20px",
     backgroundColor: COLORS.white,
@@ -37,38 +30,91 @@ const inputStyles = {
     "& fieldset": { border: "none" },
   },
   "& .MuiOutlinedInput-input": {
-    padding: "8px 10px",
+    padding: "8px 6px",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: "0.9rem",
+    fontFamily: "IRANSANS",
   },
 };
 
 const selectStyles = {
+  width: "100%",
+  height: "40px",
+  border: "none",
+  outline: "none",
+  background: "transparent",
+  textAlign: "center",
+  fontFamily: "IRANSANS",
+  fontWeight: "bold",
+  fontSize: "0.9rem",
+  cursor: "pointer",
+  appearance: "auto",
+  WebkitAppearance: "menulist",
+};
+
+const fieldShellSx = {
   borderRadius: "20px",
   backgroundColor: COLORS.white,
   boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-  "& .MuiSelect-select": {
-    padding: "8px 10px",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
+  overflow: "hidden",
 };
+
+const labeledFieldBodySx = {
+  ...fieldShellSx,
+  borderRadius: "0 0 20px 20px",
+  mt: "-1px",
+};
+
+const parseTimeToSeconds = (timeStr) => {
+  const en = toEnglishDigits(String(timeStr ?? "00:00:00"));
+  const parts = en.split(":").map((p) => parseInt(p, 10) || 0);
+  const [h = 0, m = 0, s = 0] = parts;
+  return h * 3600 + m * 60 + s;
+};
+
+const durationToSeconds = ({ hours = 0, minutes = 0 }) =>
+  Math.max(0, Number(hours) || 0) * 3600 +
+  Math.max(0, Number(minutes) || 0) * 60;
+
+const emptyDuration = () => ({ hours: 0, minutes: 0 });
+
+const clampDurationPart = (field, raw) => {
+  const n = Math.max(0, parseInt(toEnglishDigits(String(raw)), 10) || 0);
+  if (field === "minutes") return Math.min(59, n);
+  return Math.min(99, n);
+};
+
+const formatSecondsToTime = (totalSeconds) => {
+  const safe = Math.max(0, totalSeconds);
+  const h = Math.floor(safe / 3600) % 24;
+  const m = Math.floor((safe % 3600) / 60);
+  const s = safe % 60;
+  return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
+};
+
+const createEmptyRow = (index) => ({
+  order: index + 1,
+  zone: index + 1,
+  start: "00:00:00",
+  end: "00:00:00",
+});
 
 const CustomLabel = ({ children }) => (
   <Box
     sx={{
       backgroundColor: COLORS.amber,
       borderRadius: "15px 15px 0 0",
-      padding: "4px 20px",
-      width: "fit-content",
+      padding: "4px 15px",
+      width: "85%",
       margin: "0 auto 0px auto",
       position: "relative",
       zIndex: 2,
-      minWidth: "130px",
+      minWidth: "120px",
       textAlign: "center",
       fontWeight: "bold",
-      fontSize: "0.95rem",
+      fontSize: "0.75rem",
+      fontFamily: "IRANSANS",
       boxShadow: "0px 2px 4px rgba(0,0,0,0.05)",
     }}
   >
@@ -76,95 +122,607 @@ const CustomLabel = ({ children }) => (
   </Box>
 );
 
-export default function IrrigationCalculatorPage({ onClose }) {
-  const [rows] = useState(
-    Array(8).fill({ zone: 1, start: "00:00:00", end: "00:00:00" })
-  );
+const TimeField = ({ value, onChange, underLabel = false, sx = {} }) => (
+  <Box
+    sx={{
+      ...(underLabel ? labeledFieldBodySx : fieldShellSx),
+      height: "40px",
+      display: "flex",
+      alignItems: "center",
+      px: 1,
+      ...sx,
+    }}
+  >
+    <TimeInput
+      value={value}
+      step="1"
+      onChange={onChange}
+      inputStyle={{ fontSize: "0.9rem", fontWeight: "bold" }}
+      iconSize={18}
+    />
+  </Box>
+);
+
+const durationInputSx = {
+  ...inputStyles,
+  width: "44px",
+  minWidth: "44px",
+  flexShrink: 0,
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "10px",
+    backgroundColor: COLORS.bgGrey,
+    boxShadow: "none",
+    height: "28px",
+    "& fieldset": { border: "none" },
+  },
+  "& .MuiOutlinedInput-input": {
+    padding: "2px 0",
+    fontSize: "0.8rem",
+  },
+};
+
+const DurationField = ({ value, onChange, underLabel = false }) => {
+  const hours = value?.hours ?? 0;
+  const minutes = value?.minutes ?? 0;
+
+  const handlePartChange = (field, raw) => {
+    onChange({
+      ...value,
+      [field]: clampDurationPart(field, raw),
+    });
+  };
 
   return (
     <Box
       sx={{
-        pt: 2, 
-        px: 2,
-        pb: 4, // Added more padding to the bottom
+        ...(underLabel ? labeledFieldBodySx : fieldShellSx),
+        height: "40px",
+        display: "flex",
+        flexDirection: "row",
+        flexWrap: "nowrap",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 0.75,
+        gap: 0.4,
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Typography
+        sx={{
+          fontSize: "0.72rem",
+          fontWeight: "bold",
+          fontFamily: "IRANSANS",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+        }}
+      >
+        دقیقه
+      </Typography>
+      <TextField
+        sx={durationInputSx}
+        value={toPersianDigits(minutes)}
+        onChange={(e) => handlePartChange("minutes", e.target.value)}
+        inputProps={{
+          inputMode: "numeric",
+          style: { fontFamily: "IRANSANS", textAlign: "center", padding: 0 },
+        }}
+      />
+      <Typography
+        sx={{
+          fontWeight: "bold",
+          fontFamily: "IRANSANS",
+          flexShrink: 0,
+          px: 0.2,
+        }}
+      >
+        :
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: "0.72rem",
+          fontWeight: "bold",
+          fontFamily: "IRANSANS",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+        }}
+      >
+        ساعت
+      </Typography>
+      <TextField
+        sx={durationInputSx}
+        value={toPersianDigits(hours)}
+        onChange={(e) => handlePartChange("hours", e.target.value)}
+        inputProps={{
+          inputMode: "numeric",
+          style: { fontFamily: "IRANSANS", textAlign: "center", padding: 0 },
+        }}
+      />
+    </Box>
+  );
+};
+
+const LabeledField = ({ label, children }) => (
+  <Box sx={{ borderRadius: "20px" }}>
+    <CustomLabel>{label}</CustomLabel>
+    {children}
+  </Box>
+);
+
+const NumberSelect = ({
+  value,
+  onChange,
+  min = 1,
+  max = 20,
+  underLabel = false,
+  sx = {},
+}) => (
+  <Box
+    sx={{
+      ...(underLabel ? labeledFieldBodySx : fieldShellSx),
+      height: "40px",
+      display: "flex",
+      alignItems: "center",
+      px: 1,
+      ...sx,
+    }}
+    onClick={(e) => e.stopPropagation()}
+  >
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      style={selectStyles}
+    >
+      {Array.from({ length: max - min + 1 }, (_, i) => {
+        const n = min + i;
+        return (
+          <option key={n} value={n}>
+            {toPersianDigits(n)}
+          </option>
+        );
+      })}
+    </select>
+  </Box>
+);
+
+export default function IrrigationCalculatorPage({ onClose }) {
+  const [programName, setProgramName] = useState("");
+  const [firstIrrigation, setFirstIrrigation] = useState("00:00:00");
+  const [irrigationCount, setIrrigationCount] = useState(1);
+  const [irrigationInterval, setIrrigationInterval] = useState(emptyDuration);
+  const [irrigationDuration, setIrrigationDuration] = useState(emptyDuration);
+  const [zoneInterval, setZoneInterval] = useState(emptyDuration);
+  const [rows, setRows] = useState([createEmptyRow(0)]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setRows((prev) =>
+      Array.from({ length: irrigationCount }, (_, i) => {
+        if (prev[i]) return { ...prev[i], order: i + 1, zone: i + 1 };
+        return createEmptyRow(i);
+      }),
+    );
+  }, [irrigationCount]);
+
+  const buildProgramRows = () => {
+    const first = parseTimeToSeconds(firstIrrigation);
+    const interval = durationToSeconds(irrigationInterval);
+    const duration = durationToSeconds(irrigationDuration);
+    const zoneGap = durationToSeconds(zoneInterval);
+
+    const built = [];
+    for (let i = 0; i < irrigationCount; i++) {
+      let startSec;
+      if (interval > 0) {
+        startSec = first + i * interval;
+      } else if (i === 0) {
+        startSec = first;
+      } else {
+        startSec = parseTimeToSeconds(built[i - 1].end) + zoneGap;
+      }
+
+      built.push({
+        order: i + 1,
+        zone: i + 1,
+        start: formatSecondsToTime(startSec),
+        end: formatSecondsToTime(startSec + duration),
+      });
+    }
+    return built;
+  };
+
+  const handleBuildProgram = async () => {
+    if (!programName.trim()) {
+      toast.error("نام برنامه را وارد کنید");
+      return;
+    }
+
+    const built = buildProgramRows();
+    setRows(built);
+
+    const programData = {
+      programName: programName.trim(),
+      firstIrrigation,
+      irrigationCount,
+      irrigationInterval,
+      irrigationDuration,
+      zoneInterval,
+      schedule: built,
+      createdAt: new Date().toISOString(),
+    };
+
+    setIsSaving(true);
+    try {
+      const result = await saveIrrigationProgramToFile(
+        programName.trim(),
+        programData,
+      );
+      toast.success(`فایل ${result.fileName} در روت پروژه ذخیره شد`);
+    } catch (error) {
+      toast.error(
+        error.message ||
+          "ذخیره فایل ناموفق بود. سرور را با npm run save-server اجرا کنید",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRowChange = (index, field, value) => {
+    setRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    );
+  };
+
+  const handleDeleteRow = (index) => {
+    if (rows.length <= 1) return;
+    const next = rows
+      .filter((_, i) => i !== index)
+      .map((row, i) => ({
+        ...row,
+        order: i + 1,
+        zone: i + 1,
+      }));
+    setRows(next);
+    setIrrigationCount(next.length);
+  };
+
+  const handleClearTable = () => {
+    setRows(
+      Array.from({ length: irrigationCount }, (_, i) => createEmptyRow(i)),
+    );
+  };
+
+  return (
+    <Box
+      sx={{
+        pt: 3,
+        px: 1.5,
+        pb: 2,
         bgcolor: COLORS.bgGrey,
         height: "100%",
-        overflowY: "auto",
+        overflow: "hidden",
         direction: "rtl",
+        fontFamily: "IRANSANS",
       }}
     >
-      {/* هدر دکمه ضربدر */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
-        <ModalCloseButton onClick={onClose} />
-      </Box>
+      <Grid
+        container
+        spacing={1.5}
+        alignItems="stretch"
+        sx={{ maxWidth: "1000px", margin: "0 auto", height: "100%" }}
+      >
+        <Grid item xs={12} md={7}>
+          <Box
+            sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+          >
+            <Box
+              sx={{
+                bgcolor: COLORS.amber,
+                borderRadius: "20px",
+                p: 1.2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1.5,
+                mb: 2,
+                boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+              }}
+            >
+              <CalculateIcon sx={{ fontSize: 26 }} />
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", fontFamily: "IRANSANS" }}
+              >
+                ماشین حساب آبیاری
+              </Typography>
+            </Box>
 
-      <Grid container spacing={2} sx={{ maxWidth: "1100px", margin: "0 auto" }}>
-        {/* === بخش تنظیمات (سمت راست در RTL) === */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                px: 1,
+                mb: 1,
+                textAlign: "center",
+                direction: "ltr",
+              }}
+            >
+              <Typography
+                sx={{
+                  width: "18%",
+                  fontWeight: "bold",
+                  fontSize: "0.85rem",
+                  fontFamily: "IRANSANS",
+                }}
+              >
+                ترتیب
+              </Typography>
+              <Typography
+                sx={{
+                  width: "14%",
+                  fontWeight: "bold",
+                  fontSize: "0.85rem",
+                  fontFamily: "IRANSANS",
+                }}
+              >
+                عملگر
+              </Typography>
+              <Typography
+                sx={{
+                  width: "29%",
+                  fontWeight: "bold",
+                  fontSize: "0.85rem",
+                  fontFamily: "IRANSANS",
+                }}
+              >
+                شروع آبیاری
+              </Typography>
+              <Typography
+                sx={{
+                  width: "29%",
+                  fontWeight: "bold",
+                  fontSize: "0.85rem",
+                  fontFamily: "IRANSANS",
+                }}
+              >
+                پایان آبیاری
+              </Typography>
+              <Typography
+                sx={{
+                  width: "10%",
+                  fontWeight: "bold",
+                  fontSize: "0.85rem",
+                  fontFamily: "IRANSANS",
+                }}
+              >
+                حذف
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+                pr: 0.5,
+                maxHeight: "420px",
+                direction: "ltr",
+              }}
+            >
+              {rows.map((row, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    mb: 1,
+                    gap: 0.5,
+                  }}
+                >
+                  <NumberSelect
+                    value={row.order}
+                    max={irrigationCount}
+                    onChange={(v) => handleRowChange(idx, "order", v)}
+                    sx={{
+                      width: "18%",
+                      boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+                    }}
+                  />
+
+                  <TextField
+                    sx={{ ...inputStyles, width: "14%" }}
+                    value={toPersianDigits(row.zone)}
+                    onChange={(e) =>
+                      handleRowChange(
+                        idx,
+                        "zone",
+                        Number(toEnglishDigits(e.target.value)) || 1,
+                      )
+                    }
+                    inputProps={{ style: { fontFamily: "IRANSANS" } }}
+                  />
+
+                  <Box sx={{ width: "29%" }}>
+                    <TimeField
+                      value={row.start}
+                      onChange={(v) => handleRowChange(idx, "start", v)}
+                    />
+                  </Box>
+
+                  <Box sx={{ width: "29%" }}>
+                    <TimeField
+                      value={row.end}
+                      onChange={(v) => handleRowChange(idx, "end", v)}
+                    />
+                  </Box>
+
+                  <Box
+                    sx={{
+                      width: "10%",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Box
+                      onClick={() => handleDeleteRow(idx)}
+                      sx={{
+                        p: 0.5,
+                        border: `2px solid ${COLORS.red}`,
+                        borderRadius: "8px",
+                        color: COLORS.red,
+                        display: "flex",
+                        alignItems: "center",
+                        cursor: rows.length > 1 ? "pointer" : "not-allowed",
+                        opacity: rows.length > 1 ? 1 : 0.4,
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </Box>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <IconTextButton
+                text="حذف کل جدول"
+                icon={<CloseIcon />}
+                bgColor="#FFF"
+                textColor={COLORS.red}
+                width="200px"
+                onClick={handleClearTable}
+                sx={{
+                  mt: 1.5,
+                  borderRadius: "15px",
+                  py: 0.8,
+                  "& .MuiTypography-root": {
+                    fontSize: "0.9rem",
+                    fontFamily: "IRANSANS",
+                  },
+                }}
+              />
+            </Box>
+          </Box>
+        </Grid>
+
         <Grid
           item
           xs={12}
-          md={4}
-          sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}
+          md={5}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+            justifyContent: "flex-start",
+          }}
         >
-          <Box>
-            <CustomLabel>نام برنامه</CustomLabel>
-            <TextField fullWidth sx={inputStyles} />
-          </Box>
-          <Box>
-            <CustomLabel>اولین آبیاری</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
-          </Box>
+          <LabeledField label="نام برنامه">
+            <TextField
+              fullWidth
+              sx={{
+                ...inputStyles,
+                ...labeledFieldBodySx,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 0,
+                  boxShadow: "none",
+                  backgroundColor: COLORS.white,
+                  "& fieldset": { border: "none" },
+                },
+              }}
+              value={programName}
+              onChange={(e) => setProgramName(e.target.value)}
+              inputProps={{ style: { fontFamily: "IRANSANS" } }}
+            />
+          </LabeledField>
 
-          <Box>
-            <CustomLabel>تعداد آبیاری</CustomLabel>
-            <Select fullWidth defaultValue={1} sx={selectStyles}>
-              <MenuItem value={1}>{toPersianDigits(1)}</MenuItem>
-              <MenuItem value={2}>{toPersianDigits(2)}</MenuItem>
-            </Select>
-          </Box>
+          <LabeledField label="ساعت شروع عملگر">
+            <TimeField
+              underLabel
+              value={firstIrrigation}
+              onChange={setFirstIrrigation}
+            />
+          </LabeledField>
 
-          <Box>
-            <CustomLabel>فاصله بین دو آبیاری</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
-          </Box>
-          <Box>
-            <CustomLabel>مدت زمان آبیاری</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
-          </Box>
-          <Box>
-            <CustomLabel>فاصله بین دو زون</CustomLabel>
-            <TextField fullWidth sx={inputStyles} defaultValue={toPersianDigits("00:00:00")} />
-          </Box>
+          <LabeledField label="تعداد دفعات روشن شدن عملگر">
+            <NumberSelect
+              underLabel
+              value={irrigationCount}
+              min={1}
+              max={20}
+              onChange={setIrrigationCount}
+            />
+          </LabeledField>
 
-          <IconTextButton
-            text="ساخت برنامه"
-            icon={<SwapCallsIcon sx={{ transform: "rotate(90deg)" }} />}
-            bgColor={COLORS.green}
-            textColor="#000"
-            width="98%" 
+          <LabeledField label="فاصله بین دو زمان کارکرد">
+            <DurationField
+              underLabel
+              value={irrigationInterval}
+              onChange={setIrrigationInterval}
+            />
+          </LabeledField>
+
+          <LabeledField label="مدت زمان کارکرد">
+            <DurationField
+              underLabel
+              value={irrigationDuration}
+              onChange={setIrrigationDuration}
+            />
+          </LabeledField>
+
+          <LabeledField label="فاصله بین دو عملگر">
+            <DurationField
+              underLabel
+              value={zoneInterval}
+              onChange={setZoneInterval}
+            />
+          </LabeledField>
+
+          <Box
             sx={{
-              mt: 1,
-              borderRadius: "15px",
-              py: 1, 
-              "&:hover": { filter: "brightness(0.95)" },
-              "& .MuiTypography-root": { fontSize: "1rem", fontWeight: "bold" },
-              "& .MuiPaper-root": { padding: "8px 10px" },
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+              width: "90%",
+              alignSelf: "right",
+              mt: 0.5,
             }}
-          />
-
-          <Box sx={{ display: "flex", gap: 3, mt: "auto" }}>
+          >
             <IconTextButton
-              text="بستن"
+              text={isSaving ? "در حال ذخیره..." : "ساخت برنامه"}
+              icon={<SwapCallsIcon sx={{ transform: "rotate(90deg)" }} />}
+              bgColor={COLORS.green}
+              textColor="#000"
+              width="100%"
+              height="40px"
+              onClick={isSaving ? undefined : handleBuildProgram}
+              sx={{
+                borderRadius: "15px",
+                py: 0.8,
+                opacity: isSaving ? 0.7 : 1,
+                pointerEvents: isSaving ? "none" : "auto",
+                "&:hover": { filter: "brightness(0.95)" },
+                "& .MuiTypography-root": {
+                  fontSize: "0.95rem",
+                  fontWeight: "bold",
+                  fontFamily: "IRANSANS",
+                },
+              }}
+            />
+
+            <IconTextButton
+              text="پاک کردن"
               icon={<CloseIcon />}
               bgColor={COLORS.red}
               textColor="#fff"
+              width="100%"
+              height="40px"
               onClick={onClose}
               sx={{
-                flex: 1,
                 borderRadius: "15px",
                 py: 0.5,
-                "& .MuiTypography-root": { fontSize: "0.9rem" },
-                "& .MuiPaper-root": { padding: "6px 8px" },
+                "& .MuiTypography-root": {
+                  fontSize: "0.85rem",
+                  fontFamily: "IRANSANS",
+                },
               }}
             />
 
@@ -173,186 +731,17 @@ export default function IrrigationCalculatorPage({ onClose }) {
               icon={<SaveIcon />}
               bgColor={COLORS.amber}
               textColor="#000"
+              width="100%"
+              height="40px"
               sx={{
-                flex: 1,
                 borderRadius: "15px",
                 py: 0.5,
-                "& .MuiTypography-root": { fontSize: "0.9rem" },
-                "& .MuiPaper-root": { padding: "6px 8px" },
+                "& .MuiTypography-root": {
+                  fontSize: "0.85rem",
+                  fontFamily: "IRANSANS",
+                },
               }}
             />
-          </Box>
-        </Grid>
-        {/* === اسکرول‌بار میانی === */}{" "}
-        {/* <Grid
-          item
-          sx={{
-            width: "30px",
-            display: { xs: "none", md: "flex" },
-            justifyContent: "center",
-          }}
-        >
-          <Box
-            sx={{
-              width: "12px",
-              bgcolor: "#D9D9D9",
-              borderRadius: "10px",
-              height: "100%",
-              position: "relative",
-              boxShadow: "inset 0 0 5px rgba(0,0,0,0.1)",
-            }}
-          >
-            <Box
-              sx={{
-                width: "100%",
-                height: "100px",
-                bgcolor: "#AFAFAF",
-                borderRadius: "10px",
-                position: "absolute",
-                top: "40px",
-              }}
-            />
-          </Box>
-        </Grid> */}
-        {/* === بخش ماشین حساب و جدول (سمت چپ در RTL) === */}
-        <Grid item xs={12} md={7.5}>
-          <Box
-            sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-          >
-            {/* هدر طلایی */}
-            <Box
-              sx={{
-                bgcolor: COLORS.amber,
-                borderRadius: "20px",
-                p: 1.5,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 2,
-                mb: 2,
-                boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CalculateIcon sx={{ fontSize: 32 }} />
-              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                ماشین حساب آبیاری
-              </Typography>
-            </Box>
-
-            {/* تیتر ستون‌ها */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                px: 2,
-                mb: 1,
-                textAlign: "center",
-              }}
-            >
-              <Typography
-                sx={{ width: "10%", fontWeight: "bold", fontSize: "0.9rem" }}
-              >
-                حذف
-              </Typography>
-              <Typography
-                sx={{ width: "25%", fontWeight: "bold", fontSize: "0.9rem" }}
-              >
-                پایان آبیاری
-              </Typography>
-              <Typography
-                sx={{ width: "25%", fontWeight: "bold", fontSize: "0.9rem" }}
-              >
-                شروع آبیاری
-              </Typography>
-              <Typography
-                sx={{ width: "15%", fontWeight: "bold", fontSize: "0.9rem" }}
-              >
-                زون
-              </Typography>
-              <Typography
-                sx={{ width: "20%", fontWeight: "bold", fontSize: "0.9rem" }}
-              >
-                ترتیب
-              </Typography>
-            </Box>
-
-            {/* لیست سطرها با قابلیت اسکرول */}
-            <Box sx={{ flex: 1, overflowY: "auto", pr: 1 }}>
-              {rows.map((row, idx) => (
-                <Box
-                  key={idx}
-                  sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}
-                >
-                  <Box
-                    sx={{
-                      width: "10%",
-                      display: "flex",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {idx === 0 ? (
-                      <Box
-                        sx={{
-                          p: 0.5,
-                          border: `2px solid ${COLORS.red}`,
-                          borderRadius: "8px",
-                          color: COLORS.red,
-                          display: "flex",
-                          alignItems: "center",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <CloseIcon fontSize="small" />
-                      </Box>
-                    ) : (
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          border: "1px solid #CCC",
-                          borderRadius: "8px",
-                          bgcolor: "#FFF",
-                        }}
-                      />
-                    )}
-                  </Box>
-                  <TextField
-                    sx={{ ...inputStyles, width: "25%" }}
-                    defaultValue={toPersianDigits(row.end)}
-                  />
-                  <TextField
-                    sx={{ ...inputStyles, width: "25%" }}
-                    defaultValue={toPersianDigits(row.start)}
-                  />
-                  <TextField
-                    sx={{ ...inputStyles, width: "15%" }}
-                    defaultValue={toPersianDigits(row.zone)}
-                  />
-                  <Select
-                    sx={{ ...selectStyles, width: "20%" }}
-                    defaultValue=""
-                  ></Select>
-                </Box>
-              ))}
-            </Box>
-
-            <Box sx={{display:"flex" , justifyContent:"center"}}>
-              {/* دکمه حذف کل */}
-              <IconTextButton
-                text="حذف کل جدول"
-                icon={<CloseIcon />}
-                bgColor="#FFF"
-                textColor={COLORS.red}
-                width="250px"
-                sx={{
-                  mt: 2,
-                  borderRadius: "15px",
-                  py: 1, 
-                  "& .MuiTypography-root": { fontSize: "1rem" },
-                  "& .MuiPaper-root": { padding: "8px 10px" },
-                }}
-              />
-            </Box>
           </Box>
         </Grid>
       </Grid>
