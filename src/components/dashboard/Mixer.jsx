@@ -3,7 +3,6 @@ import {
   Box,
   Paper,
   Typography,
-  IconButton,
   TextField,
   Button,
   Stack,
@@ -14,6 +13,14 @@ import assets from "../../assets";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "./BuildDetailsModal";
 import StatusModal from "./StatusModal";
+import MixTankProcessStatus from "../common/MixTankProcessStatus";
+import {
+  buildMixTankStockRows,
+  formatMixTankInteger,
+  formatStockCellValue,
+  getStockRowCol1Value,
+  getStockRowCol2Value,
+} from "../../utils/mixTankStockReport";
 
 const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   minWidth: "unset",
@@ -30,14 +37,7 @@ const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
   },
 }));
 
-const formatApproxTwoDecimals = (value) => {
-  if (value === null || value === undefined || value === "") return "";
-  const num = Number(value);
-  if (Number.isNaN(num)) return String(value);
-  return toPersianDigits(num.toFixed(2));
-};
-
-const ReadonlyValueBox = ({ value, useTwoDecimals = true }) => (
+const ReadonlyValueBox = ({ value, mode }) => (
   <Box
     sx={{
       width: 40,
@@ -59,23 +59,17 @@ const ReadonlyValueBox = ({ value, useTwoDecimals = true }) => (
       textAlign="center"
       sx={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
-      {useTwoDecimals
-        ? formatApproxTwoDecimals(value)
-        : toPersianDigits(value ?? "")}
+      {formatStockCellValue(value, mode)}
     </Typography>
   </Box>
 );
 
-const PhEcControlCard = ({
-  contents,
-  statusText,
-  ecTargetValue,
-  onEcTargetChange,
-  reportData,
-}) => {
+const PhEcControlCard = ({ contents, mixTankData }) => {
   const [selectedStockType, setSelectedStockType] = React.useState("total");
-  const column1Data = reportData && reportData[0] ? reportData[0] : [];
-  const column2Data = reportData && reportData[1] ? reportData[1] : [];
+  const stockRows = React.useMemo(
+    () => buildMixTankStockRows(mixTankData),
+    [mixTankData],
+  );
 
   const [openBuildDetailsModal, setOpenBuildDetailsModal] =
     React.useState(false);
@@ -197,19 +191,21 @@ const PhEcControlCard = ({
           gap: 1,
         }}
       >
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          sx={{
-            border: "0.5px solid gray",
-            p: 1,
-            height: "95%",
-            borderRadius: "15px",
-            width: "40px",
-            position: "relative",
-          }}
-        >
+        <Stack alignItems="center" spacing={0.25} sx={{ height: "95%" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{
+              border: "0.5px solid gray",
+              p: 1,
+              flex: 1,
+              minHeight: 0,
+              borderRadius: "15px",
+              width: "40px",
+              position: "relative",
+            }}
+          >
           <Box
             sx={{
               position: "absolute",
@@ -287,6 +283,21 @@ const PhEcControlCard = ({
               }}
             ></Box>
           </Box>
+          </Stack>
+          <Typography
+            fontFamily="IRANSANS"
+            sx={{
+              scale:"1.6",
+              fontSize: "9px",
+              color: "#555",
+              textAlign: "start",
+              lineHeight: 0,
+              pt: 1.5,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {formatMixTankInteger(contents?.filled_volume ?? 0)} لیتر
+          </Typography>
         </Stack>
 
         {/* --- Middle Section --- */}
@@ -377,50 +388,68 @@ const PhEcControlCard = ({
               WebkitUserSelect: "none",
             }}
           >
-            {column1Data.map((item, index) => (
-              <Box
-                key={index}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 1,
-                  flexShrink: 0,
-                  pointerEvents: "none",
-                  userSelect: "none",
-                  WebkitUserSelect: "none",
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="body2"
-                    fontFamily="IRANSANS"
-                    sx={{ width: "30px", textAlign: "center" }}
-                  >
-                    {toPersianDigits(index + 1)}
-                  </Typography>
+            {stockRows.map((row) => {
+              const showCol1 = getStockRowCol1Value(
+                row,
+                selectedStockType,
+                stockRows,
+                mixTankData,
+              );
+              const showCol2 = getStockRowCol2Value(
+                row,
+                selectedStockType,
+                stockRows,
+                mixTankData,
+              );
+
+              return (
+                <Box
+                  key={row.id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 1,
+                    flexShrink: 0,
+                    pointerEvents: "none",
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      fontFamily="IRANSANS"
+                      sx={{
+                        width: "30px",
+                        textAlign: "center",
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      {row.label === "pH" ? "pH" : toPersianDigits(row.label)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <ReadonlyValueBox
+                      value={showCol1}
+                      mode={selectedStockType}
+                    />
+                    <ReadonlyValueBox
+                      value={showCol2}
+                      mode={selectedStockType}
+                    />
+                  </Box>
                 </Box>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <ReadonlyValueBox
-                    value={item}
-                    useTwoDecimals={selectedStockType !== "time"}
-                  />
-                  <ReadonlyValueBox
-                    value={
-                      column2Data[index] !== undefined ? column2Data[index] : ""
-                    }
-                    useTwoDecimals={false}
-                  />
-                </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         </Stack>
 
         {/* --- Left Section --- */}
         <Stack
           spacing={1}
-          alignItems="center"
+          alignItems="space-between"
+          justifyContent="space-between"
           sx={{
             flexGrow: 1,
             maxWidth: "140px",
@@ -428,160 +457,67 @@ const PhEcControlCard = ({
             borderRadius: "15px",
           }}
         >
-          <Box
-            sx={{
-              alignItems: "center",
-              justifyContent: "center",
-              display: "flex",
-              flexDirection: "column",
-              border: "0.5px solid gray",
-              mt: 2,
-              p: 0.5,
-              borderRadius: "15px",
-            }}
-          >
-            <IconButton
+          <MixTankProcessStatus mixTankData={mixTankData} />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<InfoIcon sx={{ ml: "8px" }} />}
+              onClick={handleOpenStatusModal}
               sx={{
-                backgroundColor: "#e0e0e0",
-                borderRadius: "50%",
-                width: 80,
-                height: 80,
-                p: 0,
-              }}
-            >
-              <img
-                src={assets.svg.phlogo}
-                alt="pH icon"
-                style={{ width: 80, height: 80 }}
-              />
-            </IconButton>
-            <Typography
-              variant="body2"
-              fontFamily={"IRANSANS"}
-              sx={{ mt: 1, color: "#555", mb: 1 }}
-            >
-              وضعیت سیستم:
-            </Typography>
-            <Box
-              sx={{
-                backgroundColor: "#D1E7DD",
+                backgroundColor: "#A7D9B4",
+                color: "#403f3fff",
                 borderRadius: "10px",
-                padding: "4px 8px",
-                textAlign: "center",
-                border: "0.5px solid gray",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                padding: "10px 0",
+                boxShadow: "none",
+                "&:hover": {
+                  backgroundColor: "#6CCDB0",
+                  boxShadow: "none",
+                },
+                mt: 2,
+                display: "flex",
+                justifyContent: "center",
+                pr: 1,
+                pl: 1,
               }}
             >
               <Typography
-                variant="caption"
                 fontFamily={"IRANSANS"}
-                sx={{ color: "#0F5132", fontWeight: "800", fontSize: "9px" }}
+                sx={{ fontSize: "12px", pointerEvents: "none" }}
               >
-                {statusText || "نامشخص"}
+                جزئیات ساخت
               </Typography>
-            </Box>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              mt: 2,
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography
-              fontFamily="IRANSANS"
-              fontSize="12px"
-              sx={{ fontWeight: "700" }}
-            >
-              EC هدف
-            </Typography>
-            <TextField
-              variant="outlined"
-              size="small"
-              value={toPersianDigits(ecTargetValue || "")}
-              onChange={(e) =>
-                onEcTargetChange?.({
-                  ...e,
-                  target: {
-                    ...e.target,
-                    value: toEnglishDigits(e.target.value),
-                  },
-                })
-              }
-              sx={{
-                width: 60,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "8px",
-                  backgroundColor: "white",
-                },
-                "& input": {
-                  fontFamily: "IRANSANS",
-                  textAlign: "center",
-                  padding: "8px",
-                  height: "unset",
-                },
-              }}
-            />
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<InfoIcon sx={{ ml: "8px" }} />}
-            onClick={handleOpenStatusModal}
-            sx={{
-              backgroundColor: "#A7D9B4",
-              color: "#403f3fff",
-              borderRadius: "10px",
-              fontWeight: "bold",
-              fontSize: "1rem",
-              padding: "10px 0",
-              boxShadow: "none",
-              "&:hover": {
-                backgroundColor: "#6CCDB0",
-                boxShadow: "none",
-              },
-              mt: 2,
-              display: "flex",
-              justifyContent: "center",
-              pr: 1,
-              pl: 1,
-            }}
-          >
-            <Typography
-              fontFamily={"IRANSANS"}
-              sx={{ fontSize: "12px", pointerEvents: "none" }}
-            >
-              جزئیات ساخت
-            </Typography>
-          </Button>
+            </Button>
 
-          <Button
-            variant="contained"
-            startIcon={<InfoIcon sx={{ ml: "8px" }} />}
-            onClick={handleOpenBuildDetailsModal}
-            sx={{
-              backgroundColor: "#ffebcc",
-              color: "#403f3fff",
-              borderRadius: "10px",
-              fontWeight: "bold",
-              fontSize: "1rem",
-              padding: "10px 0",
-              boxShadow: "none",
-              "&:hover": {
-                backgroundColor: "#fde0b5ff",
+            <Button
+              variant="contained"
+              startIcon={<InfoIcon sx={{ ml: "8px" }} />}
+              onClick={handleOpenBuildDetailsModal}
+              sx={{
+                backgroundColor: "#ffebcc",
+                color: "#403f3fff",
+                borderRadius: "10px",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                padding: "10px 0",
                 boxShadow: "none",
-              },
-              mt: 0,
-              display: "flex",
-              justifyContent: "center",
-              pr: 1,
-              pl: 1,
-            }}
-          >
-            <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
-              وضعیت محلول{" "}
-            </Typography>
-          </Button>
+                "&:hover": {
+                  backgroundColor: "#fde0b5ff",
+                  boxShadow: "none",
+                },
+                mt: 0,
+                display: "flex",
+                justifyContent: "center",
+                pr: 1,
+                pl: 1,
+              }}
+            >
+              <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
+                وضعیت محلول{" "}
+              </Typography>
+            </Button>
+          </Box>
         </Stack>
       </Box>
 

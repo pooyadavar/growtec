@@ -5,14 +5,12 @@ import PhEcControlCard from "../components/dashboard/Mixer";
 import StatusBar from "../components/dashboard/StatusBar";
 import Storages from "../components/dashboard/Storages";
 import { Container, Typography, CircularProgress, Alert, Box, Paper } from "@mui/material";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus, getIrrigationTanksStatus } from "../api/dashboardApi";
 import { queryKeys } from "../api/queryKeys";
 
 const Dashboard = () => {
   sessionStorage.setItem("sample", 2);
-  const [ecTarget, setEcTarget] = useState(2.1);
 
   const {
     data: mixTankData,
@@ -49,14 +47,6 @@ const Dashboard = () => {
   const mixTankInitialLoading = isMixTankLoading && !mixTankData;
   const storagesFetchFailed = isStoragesError || isStoragesRefetchError;
   const storagesInitialLoading = isStoragesLoading && !storagesList?.length;
-
-  const handleEcChange = (event) => {
-    setEcTarget(event.target.value);
-  };
-
-  const getStatusText = (statusNumber) => {
-    return statusNumber === 0 ? "در حال چک  pH" : "وضعیت دیگر";
-  };
 
   return (
     <Container
@@ -115,10 +105,7 @@ const Dashboard = () => {
           ) : (
             <PhEcControlCard
               contents={mixTankData?.contents}
-              statusText={getStatusText(mixTankData?.status_number)}
-              ecTargetValue={ecTarget}
-              onEcTargetChange={handleEcChange}
-              reportData={mixTankData?.acid_stock_report}
+              mixTankData={mixTankData}
             />
           )}
         </div>

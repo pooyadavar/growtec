@@ -71,16 +71,6 @@ const Feeding = () => {
   const handleSettingsClick = () => setIsSettingsModalOpen(true);
   const handleCalibClick = () => setIsCalibModalOpen(true);
 
-  const [ecTarget, setEcTarget] = useState(2.1);
-
-  const handleEcChange = (event) => {
-    setEcTarget(event.target.value);
-  };
-
-  const getStatusText = (statusNumber) => {
-    return statusNumber === 0 ? "در حال اصلاح pH" : "وضعیت دیگر";
-  };
-
   return (
     <Container>
       <div
@@ -203,10 +193,7 @@ const Feeding = () => {
           ) : (
             <PhEcControlCardMixer
               contents={mixTankData?.contents}
-              statusText={getStatusText(mixTankData?.status_number)}
-              ecTargetValue={ecTarget}
-              onEcTargetChange={handleEcChange}
-              reportData={mixTankData?.acid_stock_report}
+              mixTankData={mixTankData}
               ecValue={mixTankData?.ec_ph?.ec}
               phValue={mixTankData?.ec_ph?.ph}
               ecRange={mixTankData?.ec_ph?.range?.ec}

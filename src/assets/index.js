@@ -68,6 +68,12 @@ const assets = {
     highStatusDashboard:require("./svg/highStatusDashboard.svg").default,
     goodStatusDashboard:require("./svg/goodStatusDashboard.svg").default, 
     calibrationsvg: require("./svg/calibration.svg").default,
+    statusEc: require("./svg/status/EC.gif"),
+    statusPh: require("./svg/status/pH.gif"),
+    statusMix: require("./svg/status/mix.gif"),
+    statusFill: require("./svg/status/fill.gif"),
+    statusEmpty: require("./svg/status/empty.gif"),
+    outputZone: require("./svg/outputZone.svg").default,
 
 
   },

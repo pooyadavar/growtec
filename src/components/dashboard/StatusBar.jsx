@@ -2,8 +2,8 @@ import React from "react";
 import { Typography } from "@mui/material";
 import Container from "@mui/material/Container";
 import assets from "../../assets";
-import { makeStyles } from "@mui/styles";
-import { toPersianDigits } from "../../utils/persianDigits";
+import { formatMixTankInteger } from "../../utils/mixTankStockReport";
+import { getRangeBarStatusImage } from "../../utils/mixTankStatus";
 
 
 const StatusBar = ({
@@ -12,32 +12,7 @@ const StatusBar = ({
   ecRange,
   phRange,
 }) => {
-  const useStyle = makeStyles(() => ({
-    barContainer: {},
-  }));
-
-  const classes = useStyle();
-
-  /**
-   * @param {object} range 
-   */
-  const getStatusImage = (range) => {
-    if (!range) {
-      return assets.svg.goodStatusDashboard;
-    }
-
-    const { higher_than_low, higher_than_high } = range;
-
-    if (higher_than_high) {
-      return assets.svg.highStatusDashboard;
-    }
-    
-    if (!higher_than_low) {
-      return assets.svg.lowStatusDashboard;
-    }
-
-    return assets.svg.goodStatusDashboard;
-  };
+  const getStatusImage = (range) => getRangeBarStatusImage(range, "dashboard");
 
   const phStatusImage = getStatusImage(phRange);
   const ecStatusImage = getStatusImage(ecRange);
@@ -62,7 +37,7 @@ const StatusBar = ({
     >
       {/* --- بخش EC --- */}
       <div
-        className={classes.barContainer}
+        className="status-bar-row"
         style={{
           backgroundColor: "#ffff",
           width: "300px",
@@ -76,7 +51,10 @@ const StatusBar = ({
           paddingRight: "1rem",
         }}
       >
-        <Typography fontFamily={"IRANSANS"}> EC : {toPersianDigits(ecValue)}</Typography>
+        <Typography fontFamily={"IRANSANS"}>
+          {" "}
+          EC : {formatMixTankInteger(ecValue)}
+        </Typography>
         <div
           style={{
             display: "flex",
@@ -96,7 +74,7 @@ const StatusBar = ({
 
       {/* --- بخش pH --- */}
       <div
-        className={classes.barContainer}
+        className="status-bar-row"
         style={{
           backgroundColor: "#ffff",
           width: "300px",
@@ -111,7 +89,10 @@ const StatusBar = ({
           paddingRight: "1rem",
         }}
       >
-        <Typography fontFamily={"IRANSANS"}> pH : {toPersianDigits(phValue)}</Typography>
+        <Typography fontFamily={"IRANSANS"}>
+          {" "}
+          pH : {formatMixTankInteger(phValue)}
+        </Typography>
         <div
           style={{
             display: "flex",

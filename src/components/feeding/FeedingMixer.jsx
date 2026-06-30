@@ -3,7 +3,6 @@ import {
   Box,
   Paper,
   Typography,
-  IconButton,
   TextField,
   Button,
   Stack,
@@ -16,6 +15,15 @@ import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "../dashboard/BuildDetailsModal";
 import IconTextButton from "../../card/IconTextButton";
 import StatusModal from "../dashboard/StatusModal";
+import MixTankProcessStatus from "../common/MixTankProcessStatus";
+import { getRangeBarStatusImage } from "../../utils/mixTankStatus";
+import {
+  buildMixTankStockRows,
+  formatMixTankInteger,
+  formatStockCellValue,
+  getStockRowCol1Value,
+  getStockRowCol2Value,
+} from "../../utils/mixTankStockReport";
 
 // استایل دکمه‌های تاگل
 const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
@@ -35,10 +43,7 @@ const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
 
 const PhEcControlCardMixer = ({
   contents,
-  statusText,
-  ecTargetValue,
-  onEcTargetChange,
-  reportData,
+  mixTankData,
   ecValue,
   phValue,
   ecRange,
@@ -46,14 +51,10 @@ const PhEcControlCardMixer = ({
 }) => {
   const [selectedStockType, setSelectedStockType] = React.useState("total");
 
-  const column1Data =
-    Array.isArray(reportData) && Array.isArray(reportData[0])
-      ? reportData[0]
-      : [];
-  const column2Data =
-    Array.isArray(reportData) && Array.isArray(reportData[1])
-      ? reportData[1]
-      : [];
+  const stockRows = React.useMemo(
+    () => buildMixTankStockRows(mixTankData),
+    [mixTankData],
+  );
 
   const [openBuildDetailsModal, setOpenBuildDetailsModal] =
     React.useState(false);
@@ -135,30 +136,12 @@ const PhEcControlCardMixer = ({
     { time: "14:00", type: "EC", volume: "15L", tank: "B", status: "success" },
   ];
 
-  const getVerticalStatusImage = (range) => {
-    if (!range) {
-      return assets.svg.vertical_barstatus_khonsa;
-    }
-    const { higher_than_low, higher_than_high } = range;
-
-    if (higher_than_high) {
-      return assets.svg.vertical_barstatus_baz;
-    }
-    if (!higher_than_low) {
-      return assets.svg.vertical_barstatus_acid;
-    }
-    return assets.svg.vertical_barstatus_khonsa;
-  };
+  const phStatusBarImage = getRangeBarStatusImage(phRange, "vertical");
+  const ecStatusBarImage = getRangeBarStatusImage(ecRange, "vertical");
 
   const [openStatusModal, setOpenStatusModal] = React.useState(false);
-
-  const handleOpenStatusModal = () => {
-    setOpenStatusModal(true);
-  };
+  const handleOpenStatusModal = () => setOpenStatusModal(true);
   const handleCloseStatusModal = () => setOpenStatusModal(false);
-
-  const phStatusBarImage = getVerticalStatusImage(phRange);
-  const ecStatusBarImage = getVerticalStatusImage(ecRange);
 
   return (
     <Paper
@@ -223,7 +206,7 @@ const PhEcControlCardMixer = ({
               <TextField
                 variant="outlined"
                 size="small"
-                value={toPersianDigits(phValue ?? "")}
+                value={formatMixTankInteger(phValue)}
                 InputProps={{ readOnly: true }}
                 sx={{
                   width: 50,
@@ -260,7 +243,7 @@ const PhEcControlCardMixer = ({
               <TextField
                 variant="outlined"
                 size="small"
-                value={toPersianDigits(ecValue ?? "")}
+                value={formatMixTankInteger(ecValue)}
                 InputProps={{ readOnly: true }}
                 sx={{
                   width: 50,
@@ -279,18 +262,20 @@ const PhEcControlCardMixer = ({
         </Stack>
 
         {/* ستون نمایشگر سطح آب */}
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          sx={{
-            border: "0.5px solid gray",
-            height: "100%",
-            borderRadius: "15px",
-            width: "40px",
-            position: "relative",
-          }}
-        >
+        <Stack alignItems="center" spacing={0.25} sx={{ height: "100%" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{
+              border: "0.5px solid gray",
+              flex: 1,
+              minHeight: 0,
+              borderRadius: "15px",
+              width: "40px",
+              position: "relative",
+            }}
+          >
           {/* لایه پس‌زمینه */}
           <Box
             sx={{
@@ -348,6 +333,21 @@ const PhEcControlCardMixer = ({
               ></Box>
             ))}
           </Box>
+          </Stack>
+          <Typography
+            fontFamily="IRANSANS"
+            sx={{
+              scale: "1.9",
+              fontSize: "9px",
+              color: "#555",
+              textAlign: "center",
+              lineHeight: 1.1,
+              pt: 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {formatMixTankInteger(contents?.filled_volume ?? 0)} لیتر
+          </Typography>
         </Stack>
 
         {/* بخش میانی (Middle Section) */}
@@ -426,71 +426,92 @@ const PhEcControlCardMixer = ({
               },
             }}
           >
-            {column1Data.map((item, index) => (
-              <Box
-                key={index}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 1,
-                  flexShrink: 0,
-                  pointerEvents: "none", // جلوگیری از تداخل فیلدها با درگ
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="body2"
-                    fontFamily="IRANSANS"
-                    sx={{ width: "30px", textAlign: "center" }}
-                  >
-                    {toPersianDigits(index + 1)}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <TextField
-                    variant="outlined"
-                    size="small"
-                    value={toPersianDigits(item)}
-                    InputProps={{ readOnly: true }}
-                    sx={{
-                      width: 37,
-                      backgroundColor: "#f0f0f0",
-                      "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-                      "& input": {
-                        fontFamily: "IRANSANS",
+            {stockRows.map((row, index) => {
+              const showCol1 = getStockRowCol1Value(
+                row,
+                selectedStockType,
+                stockRows,
+                mixTankData,
+              );
+              const showCol2 = getStockRowCol2Value(
+                row,
+                selectedStockType,
+                stockRows,
+                mixTankData,
+              );
+
+              return (
+                <Box
+                  key={row.id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 1,
+                    flexShrink: 0,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      fontFamily="IRANSANS"
+                      sx={{
+                        width: "30px",
                         textAlign: "center",
-                        padding: "8px",
-                        height: "unset",
-                        fontSize: "0.75rem",
-                      },
-                    }}
-                  />
-                  <TextField
-                    variant="outlined"
-                    size="small"
-                    value={toPersianDigits(
-                      column2Data[index] !== undefined
-                        ? column2Data[index]
-                        : "",
-                    )}
-                    InputProps={{ readOnly: true }}
-                    sx={{
-                      width: 37,
-                      backgroundColor: "#f0f0f0",
-                      "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-                      "& input": {
-                        fontFamily: "IRANSANS",
-                        textAlign: "center",
-                        padding: "8px",
-                        height: "unset",
-                        fontSize: "0.75rem",
-                      },
-                    }}
-                  />
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      {row.label === "pH" ? "pH" : toPersianDigits(row.label)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      variant="outlined"
+                      size="small"
+                      value={formatStockCellValue(
+                        showCol1,
+                        selectedStockType,
+                      )}
+                      InputProps={{ readOnly: true }}
+                      sx={{
+                        width: 37,
+                        backgroundColor: "#f0f0f0",
+                        "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+                        "& input": {
+                          fontFamily: "IRANSANS",
+                          textAlign: "center",
+                          padding: "8px",
+                          height: "unset",
+                          fontSize: "0.75rem",
+                        },
+                      }}
+                    />
+                    <TextField
+                      variant="outlined"
+                      size="small"
+                      value={formatStockCellValue(
+                        showCol2,
+                        selectedStockType,
+                      )}
+                      InputProps={{ readOnly: true }}
+                      sx={{
+                        width: 37,
+                        backgroundColor: "#f0f0f0",
+                        "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+                        "& input": {
+                          fontFamily: "IRANSANS",
+                          textAlign: "center",
+                          padding: "8px",
+                          height: "unset",
+                          fontSize: "0.75rem",
+                        },
+                      }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         </Stack>
 
@@ -498,6 +519,7 @@ const PhEcControlCardMixer = ({
         <Stack
           spacing={1}
           alignItems="center"
+          justifyContent="space-between"
           sx={{
             flexGrow: 1,
             maxWidth: "140px",
@@ -505,150 +527,61 @@ const PhEcControlCardMixer = ({
             borderRadius: "15px",
           }}
         >
-          <Box
-            sx={{
-              alignItems: "center",
-              justifyContent: "center",
-              display: "flex",
-              flexDirection: "column",
-              border: "0.5px solid gray",
-              mt: 2,
-              p: 0.5,
-              borderRadius: "15px",
-            }}
-          >
-            <IconButton
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <MixTankProcessStatus mixTankData={mixTankData} />
+            <Button
+              variant="contained"
+              startIcon={<InfoIcon sx={{ ml: "8px" }} />}
+              onClick={handleOpenStatusModal}
               sx={{
-                backgroundColor: "#e0e0e0",
-                borderRadius: "50%",
-                width: 80,
-                height: 80,
-                p: 0,
-              }}
-            >
-              <img
-                src={assets.svg.phlogo}
-                alt="pH icon"
-                style={{ width: 80, height: 80 }}
-              />
-            </IconButton>
-            <Typography
-              variant="body2"
-              fontFamily={"IRANSANS"}
-              sx={{ mt: 1, color: "#555", mb: 1 }}
-            >
-              وضعیت سیستم:
-            </Typography>
-            <Box
-              sx={{
-                backgroundColor: "#D1E7DD",
+                backgroundColor: "#A7D9B4",
+                color: "#403f3fff",
                 borderRadius: "10px",
-                padding: "4px 8px",
-                textAlign: "center",
-                border: "0.5px solid gray",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                padding: "10px 0",
+                boxShadow: "none",
+                "&:hover": { backgroundColor: "#6CCDB0", boxShadow: "none" },
+                mt: 2,
+                display: "flex",
+                justifyContent: "center",
+                pr: 1,
+                pl: 1,
               }}
             >
               <Typography
-                variant="caption"
                 fontFamily={"IRANSANS"}
-                sx={{ color: "#0F5132", fontWeight: "800", fontSize: "9px" }}
+                sx={{ fontSize: "12px", pointerEvents: "none" }}
               >
-                {statusText || "نامشخص"}
+                جزئیات ساخت
               </Typography>
-            </Box>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              mt: 2,
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography fontSize="12px" sx={{ fontWeight: "700" }}>
-              EC هدف
-            </Typography>
-            <TextField
-              variant="outlined"
-              size="small"
-              value={toPersianDigits(ecTargetValue || "")}
-              onChange={(e) =>
-                onEcTargetChange?.({
-                  ...e,
-                  target: {
-                    ...e.target,
-                    value: toEnglishDigits(e.target.value),
-                  },
-                })
-              }
-              sx={{
-                width: 60,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "8px",
-                  backgroundColor: "white",
-                },
-                "& input": {
-                  fontFamily: "IRANSANS",
-                  textAlign: "center",
-                  padding: "8px",
-                  height: "unset",
-                },
-              }}
-            />
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<InfoIcon sx={{ ml: "8px" }} />}
-            onClick={handleOpenStatusModal}
-            sx={{
-              backgroundColor: "#A7D9B4",
-              color: "#403f3fff",
-              borderRadius: "10px",
-              fontWeight: "bold",
-              fontSize: "1rem",
-              padding: "10px 0",
-              boxShadow: "none",
-              "&:hover": { backgroundColor: "#6CCDB0", boxShadow: "none" },
-              mt: 2,
-              display: "flex",
-              justifyContent: "center",
-              pr: 1,
-              pl: 1,
-            }}
-          >
-            <Typography
-              fontFamily={"IRANSANS"}
-              sx={{ fontSize: "12px", pointerEvents: "none" }}
-            >
-              جزئیات ساخت
-            </Typography>
-          </Button>
+            </Button>
 
-          <Button
-            variant="contained"
-            startIcon={<InfoIcon sx={{ ml: "8px" }} />}
-            onClick={handleOpenBuildDetailsModal}
-            sx={{
-              backgroundColor: "#ffebcc",
-              color: "#403f3fff",
-              borderRadius: "10px",
-              fontWeight: "bold",
-              fontSize: "1rem",
-              padding: "10px 0",
-              boxShadow: "none",
-              "&:hover": { backgroundColor: "#fde0b5ff", boxShadow: "none" },
-              mt: 0,
-              display: "flex",
-              justifyContent: "center",
-              pr: 1,
-              pl: 1,
-            }}
-          >
-            <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
-              وضعیت محلول
-            </Typography>
-          </Button>
+            <Button
+              variant="contained"
+              startIcon={<InfoIcon sx={{ ml: "8px" }} />}
+              onClick={handleOpenBuildDetailsModal}
+              sx={{
+                backgroundColor: "#ffebcc",
+                color: "#403f3fff",
+                borderRadius: "10px",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                padding: "10px 0",
+                boxShadow: "none",
+                "&:hover": { backgroundColor: "#fde0b5ff", boxShadow: "none" },
+                mt: 0,
+                display: "flex",
+                justifyContent: "center",
+                pr: 1,
+                pl: 1,
+              }}
+            >
+              <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "12px" }}>
+                وضعیت محلول
+              </Typography>
+            </Button>
+          </Box>
         </Stack>
       </Box>
 

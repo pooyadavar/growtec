@@ -8,12 +8,10 @@ import React, {
 import {
   Box,
   Container,
-  IconButton,
   CircularProgress,
   Typography,
 } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import NavArrowButton from "../common/NavArrowButton";
 import TimePlansCards from "../../card/TimePlansCards";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -171,7 +169,8 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         userSelect: "none",
       }}
     >
-      <IconButton
+      <NavArrowButton
+        direction="next"
         onClick={() => slide("left")}
         disabled={!canScrollLeft}
         sx={{
@@ -181,9 +180,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
           backgroundColor: "#E3E3E3",
           zIndex: 10,
         }}
-      >
-        <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
-      </IconButton>
+      />
 
       <Box
         ref={scrollRef}
@@ -226,7 +223,8 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
         )}
       </Box>
 
-      <IconButton
+      <NavArrowButton
+        direction="prev"
         onClick={() => slide("right")}
         disabled={!canScrollRight}
         sx={{
@@ -236,9 +234,7 @@ const PayeshManyTimePlans = ({ onCardClick, zone }) => {
           backgroundColor: "#E3E3E3",
           zIndex: 10,
         }}
-      >
-        <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
-      </IconButton>
+      />
     </Container>
   );
 };

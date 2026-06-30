@@ -6,11 +6,9 @@ import {
   Button,
   Modal,
   TextField,
-  IconButton,
 } from "@mui/material";
 import ModalCloseButton from "../common/ModalCloseButton";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import NavArrowButton from "../common/NavArrowButton";
 import { AgCharts } from "ag-charts-react";
 import assets from "../../assets";
 import IconTextButton from "../../card/IconTextButton";
@@ -762,7 +760,8 @@ const SlidingWindowChart = () => {
           bottom: 9,
         }}
       >
-        <IconButton
+        <NavArrowButton
+          direction="next"
           onClick={slideNext}
           disabled={activeIndex === SENSORS.length - 1}
           sx={{
@@ -773,9 +772,7 @@ const SlidingWindowChart = () => {
             border: "0.5px solid #9F9F9F",
             opacity: activeIndex === SENSORS.length - 1 ? 0.5 : 1,
           }}
-        >
-          <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
-        </IconButton>
+        />
 
         <Box
           ref={scrollRef}
@@ -807,7 +804,8 @@ const SlidingWindowChart = () => {
           ))}
         </Box>
 
-        <IconButton
+        <NavArrowButton
+          direction="prev"
           onClick={slidePrev}
           disabled={activeIndex === 0}
           sx={{
@@ -818,9 +816,7 @@ const SlidingWindowChart = () => {
             border: "0.5px solid #9F9F9F",
             opacity: activeIndex === 0 ? 0.5 : 1,
           }}
-        >
-          <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
-        </IconButton>
+        />
       </Box>
 
       <CalibrationModalContent

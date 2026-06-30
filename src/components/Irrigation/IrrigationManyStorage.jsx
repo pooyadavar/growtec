@@ -8,7 +8,6 @@ import React, {
 import {
   Box,
   Container,
-  IconButton,
   Modal,
   Typography,
   Divider,
@@ -20,11 +19,10 @@ import {
   MenuItem,
 } from "@mui/material";
 import { TransitionGroup } from "react-transition-group";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import ModalCloseButton from "../common/ModalCloseButton";
+import NavArrowButton from "../common/NavArrowButton";
 import IrrigationCard from "../../card/IrrigationCard";
 import IconTextButton from "../../card/IconTextButton";
-import ModalCloseButton from "../common/ModalCloseButton";
 import assets from "../../assets";
 import SaveIcon from "@mui/icons-material/Save";
 import { styled } from "@mui/system";
@@ -586,11 +584,12 @@ const IrrigationManyStorage = () => {
         gap: 0,
       }}
     >
-      <IconButton
+      <NavArrowButton
+        direction="next"
         onClick={() => slide("right")}
         disabled={!canScrollRight}
         sx={{
-          width: "20px",
+          width: "30px",
           height: "40px",
           borderRadius: "5px",
           backgroundColor: "#E3E3E3",
@@ -599,9 +598,7 @@ const IrrigationManyStorage = () => {
           opacity: canScrollRight ? 1 : 0.5,
           zIndex: 10,
         }}
-      >
-        <ArrowForwardIosIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
-      </IconButton>
+      />
 
       <Box
         ref={scrollRef}
@@ -660,11 +657,12 @@ const IrrigationManyStorage = () => {
         })}
       </Box>
 
-      <IconButton
+      <NavArrowButton
+        direction="prev"
         onClick={() => slide("left")}
         disabled={!canScrollLeft}
         sx={{
-          width: "20px",
+          width: "30px",
           height: "40px",
           borderRadius: "5px",
           backgroundColor: "#E3E3E3",
@@ -673,9 +671,7 @@ const IrrigationManyStorage = () => {
           opacity: canScrollLeft ? 1 : 0.5,
           zIndex: 10,
         }}
-      >
-        <ArrowBackIosNewIcon sx={{ fontSize: "16px", color: "#8A8A8A" }} />
-      </IconButton>
+      />
 
       {/* Settings Modal */}
       <Modal
