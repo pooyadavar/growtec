@@ -1,15 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, TextField, Typography, Grid } from "@mui/material";
 import SaveIcon from "@mui/icons-material/SaveOutlined";
 import CalculateIcon from "@mui/icons-material/CalculateOutlined";
 import SwapCallsIcon from "@mui/icons-material/SwapCalls";
 import CloseIcon from "@mui/icons-material/Close";
 import toast from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
 
 import IconTextButton from "../../card/IconTextButton";
 import TimeInput from "../common/TimeInput";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import { saveIrrigationProgramToFile } from "../../utils/saveIrrigationProgram";
+import { getIrrigationConfig } from "../../api/configApi";
+
+const MOCK_OPERATORS_COUNT = 8;
 
 const COLORS = {
   amber: "#FFCB82",
@@ -93,12 +97,22 @@ const formatSecondsToTime = (totalSeconds) => {
   return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
 };
 
-const createEmptyRow = (index) => ({
+const createEmptyRow = (index, operator = 1) => ({
   order: index + 1,
-  zone: index + 1,
+  zone: operator,
   start: "00:00:00",
   end: "00:00:00",
 });
+
+const resolveOperatorsCount = (config) => {
+  const count = Number(
+    config?.operators_count ??
+      config?.operator_count ??
+      config?.operators?.length ??
+      0,
+  );
+  return count > 0 ? count : MOCK_OPERATORS_COUNT;
+};
 
 const CustomLabel = ({ children }) => (
   <Box
@@ -254,15 +268,23 @@ const NumberSelect = ({
   min = 1,
   max = 20,
   underLabel = false,
+  compact = false,
   sx = {},
 }) => (
   <Box
     sx={{
       ...(underLabel ? labeledFieldBodySx : fieldShellSx),
-      height: "40px",
+      height: compact ? "36px" : "40px",
       display: "flex",
       alignItems: "center",
-      px: 1,
+      px: compact ? 0.5 : 1,
+      ...(compact
+        ? {
+            backgroundColor: COLORS.amber,
+            borderRadius: "12px",
+            boxShadow: "0px 2px 6px rgba(0,0,0,0.12)",
+          }
+        : {}),
       ...sx,
     }}
     onClick={(e) => e.stopPropagation()}
@@ -270,7 +292,11 @@ const NumberSelect = ({
     <select
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
-      style={selectStyles}
+      style={{
+        ...selectStyles,
+        height: compact ? "34px" : "40px",
+        fontSize: compact ? "0.85rem" : "0.9rem",
+      }}
     >
       {Array.from({ length: max - min + 1 }, (_, i) => {
         const n = min + i;
@@ -284,24 +310,50 @@ const NumberSelect = ({
   </Box>
 );
 
-export default function IrrigationCalculatorPage({ onClose }) {
+export default function IrrigationCalculatorPage({
+  onClose,
+  operatorsCount: operatorsCountProp,
+}) {
+  const { data: irrigationConfig } = useQuery({
+    queryKey: ["irrigationConfig"],
+    queryFn: getIrrigationConfig,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const operatorsCount = useMemo(() => {
+    if (operatorsCountProp > 0) return operatorsCountProp;
+    return resolveOperatorsCount(irrigationConfig);
+  }, [operatorsCountProp, irrigationConfig]);
+
   const [programName, setProgramName] = useState("");
+  const [headerOperator, setHeaderOperator] = useState(1);
   const [firstIrrigation, setFirstIrrigation] = useState("00:00:00");
   const [irrigationCount, setIrrigationCount] = useState(1);
   const [irrigationInterval, setIrrigationInterval] = useState(emptyDuration);
   const [irrigationDuration, setIrrigationDuration] = useState(emptyDuration);
   const [zoneInterval, setZoneInterval] = useState(emptyDuration);
-  const [rows, setRows] = useState([createEmptyRow(0)]);
+  const [rows, setRows] = useState([createEmptyRow(0, 1)]);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setHeaderOperator((prev) => Math.min(Math.max(prev, 1), operatorsCount));
+  }, [operatorsCount]);
 
   useEffect(() => {
     setRows((prev) =>
       Array.from({ length: irrigationCount }, (_, i) => {
-        if (prev[i]) return { ...prev[i], order: i + 1, zone: i + 1 };
-        return createEmptyRow(i);
+        if (prev[i]) {
+          return {
+            ...prev[i],
+            order: i + 1,
+            zone: Math.min(Math.max(prev[i].zone ?? 1, 1), operatorsCount),
+          };
+        }
+        return createEmptyRow(i, headerOperator);
       }),
     );
-  }, [irrigationCount]);
+  }, [irrigationCount, operatorsCount]);
 
   const buildProgramRows = () => {
     const first = parseTimeToSeconds(firstIrrigation);
@@ -322,7 +374,7 @@ export default function IrrigationCalculatorPage({ onClose }) {
 
       built.push({
         order: i + 1,
-        zone: i + 1,
+        zone: rows[i]?.zone ?? headerOperator,
         start: formatSecondsToTime(startSec),
         end: formatSecondsToTime(startSec + duration),
       });
@@ -341,6 +393,8 @@ export default function IrrigationCalculatorPage({ onClose }) {
 
     const programData = {
       programName: programName.trim(),
+      headerOperator,
+      operatorsCount,
       firstIrrigation,
       irrigationCount,
       irrigationInterval,
@@ -388,7 +442,9 @@ export default function IrrigationCalculatorPage({ onClose }) {
 
   const handleClearTable = () => {
     setRows(
-      Array.from({ length: irrigationCount }, (_, i) => createEmptyRow(i)),
+      Array.from({ length: irrigationCount }, (_, i) =>
+        createEmptyRow(i, headerOperator),
+      ),
     );
   };
 
@@ -423,7 +479,8 @@ export default function IrrigationCalculatorPage({ onClose }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 1.5,
+                flexWrap: "wrap",
+                gap: 1,
                 mb: 2,
                 boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
               }}
@@ -433,153 +490,202 @@ export default function IrrigationCalculatorPage({ onClose }) {
                 variant="subtitle1"
                 sx={{ fontWeight: "bold", fontFamily: "IRANSANS" }}
               >
-                ماشین حساب آبیاری
+                ماشین حساب آبیاری عملگر (دراپ باکس)
               </Typography>
+              <Box sx={{ width: 72, flexShrink: 0 }}>
+                <NumberSelect
+                  value={headerOperator}
+                  max={operatorsCount}
+                  onChange={setHeaderOperator}
+                  sx={{
+                    backgroundColor: COLORS.white,
+                    boxShadow: "0px 2px 6px rgba(0,0,0,0.12)",
+                  }}
+                />
+              </Box>
             </Box>
 
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                px: 1,
-                mb: 1,
-                textAlign: "center",
-                direction: "ltr",
-              }}
-            >
-              <Typography
+            <Box sx={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
+              <Box
                 sx={{
-                  width: "18%",
-                  fontWeight: "bold",
-                  fontSize: "0.85rem",
-                  fontFamily: "IRANSANS",
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
-                ترتیب
-              </Typography>
-              <Typography
-                sx={{
-                  width: "14%",
-                  fontWeight: "bold",
-                  fontSize: "0.85rem",
-                  fontFamily: "IRANSANS",
-                }}
-              >
-                عملگر
-              </Typography>
-              <Typography
-                sx={{
-                  width: "29%",
-                  fontWeight: "bold",
-                  fontSize: "0.85rem",
-                  fontFamily: "IRANSANS",
-                }}
-              >
-                شروع آبیاری
-              </Typography>
-              <Typography
-                sx={{
-                  width: "29%",
-                  fontWeight: "bold",
-                  fontSize: "0.85rem",
-                  fontFamily: "IRANSANS",
-                }}
-              >
-                پایان آبیاری
-              </Typography>
-              <Typography
-                sx={{
-                  width: "10%",
-                  fontWeight: "bold",
-                  fontSize: "0.85rem",
-                  fontFamily: "IRANSANS",
-                }}
-              >
-                حذف
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                flex: 1,
-                overflowY: "auto",
-                pr: 0.5,
-                maxHeight: "420px",
-                direction: "ltr",
-              }}
-            >
-              {rows.map((row, idx) => (
                 <Box
-                  key={idx}
                   sx={{
                     display: "flex",
-                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 1,
                     mb: 1,
-                    gap: 0.5,
+                    textAlign: "center",
+                    direction: "ltr",
                   }}
                 >
-                  <NumberSelect
-                    value={row.order}
-                    max={irrigationCount}
-                    onChange={(v) => handleRowChange(idx, "order", v)}
+                  <Typography
                     sx={{
-                      width: "18%",
-                      boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-                    }}
-                  />
-
-                  <TextField
-                    sx={{ ...inputStyles, width: "14%" }}
-                    value={toPersianDigits(row.zone)}
-                    onChange={(e) =>
-                      handleRowChange(
-                        idx,
-                        "zone",
-                        Number(toEnglishDigits(e.target.value)) || 1,
-                      )
-                    }
-                    inputProps={{ style: { fontFamily: "IRANSANS" } }}
-                  />
-
-                  <Box sx={{ width: "29%" }}>
-                    <TimeField
-                      value={row.start}
-                      onChange={(v) => handleRowChange(idx, "start", v)}
-                    />
-                  </Box>
-
-                  <Box sx={{ width: "29%" }}>
-                    <TimeField
-                      value={row.end}
-                      onChange={(v) => handleRowChange(idx, "end", v)}
-                    />
-                  </Box>
-
-                  <Box
-                    sx={{
-                      width: "10%",
-                      display: "flex",
-                      justifyContent: "center",
+                      width: "16%",
+                      fontWeight: "bold",
+                      fontSize: "0.85rem",
+                      fontFamily: "IRANSANS",
                     }}
                   >
+                    عملگر
+                  </Typography>
+                  <Typography
+                    sx={{
+                      width: "32%",
+                      fontWeight: "bold",
+                      fontSize: "0.85rem",
+                      fontFamily: "IRANSANS",
+                    }}
+                  >
+                    شروع آبیاری
+                  </Typography>
+                  <Typography
+                    sx={{
+                      width: "32%",
+                      fontWeight: "bold",
+                      fontSize: "0.85rem",
+                      fontFamily: "IRANSANS",
+                    }}
+                  >
+                    پایان آبیاری
+                  </Typography>
+                  <Typography
+                    sx={{
+                      width: "10%",
+                      fontWeight: "bold",
+                      fontSize: "0.85rem",
+                      fontFamily: "IRANSANS",
+                    }}
+                  >
+                    حذف
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    flex: 1,
+                    overflowY: "auto",
+                    pr: 0.5,
+                    maxHeight: "420px",
+                    direction: "ltr",
+                  }}
+                >
+                  {rows.map((row, idx) => (
                     <Box
-                      onClick={() => handleDeleteRow(idx)}
+                      key={idx}
                       sx={{
-                        p: 0.5,
-                        border: `2px solid ${COLORS.red}`,
-                        borderRadius: "8px",
-                        color: COLORS.red,
                         display: "flex",
                         alignItems: "center",
-                        cursor: rows.length > 1 ? "pointer" : "not-allowed",
-                        opacity: rows.length > 1 ? 1 : 0.4,
+                        mb: 1,
+                        gap: 0.5,
+                        minHeight: "40px",
                       }}
                     >
-                      <CloseIcon fontSize="small" />
+                      <NumberSelect
+                        value={row.zone}
+                        max={operatorsCount}
+                        onChange={(v) => handleRowChange(idx, "zone", v)}
+                        sx={{
+                          width: "16%",
+                          boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+                        }}
+                      />
+
+                      <Box sx={{ width: "32%" }}>
+                        <TimeField
+                          value={row.start}
+                          onChange={(v) => handleRowChange(idx, "start", v)}
+                        />
+                      </Box>
+
+                      <Box sx={{ width: "32%" }}>
+                        <TimeField
+                          value={row.end}
+                          onChange={(v) => handleRowChange(idx, "end", v)}
+                        />
+                      </Box>
+
+                      <Box
+                        sx={{
+                          width: "10%",
+                          display: "flex",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Box
+                          onClick={() => handleDeleteRow(idx)}
+                          sx={{
+                            p: 0.5,
+                            border: `2px solid ${COLORS.red}`,
+                            borderRadius: "8px",
+                            color: COLORS.red,
+                            display: "flex",
+                            alignItems: "center",
+                            cursor: rows.length > 1 ? "pointer" : "not-allowed",
+                            opacity: rows.length > 1 ? 1 : 0.4,
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </Box>
+                      </Box>
                     </Box>
-                  </Box>
+                  ))}
                 </Box>
-              ))}
+              </Box>
+
+              <Box
+                sx={{
+                  width: 56,
+                  flexShrink: 0,
+                  bgcolor: COLORS.bgGrey,
+                  borderRight: "1px solid #9F9F9F",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  pt: 0.5,
+                  pb: 1,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontWeight: "bold",
+                    fontSize: "0.85rem",
+                    fontFamily: "IRANSANS",
+                    mb: 1,
+                    textAlign: "center",
+                  }}
+                >
+                  ترتیب
+                </Typography>
+                <Box
+                  sx={{
+                    flex: 1,
+                    overflowY: "auto",
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 0.5,
+                  }}
+                >
+                  {rows.map((row, idx) => (
+                    <NumberSelect
+                      key={idx}
+                      compact
+                      value={row.order}
+                      max={irrigationCount}
+                      onChange={(v) => handleRowChange(idx, "order", v)}
+                      sx={{ width: 44 }}
+                    />
+                  ))}
+                </Box>
+              </Box>
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "center" }}>

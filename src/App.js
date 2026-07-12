@@ -10,6 +10,7 @@ import Payesh from "./components/payesh/Payesh"; // Import Payesh component
 import PayeshTimePlansPage from "./pages/PayeshTimePlansPage"; // Import PayeshTimePlansPage
 import AdminSetting from "./components/admin/AdminSetting"; // Import AdminSetting
 import Login from "./pages/Login"; // Import Login page
+import CalculatorPreviewPage from "./pages/CalculatorPreviewPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from 'react-hot-toast';
@@ -65,6 +66,7 @@ function App() {
             }
           />
           <Route path="/login" element={<Login />} />
+          <Route path="/dev/calculator" element={<CalculatorPreviewPage />} />
           <Route
             path="/feeding-history"
             element={
