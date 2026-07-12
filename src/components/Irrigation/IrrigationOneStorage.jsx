@@ -256,16 +256,16 @@ const IrrigationOneStorage = ({ storageNumber }) => {
       sx={{
         width: "825px",
         height: "max-content",
-        paddingY: "20px",
+        paddingY: "8px",
         bgcolor: "#F0F0F0",
         borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
         alignItems: "center",
-        gap: "20px",
-        py: 6,
-        transform: "scale(0.85)",
+        gap: "14px",
+        py: 3,
+        transform: "scale(0.88)",
       }}
     >
       {/* بخش بالای کارت: حجم مخزن */}
@@ -330,7 +330,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
       <Box
         sx={{
           width: "95%",
-          height: "113px",
+          height: "102px",
           border: "0.5px solid #9F9F9F",
           borderRadius: "10px",
           bgcolor: "#FFFFFF",

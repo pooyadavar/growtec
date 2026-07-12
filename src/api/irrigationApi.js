@@ -19,3 +19,7 @@ export const updateIrrigationSchedule = async (id, payload) => {
 export const deleteIrrigationSchedule = async (id) => {
   return apiClient.delete(`/irrigation/irrigation-schedule/${id}/`);
 };
+
+export const makeManualIrrigation = async (data) => {
+  return apiClient.post("/irrigation/make-manual-irrigation/", data);
+};

@@ -164,19 +164,19 @@ const IrrigationCard = ({
     <Paper
       onClick={onClick}
       sx={{
-        width: "293px",
-        height: "640px",
+        width: "288px",
+        height: "560px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
         alignItems: "center",
-        gap: 1.5,
+        gap: 1,
         cursor: onClick ? "pointer" : "default",
         transition: "transform 0.2s",
-        p: 2,
-        transform: "scale(0.9)",
+        p: 1.5,
+        transform: "scale(0.92)",
         "&:hover": onClick ? { transform: "scale(1.02)" } : {},
       }}
     >
@@ -252,7 +252,7 @@ const IrrigationCard = ({
       <Box
         sx={{
           width: "259px",
-          height: "113px",
+          height: "102px",
           display: "flex",
           flexDirection: "row-reverse",
           alignItems: "center",
@@ -264,7 +264,7 @@ const IrrigationCard = ({
         <Box
           sx={{
             width: "237px",
-            height: "113px",
+            height: "102px",
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
             overflow: "hidden",
@@ -370,7 +370,7 @@ const IrrigationCard = ({
                   <Box
                     sx={{
                       width: "280px",
-                      height: "60px",
+                      height: "56px",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
@@ -395,7 +395,7 @@ const IrrigationCard = ({
                       <Box
                         sx={{
                           width: "65px",
-                          height: "35px",
+                          height: "32px",
                           border: "0.5px solid #9F9F9F",
                           borderRadius: "10px",
                           display: "flex",
@@ -425,7 +425,7 @@ const IrrigationCard = ({
                       <Box
                         sx={{
                           width: "65px",
-                          height: "35px",
+                          height: "32px",
                           border: "0.5px solid #9F9F9F",
                           borderRadius: "10px",
                           display: "flex",
@@ -455,7 +455,7 @@ const IrrigationCard = ({
                       <Box
                         sx={{
                           width: "35px",
-                          height: "35px",
+                          height: "32px",
                           border: "0.5px solid #9F9F9F",
                           borderRadius: "10px",
                           display: "flex",
@@ -485,7 +485,7 @@ const IrrigationCard = ({
                       <Box
                         sx={{
                           width: "35px",
-                          height: "35px",
+                          height: "32px",
                           border: "0.5px solid #9F9F9F",
                           borderRadius: "10px",
                           display: "flex",
@@ -515,7 +515,7 @@ const IrrigationCard = ({
                       <Box
                         sx={{
                           width: "35px",
-                          height: "35px",
+                          height: "32px",
                           border:
                             displayStatus === "tick"
                               ? "1px solid #4CAF50"
@@ -606,7 +606,7 @@ const IrrigationCard = ({
               }}
               sx={{
                 flex: 1,
-                height: "55px",
+                height: "48px",
                 backgroundColor: "#6CCDB0",
                 color: "#000",
                 fontFamily: "IRANSANS",
@@ -628,7 +628,7 @@ const IrrigationCard = ({
               }}
               sx={{
                 flex: 1,
-                height: "55px",
+                height: "48px",
                 backgroundColor: "#FFCB82",
                 color: "#000",
                 fontFamily: "IRANSANS",
@@ -658,7 +658,7 @@ const IrrigationCard = ({
             }}
             sx={{
               width: "100%",
-              height: "55px",
+              height: "48px",
               backgroundColor: "#FF9933",
               color: "#fff",
               fontFamily: "IRANSANS",

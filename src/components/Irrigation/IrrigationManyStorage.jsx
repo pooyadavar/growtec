@@ -604,7 +604,7 @@ const IrrigationManyStorage = () => {
         ref={scrollRef}
         sx={{
           width: "970px",
-          height: "680px",
+          height: "590px",
           display: "flex",
           flexDirection: "row-reverse",
           overflowX: "auto",
@@ -613,10 +613,8 @@ const IrrigationManyStorage = () => {
           scrollSnapType: "x mandatory",
           scrollBehavior: "smooth",
           padding: 0,
-          transform: "scale(0.9)",
-          transformOrigin: "center",
-          marginTop: "-50px",
-          marginBottom: "-50px",
+          marginTop: "-10px",
+          marginBottom: "-10px",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
           "&::-webkit-scrollbar": { display: "none" },
