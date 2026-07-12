@@ -17,10 +17,27 @@ import {
   getFoodstuffPreparationProgram,
   updateFoodstuffPreparationProgram,
   getSolubleEcPhTemperature,
+  getFoodstuffPreparationProgramInputWaterRatio,
+  updateFoodstuffPreparationProgramInputWaterRatio,
 } from "../api/solubleApi";
 import { queryKeys } from "../api/queryKeys";
 import toast, { Toaster } from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
+
+const ONE_DECIMAL_INPUT = /^\d*(\.\d?)?$/;
+
+const formatOneDecimal = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return num.toFixed(1);
+};
+
+const toOneDecimalNumber = (value) => {
+  const num = Number(value);
+  if (Number.isNaN(num)) return 0;
+  return parseFloat(num.toFixed(1));
+};
 
 const deepEqual = (obj1, obj2) => {
   if (obj1 === obj2) return true;
@@ -191,6 +208,9 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const [programs, setPrograms] = useState({});
   const [initialPrograms, setInitialPrograms] = useState({});
   const [isSaveDisabled, setIsSaveDisabled] = useState(true);
+  const [initialInputWaterVolume, setInitialInputWaterVolume] = useState("");
+  const [isInputWaterInitialized, setIsInputWaterInitialized] = useState(false);
+
   const [inputWaterVolume, setInputWaterVolume] = useState("");
 
   const programNumbers = [1, 2, 3];
@@ -216,6 +236,22 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
 
   const isDataReady = programQueries.length > 0 && programQueries.every((q) => q.isSuccess);
 
+  const inputWaterRatioQuery = useQuery({
+    queryKey: queryKeys.foodstuffInputWaterRatio(),
+    queryFn: getFoodstuffPreparationProgramInputWaterRatio,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (inputWaterRatioQuery.isSuccess && !isInputWaterInitialized) {
+      const value = formatOneDecimal(inputWaterRatioQuery.data ?? "");
+      setInputWaterVolume(value);
+      setInitialInputWaterVolume(value);
+      setIsInputWaterInitialized(true);
+    }
+  }, [inputWaterRatioQuery.isSuccess, inputWaterRatioQuery.data, isInputWaterInitialized]);
+
   useEffect(() => {
     if (isDataReady && Object.keys(initialPrograms).length === 0) {
       const newPrograms = {};
@@ -232,11 +268,17 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
     if (
       Object.keys(programs).length === 0 ||
       Object.keys(initialPrograms).length === 0
-    )
+    ) {
+      const hasInputWaterChanges =
+        isInputWaterInitialized && inputWaterVolume !== initialInputWaterVolume;
+      setIsSaveDisabled(!hasInputWaterChanges);
       return;
-    const hasChanges = !deepEqual(programs, initialPrograms);
-    setIsSaveDisabled(!hasChanges);
-  }, [programs, initialPrograms]);
+    }
+    const hasProgramChanges = !deepEqual(programs, initialPrograms);
+    const hasInputWaterChanges =
+      isInputWaterInitialized && inputWaterVolume !== initialInputWaterVolume;
+    setIsSaveDisabled(!hasProgramChanges && !hasInputWaterChanges);
+  }, [programs, initialPrograms, inputWaterVolume, initialInputWaterVolume, isInputWaterInitialized]);
 
   const queryClient = useQueryClient();
 
@@ -251,6 +293,20 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
     onError: (error, variables) => {
       console.error(`Error saving program ${variables.program_number}:`, error);
       toast.error(`خطا در ذخیره برنامه ${variables.program_number}`);
+    },
+  });
+
+  const updateInputWaterRatioMutation = useMutation({
+    mutationFn: updateFoodstuffPreparationProgramInputWaterRatio,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.foodstuffInputWaterRatio(),
+      });
+      toast.success("حجم تغییر آب ورودی با موفقیت ذخیره شد");
+    },
+    onError: (error) => {
+      console.error("Error saving input water ratio:", error);
+      toast.error("خطا در ذخیره حجم تغییر آب ورودی");
     },
   });
 
@@ -280,10 +336,20 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
       }
     }
 
+    if (inputWaterVolume !== initialInputWaterVolume) {
+      updatePromises.push(
+        updateInputWaterRatioMutation.mutateAsync(
+          toOneDecimalNumber(inputWaterVolume),
+        ),
+      );
+    }
+
     try {
       await Promise.all(updatePromises);
       programQueries.forEach((query) => query.refetch());
+      inputWaterRatioQuery.refetch();
       setInitialPrograms(JSON.parse(JSON.stringify(programs)));
+      setInitialInputWaterVolume(inputWaterVolume);
       setIsSaveDisabled(true);
     } catch (error) {
       toast.error("خطا در ذخیره‌سازی برخی از برنامه‌ها");
@@ -299,8 +365,16 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
 
   const handleInputWaterVolumeChange = (e) => {
     const enValue = toEnglishDigits(e.target.value);
-    if (enValue === "" || /^\d*\.?\d*$/.test(enValue)) {
+    if (enValue === "" || ONE_DECIMAL_INPUT.test(enValue)) {
       setInputWaterVolume(enValue);
+    }
+  };
+
+  const handleInputWaterVolumeBlur = () => {
+    if (inputWaterVolume === "") return;
+    const num = Number(inputWaterVolume);
+    if (!Number.isNaN(num)) {
+      setInputWaterVolume(formatOneDecimal(num));
     }
   };
 
@@ -342,7 +416,16 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
                     <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}>
                       حجم تغییر آب ورودی
                     </Typography>
-                    <TextField fullWidth size="small" variant="outlined" value={toPersianDigits(inputWaterVolume)} onChange={handleInputWaterVolumeChange} inputProps={{ inputMode: "decimal" }} sx={{ "& .MuiInputBase-input": { textAlign: "center", padding: "6px 8px", fontSize: "0.8rem", fontFamily: "IRANSANS" } }} />
+                    <TextField
+                      fullWidth
+                      size="small"
+                      variant="outlined"
+                      value={toPersianDigits(inputWaterVolume)}
+                      onChange={handleInputWaterVolumeChange}
+                      onBlur={handleInputWaterVolumeBlur}
+                      inputProps={{ inputMode: "decimal" }}
+                      sx={{ "& .MuiInputBase-input": { textAlign: "center", padding: "6px 8px", fontSize: "0.8rem", fontFamily: "IRANSANS" } }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <Typography variant="body2" fontFamily="IRANSANS" sx={{ mb: 0.3, fontSize: "0.8rem", textAlign: "right" }}>
@@ -352,7 +435,11 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
                       fullWidth
                       size="small"
                       variant="outlined"
-                      value={currentPh !== undefined && currentPh !== null ? toPersianDigits(currentPh) : ""}
+                      value={
+                        currentPh !== undefined && currentPh !== null
+                          ? toPersianDigits(formatOneDecimal(currentPh))
+                          : ""
+                      }
                       inputProps={{ readOnly: true }}
                       sx={{ "& .MuiInputBase-input": { textAlign: "center", padding: "6px 8px", fontSize: "0.8rem", fontFamily: "IRANSANS" }, backgroundColor: "#f5f5f5" }}
                     />
@@ -365,7 +452,11 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
                       fullWidth
                       size="small"
                       variant="outlined"
-                      value={currentEc !== undefined && currentEc !== null ? toPersianDigits(currentEc) : ""}
+                      value={
+                        currentEc !== undefined && currentEc !== null
+                          ? toPersianDigits(formatOneDecimal(currentEc))
+                          : ""
+                      }
                       inputProps={{ readOnly: true }}
                       sx={{ "& .MuiInputBase-input": { textAlign: "center", padding: "6px 8px", fontSize: "0.8rem", fontFamily: "IRANSANS" }, backgroundColor: "#f5f5f5" }}
                     />

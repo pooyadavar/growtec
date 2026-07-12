@@ -34,18 +34,28 @@ import toast from "react-hot-toast";
 import { showErrorToast } from "../../utils/appToast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
-const FormRow = ({ label, name, value, onChange }) => (
+const FormRow = ({ label, name, value, onChange, compact = false }) => (
   <Box
     sx={{
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       width: "100%",
-      mb: 2.5,
-      gap: 2.5,
+      mb: compact ? 1.25 : 2.5,
+      gap: compact ? 0.75 : 2.5,
     }}
   >
-    <Typography fontFamily={"IRANSANS"} fontSize={15} color="#333">
+    <Typography
+      fontFamily={"IRANSANS"}
+      fontSize={compact ? 13 : 15}
+      color="#333"
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        lineHeight: 1.3,
+        ...(compact && { whiteSpace: "nowrap" }),
+      }}
+    >
       {label}
     </Typography>
     <TextField
@@ -58,13 +68,20 @@ const FormRow = ({ label, name, value, onChange }) => (
       }
       inputProps={{ inputMode: "decimal" }}
       sx={{
-        width: "120px",
+        width: compact ? "32%" : "120px",
+        minWidth: compact ? "90px" : undefined,
+        maxWidth: compact ? "130px" : undefined,
+        flexShrink: 0,
         backgroundColor: "#FFFFFF",
         borderRadius: "5px",
+        "& .MuiInputBase-root": {
+          height: compact ? "30px" : undefined,
+        },
         "& .MuiInputBase-input": {
           fontFamily: "IRANSANS",
           textAlign: "center",
-          padding: "8px",
+          padding: compact ? "4px 2px" : "8px",
+          fontSize: compact ? "13px" : undefined,
         },
       }}
     />
@@ -699,8 +716,13 @@ const AdminSetting = () => {
     number_of_sensors_zone_2: "",
     number_of_sensors_zone_3: "",
     number_of_sensors_zone_4: "",
+    number_of_pumps_zone_1: "",
+    number_of_pumps_zone_2: "",
+    number_of_pumps_zone_3: "",
+    number_of_pumps_zone_4: "",
     number_of_sensors: "",
     number_of_dosing_pumps: "",
+    dosing_pump_working_duration_in_calibration: "",
     ...getInitialClimateState(),
   });
 
@@ -708,6 +730,7 @@ const AdminSetting = () => {
     queryKey: queryKeys.adminConfig(),
     queryFn: getAllConfig,
     staleTime: 5 * 60 * 1000,
+    networkMode: "always",
   });
 
   useEffect(() => {
@@ -734,6 +757,14 @@ const AdminSetting = () => {
             Number(currentSettings.number_of_sensors_zone_3) || 0,
           number_of_sensors_zone_4:
             Number(currentSettings.number_of_sensors_zone_4) || 0,
+          number_of_pumps_zone_1:
+            Number(currentSettings.number_of_pumps_zone_1) || 0,
+          number_of_pumps_zone_2:
+            Number(currentSettings.number_of_pumps_zone_2) || 0,
+          number_of_pumps_zone_3:
+            Number(currentSettings.number_of_pumps_zone_3) || 0,
+          number_of_pumps_zone_4:
+            Number(currentSettings.number_of_pumps_zone_4) || 0,
         });
       }
       if (tab === 1) {
@@ -741,6 +772,10 @@ const AdminSetting = () => {
           number_of_sensors: Number(currentSettings.number_of_sensors) || 0,
           number_of_dosing_pumps:
             Number(currentSettings.number_of_dosing_pumps) || 0,
+          dosing_pump_working_duration_in_calibration:
+            Number(
+              currentSettings.dosing_pump_working_duration_in_calibration,
+            ) || 0,
         });
       }
       const payload = { zones: {} };
@@ -789,13 +824,18 @@ const AdminSetting = () => {
 
   return (
     <Container
+      maxWidth={false}
+      disableGutters
       sx={{
-        width: "950px",
+        width: "100%",
+        maxWidth: "100%",
+        px: 2,
         height: "600px",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
+        alignItems: "stretch",
         marginTop: "30px",
+        boxSizing: "border-box",
       }}
     >
       <Box
@@ -884,44 +924,66 @@ const AdminSetting = () => {
               display: "flex",
               flexDirection: "column",
               direction: "rtl",
-              overflow: "hidden",
+              overflowY: "auto",
+              overflowX: "hidden",
             }}
           >
             {/* ================= تب آبیاری ================= */}
             {activeTab === 0 && (
               <>
-                <Grid
-                  container
-                  spacing={8}
-                  sx={{ flex: 1, alignContent: "flex-start" }}
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 3,
+                    flex: 1,
+                    width: "100%",
+                    alignItems: "flex-start",
+                    flexWrap: { xs: "wrap", md: "nowrap" },
+                  }}
                 >
-                  <Grid item xs={6}>
+                  <Box sx={{ flex: 1, minWidth: { xs: "100%", md: 0 } }}>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                       {[1, 2, 3, 4, 5].map((num) => (
                         <FormRow
                           key={`tank-${num}`}
-                          label={`حجم مخزن آبیاری ${toPersianDigits(num)}`}
+                          compact
+                          label={`حجم مخزن ${toPersianDigits(num)}`}
                           name={`tank_volume_${num}`}
                           value={settings[`tank_volume_${num}`]}
                           onChange={handleChange}
                         />
                       ))}
                     </Box>
-                  </Grid>
-                  <Grid item xs={6}>
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: { xs: "100%", md: 0 } }}>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                       {[1, 2, 3, 4].map((num) => (
                         <FormRow
                           key={`sensor-${num}`}
-                          label={`تعداد سنسور در زون ${toPersianDigits(num)}`}
+                          compact
+                          label={`سنسور زون ${toPersianDigits(num)}`}
                           name={`number_of_sensors_zone_${num}`}
                           value={settings[`number_of_sensors_zone_${num}`]}
                           onChange={handleChange}
                         />
                       ))}
                     </Box>
-                  </Grid>
-                </Grid>
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: { xs: "100%", md: 0 } }}>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                      {[1, 2, 3, 4].map((num) => (
+                        <FormRow
+                          key={`pump-${num}`}
+                          compact
+                          label={`پمپ زون ${toPersianDigits(num)}`}
+                          name={`number_of_pumps_zone_${num}`}
+                          value={settings[`number_of_pumps_zone_${num}`]}
+                          onChange={handleChange}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                </Box>
                 <Box
                   sx={{
                     display: "flex",
@@ -983,6 +1045,14 @@ const AdminSetting = () => {
                         label="تعداد دوزینگ پمپ‌ها"
                         name="number_of_dosing_pumps"
                         value={settings.number_of_dosing_pumps}
+                        onChange={handleChange}
+                      />
+                      <FormRow
+                        label="مدت کار دوزینگ پمپ در کالیبراسیون"
+                        name="dosing_pump_working_duration_in_calibration"
+                        value={
+                          settings.dosing_pump_working_duration_in_calibration
+                        }
                         onChange={handleChange}
                       />
                     </Box>

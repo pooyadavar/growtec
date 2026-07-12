@@ -11,7 +11,7 @@ import {
   Modal,
   Typography,
   Divider,
-  CircularProgress,
+  Alert,
   Collapse,
   Button,
   FormControl,
@@ -35,6 +35,7 @@ import {
   updateIrrigationSchedule,
   deleteIrrigationSchedule,
 } from "../../api/irrigationApi";
+import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import { uiIrrigationTankToApi } from "../../utils/tankMapping";
 import TimeInput from "../common/TimeInput";
@@ -76,6 +77,8 @@ const getDisplayStatus = (startStatus, endStatus) => {
   }
   return "blank";
 };
+
+const MANUAL_ROW_BG = "#EEEEEE";
 
 const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
   const [isChanging, setIsChanging] = useState(false);
@@ -123,7 +126,11 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
         width: "100%",
         alignItems: "center",
         padding: "8px 0",
-        backgroundColor: isNew ? "#E3F2FD" : "transparent",
+        backgroundColor: isNew
+          ? "#E3F2FD"
+          : data.is_manual
+            ? MANUAL_ROW_BG
+            : "transparent",
         borderRadius: "8px",
         marginBottom: isNew ? "5px" : "0",
         border: isNew ? "1px dashed #2196F3" : "none",
@@ -311,10 +318,14 @@ const IrrigationManyStorage = () => {
   const [modalRows, setModalRows] = useState([]);
 
   // Fetch real-time tank data
-  const { data: tanksData = {}, isLoading: isLoadingTankStatus } = useQuery({
-    queryKey: ["irrigationTanksStatusLogs"],
+  const { data: tanksData = {}, isError: isTanksError, error: tanksError } =
+    useQuery({
+    queryKey: queryKeys.irrigationTanksStatusLogs(),
     queryFn: getIrrigationTanksStatusLogs,
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 10000,
+    networkMode: "always",
+    retry: 1,
+    placeholderData: (previousData) => previousData,
     select: (response) => {
       const data = Array.isArray(response) ? response : [];
       const sortedData = [...data].sort(
@@ -340,10 +351,17 @@ const IrrigationManyStorage = () => {
     },
   });
 
-  const { data: rawSchedules = [], isLoading: isLoadingSchedules } = useQuery({
-    queryKey: ["irrigationSchedules"],
+  const {
+    data: rawSchedules = [],
+    isError: isSchedulesError,
+    error: schedulesError,
+  } = useQuery({
+    queryKey: queryKeys.irrigationSchedules(),
     queryFn: getIrrigationSchedules,
-    refetchInterval: 60000, // Refetch every 60 seconds
+    refetchInterval: 60000,
+    networkMode: "always",
+    retry: 1,
+    placeholderData: (previousData) => previousData,
     select: (response) => {
       return Array.isArray(response) ? response : [];
     },
@@ -352,7 +370,7 @@ const IrrigationManyStorage = () => {
   const deleteIrrigationScheduleMutation = useMutation({
     mutationFn: deleteIrrigationSchedule,
     onSuccess: () => {
-      queryClient.invalidateQueries(["irrigationSchedules"]); // Refetch all schedules
+      queryClient.invalidateQueries({ queryKey: queryKeys.irrigationSchedules() });
       toast.success("ردیف با موفقیت حذف شد.");
     },
     onError: (error) => {
@@ -364,7 +382,7 @@ const IrrigationManyStorage = () => {
   const createIrrigationScheduleMutation = useMutation({
     mutationFn: createIrrigationSchedule,
     onSuccess: () => {
-      queryClient.invalidateQueries(["irrigationSchedules"]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.irrigationSchedules() });
       toast.success("برنامه آبیاری با موفقیت ایجاد شد.");
     },
     onError: (error) => {
@@ -376,7 +394,7 @@ const IrrigationManyStorage = () => {
   const updateIrrigationScheduleMutation = useMutation({
     mutationFn: ({ id, payload }) => updateIrrigationSchedule(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries(["irrigationSchedules"]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.irrigationSchedules() });
       toast.success("برنامه آبیاری با موفقیت به روز شد.");
     },
     onError: (error) => {
@@ -578,12 +596,31 @@ const IrrigationManyStorage = () => {
         width: "100%",
         height: "100%",
         display: "flex",
+        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         marginTop: "0px",
         gap: 0,
       }}
     >
+      {(isTanksError || isSchedulesError) && (
+        <Alert severity="warning" sx={{ width: "100%", maxWidth: 970, mb: 0.5 }}>
+          {isTanksError
+            ? `خطا در دریافت وضعیت مخازن${tanksError?.message ? `: ${tanksError.message}` : ""}`
+            : `خطا در دریافت برنامه آبیاری${schedulesError?.message ? `: ${schedulesError.message}` : ""}`}
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          maxWidth: "1030px",
+        }}
+      >
       <NavArrowButton
         direction="next"
         onClick={() => slide("right")}
@@ -604,7 +641,7 @@ const IrrigationManyStorage = () => {
         ref={scrollRef}
         sx={{
           width: "970px",
-          height: "590px",
+          height: "600px",
           display: "flex",
           flexDirection: "row-reverse",
           overflowX: "auto",
@@ -613,8 +650,8 @@ const IrrigationManyStorage = () => {
           scrollSnapType: "x mandatory",
           scrollBehavior: "smooth",
           padding: 0,
-          marginTop: "-10px",
-          marginBottom: "-10px",
+          marginTop: "-8px",
+          marginBottom: "-8px",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
           "&::-webkit-scrollbar": { display: "none" },
@@ -648,7 +685,7 @@ const IrrigationManyStorage = () => {
                 chartData={history}
                 onClickSettings={() => handleSettingsClick(id)}
                 irrigationScheduleItems={tankSchedules}
-                allSchedulesLoading={isLoadingSchedules}
+                allSchedulesLoading={false}
               />
             </Box>
           );
@@ -670,6 +707,8 @@ const IrrigationManyStorage = () => {
           zIndex: 10,
         }}
       />
+
+      </Box>
 
       {/* Settings Modal */}
       <Modal
@@ -886,7 +925,7 @@ const IrrigationManyStorage = () => {
                   ))}
                 </TransitionGroup>
 
-                {modalRows.length === 0 && !isLoadingSchedules && (
+                {modalRows.length === 0 && (
                   <Typography
                     fontFamily={"IRANSANS"}
                     fontSize={14}

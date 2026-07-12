@@ -135,6 +135,31 @@ export const updateFoodstuffPreparationProgramPh = async (data) => {
   return apiClient.post('/soluble/foodstuff-preparation-program-ph/', data);
 };
 
+export const getFoodstuffPreparationProgramInputWaterRatio = async () => {
+  const response = await apiClient.get(
+    "/soluble/foodstuff-preparation-program-input-water-ratio/",
+  );
+  const value =
+    response?.input_water_ratio ??
+    response?.data?.input_water_ratio ??
+    response;
+  return formatProgramDecimal(
+    typeof value === "object" ? value?.input_water_ratio : value,
+    0,
+  );
+};
+
+export const updateFoodstuffPreparationProgramInputWaterRatio = async (
+  input_water_ratio,
+) => {
+  const num = Number(input_water_ratio);
+  const normalized = Number.isNaN(num) ? 0 : parseFloat(num.toFixed(1));
+  return apiClient.post(
+    "/soluble/foodstuff-preparation-program-input-water-ratio/",
+    { input_water_ratio: normalized },
+  );
+};
+
 export const calibrationEc = async (data) => {
   return apiClient.post('/calibration/calibration-ec/', data);
 };

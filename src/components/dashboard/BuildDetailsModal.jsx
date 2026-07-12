@@ -17,12 +17,14 @@ import { getFoodstuffSchedule } from "../../api/solubleApi";
 import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits } from "../../utils/persianDigits";
 
+const MANUAL_ROW_BG = "#EEEEEE";
+
 const modalStyle = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 550,
+  width: 560,
   bgcolor: "background.paper",
   border: "0.5px solid #9F9F9F",
   borderRadius: "10px",
@@ -90,6 +92,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
       type: item.type,
       volume: item.volume,
       status: item.status,
+      isManual: item.is_manual === true,
     }));
   }, [scheduleData]);
 
@@ -163,8 +166,11 @@ const BuildDetailsModal = ({ open, onClose }) => {
                     gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", 
                     gap: 1,
                     width: "100%",
-                    mb: 1, // فاصله بین ردیف‌ها
+                    mb: 1,
                     alignItems: "center",
+                    backgroundColor: detail.isManual ? MANUAL_ROW_BG : "transparent",
+                    borderRadius: detail.isManual ? "8px" : 0,
+                    p: detail.isManual ? 0.3 : 0,
                   }}
                 >
 

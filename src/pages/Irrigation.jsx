@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import IrrigationManyStorage from "../components/Irrigation/IrrigationManyStorage";
 import IrrigationOneStorage from "../components/Irrigation/IrrigationOneStorage";
 import {
   Container,
-  CircularProgress,
-  Alert,
   Box,
   Modal,
   Typography,
@@ -14,11 +12,12 @@ import {
   MenuItem,
   Button,
 } from "@mui/material";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getIrrigationTanksStatusLogs,
-  makeManualIrrigation,
+  submitManualIrrigationWithSchedule,
 } from "../api/irrigationApi";
+import { queryKeys } from "../api/queryKeys";
 import IconTextButton from "../card/IconTextButton";
 import ModalCloseButton from "../components/common/ModalCloseButton";
 import assets from "../assets";
@@ -36,36 +35,40 @@ const inputStyle = {
 };
 
 const Irrigation = () => {
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["irrigationTanksStatusLogs"],
+  const queryClient = useQueryClient();
+
+  const { data } = useQuery({
+    queryKey: queryKeys.irrigationTanksStatusLogs(),
     queryFn: getIrrigationTanksStatusLogs,
     staleTime: 60 * 1000,
-    cacheTime: 5 * 60 * 1000,
-    select: (response) => {
-      return Array.isArray(response) ? response : [];
-    },
+    gcTime: 5 * 60 * 1000,
+    networkMode: "always",
+    retry: 1,
+    placeholderData: (previousData) => previousData,
   });
+
+  const logs = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   const [singleTankId, setSingleTankId] = useState(null);
   const [manualOpen, setManualOpen] = useState(false);
-  const [status, setStatus] = useState("start");
+  const [selectedZone, setSelectedZone] = useState(1);
   const [irrigationNumber, setIrrigationNumber] = useState("");
   const [volume, setVolume] = useState("");
   const [duration, setDuration] = useState("");
 
   useEffect(() => {
-    if (data) {
-      const uniqueTanks = new Set(data.map((log) => log.log_data?.number));
-      if (uniqueTanks.size === 1) {
-        setSingleTankId([...uniqueTanks][0]);
-      } else {
-        setSingleTankId(null);
-      }
+    const uniqueTanks = new Set(
+      logs.map((log) => log.log_data?.number).filter((num) => num != null),
+    );
+    if (uniqueTanks.size === 1) {
+      setSingleTankId([...uniqueTanks][0]);
+    } else {
+      setSingleTankId(null);
     }
-  }, [data]);
+  }, [logs]);
 
   const resetManualForm = () => {
-    setStatus("start");
+    setSelectedZone(1);
     setIrrigationNumber("");
     setVolume("");
     setDuration("");
@@ -83,57 +86,51 @@ const Irrigation = () => {
     setter(raw === "" ? "" : raw);
   };
 
-  const { mutate: makeManualIrrigationMutation, isPending: isSubmitting } =
+  const { mutate: submitManualIrrigationMutation, isPending: isSubmitting } =
     useMutation({
-      mutationFn: makeManualIrrigation,
+      mutationFn: submitManualIrrigationWithSchedule,
       onSuccess: () => {
-        toast.success(
-          status === "start" ? "آبیاری دستی شروع شد" : "آبیاری دستی پایان یافت",
-        );
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.irrigationSchedules(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.irrigationTanksStatusLogs(),
+        });
+        toast.success("آبیاری دستی شروع شد");
         handleManualClose();
       },
       onError: (err) => {
-        console.error("Error creating manual irrigation:", err);
+        console.error("Error during manual irrigation:", err);
         toast.error("خطا در آبیاری دستی");
       },
     });
 
   const handleManualSubmit = () => {
-    const payload = { status };
+    const manualPayload = { status: "start" };
 
     if (irrigationNumber !== "") {
       const num = parseInt(irrigationNumber, 10);
-      if (!Number.isNaN(num)) payload.irrigation_number = num;
+      if (!Number.isNaN(num)) manualPayload.irrigation_number = num;
     }
     if (volume !== "") {
       const vol = parseFloat(volume);
-      if (!Number.isNaN(vol)) payload.volume = vol;
+      if (!Number.isNaN(vol)) manualPayload.volume = vol;
     }
     if (duration !== "") {
       const dur = parseInt(duration, 10);
-      if (!Number.isNaN(dur)) payload.duration = dur;
+      if (!Number.isNaN(dur)) manualPayload.duration = dur;
     }
 
-    makeManualIrrigationMutation(payload);
+    submitManualIrrigationMutation({
+      manualPayload,
+      scheduleInput: {
+        status: "start",
+        zone: selectedZone,
+        volume,
+        duration,
+      },
+    });
   };
-
-  if (isLoading) {
-    return (
-      <Container sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <Alert severity="error">
-          خطا در بارگیری وضعیت مخازن: {error.message}
-        </Alert>
-      </Container>
-    );
-  }
 
   return (
     <Container
@@ -143,6 +140,11 @@ const Irrigation = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        width: "100%",
+        scale: 0.93,
+        maxWidth: "100vw",
+        overflow: "hidden",
+        pb: 1,
       }}
     >
       {singleTankId ? (
@@ -151,15 +153,26 @@ const Irrigation = () => {
         <IrrigationManyStorage />
       )}
 
-      <Box sx={{ mt: 0.5, mb: 1 , ml: 5}}>
+      <Box
+        sx={{
+          mt: 0,
+          mb: 2,
+          width: "100%",
+          maxWidth: 970,
+          display: "flex",
+          justifyContent: "center",
+          ml: 5,
+        }}
+      >
         <IconTextButton
           text="آبیاری دستی"
           icon={assets.svg.watericon}
+          height="35px"
           bgColor="#3fb07a"
           borderColor="#02ad5b"
           iconPosition="left"
           onClick={handleManualOpen}
-          width="240px"
+          width="200px"
           textColor="#fff"
         />
       </Box>
@@ -218,30 +231,29 @@ const Irrigation = () => {
                   lineHeight: "unset",
                 }}
               >
-                وضعیت
+                مخزن
               </InputLabel>
               <Select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                label="وضعیت"
+                value={selectedZone}
+                onChange={(e) => setSelectedZone(Number(e.target.value))}
+                label="مخزن"
                 sx={{
                   height: "40px",
                   fontFamily: "IRANSANS",
                   borderRadius: "10px",
                 }}
               >
-                <MenuItem value="start" sx={{ fontFamily: "IRANSANS" }}>
-                  شروع
-                </MenuItem>
-                <MenuItem value="finish" sx={{ fontFamily: "IRANSANS" }}>
-                  پایان
-                </MenuItem>
+                {[1, 2, 3, 4].map((num) => (
+                  <MenuItem key={num} value={num} sx={{ fontFamily: "IRANSANS" }}>
+                    {toPersianDigits(num)}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <input
               type="text"
               inputMode="numeric"
-              placeholder="شماره آبیاری"
+              placeholder="زون آبیاری"
               value={toPersianDigits(irrigationNumber)}
               onChange={handleNumberChange(setIrrigationNumber)}
               style={inputStyle}

@@ -10,6 +10,7 @@ import { makeStyles } from "@mui/styles";
 import assets from "../assets";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useIsSuperuser } from "../hooks/useIsSuperuser";
 import { UserAccountMenu, LoginNavButton } from "./UserAccountMenu";
 
 const LOGIN_REQUIRED_TOOLTIP = "ابتدا باید وارد شوید";
@@ -112,6 +113,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { isSuperuser, isLoading: isSuperuserLoading } = useIsSuperuser();
 
   const isActive = (path) => location.pathname.startsWith(path);
 
@@ -179,14 +181,16 @@ const Navbar = () => {
               isActive={isActive("/payesh")}
               classes={classes}
             />
-            <NavTab
-              to="/admin-settings"
-              label="تنظیمات"
-              icon={assets.svg.setting}
-              alt="setting"
-              isActive={isActive("/admin-settings")}
-              classes={classes}
-            />
+            {!isSuperuserLoading && isSuperuser && (
+              <NavTab
+                to="/admin-settings"
+                label="تنظیمات"
+                icon={assets.svg.setting}
+                alt="setting"
+                isActive={isActive("/admin-settings")}
+                classes={classes}
+              />
+            )}
             <Tooltip
               title={isAuthenticated ? "" : LOGIN_REQUIRED_TOOLTIP}
               arrow

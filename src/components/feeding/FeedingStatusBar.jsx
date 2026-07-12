@@ -28,6 +28,8 @@ import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import TimeInput from "../common/TimeInput";
 import ModalCloseButton from "../common/ModalCloseButton";
 
+const MANUAL_ROW_BG = "#EEEEEE";
+
 const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, isNew }) => {
   const [isChanging, setIsChanging] = useState(false);
 
@@ -48,7 +50,11 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, isNew }) => {
         justifyContent: "space-around",
         alignItems: "center",
         paddingBottom: "10px",
-        backgroundColor: isNew ? "#E3F2FD" : "transparent",
+        backgroundColor: isNew
+          ? "#E3F2FD"
+          : data.isManual
+            ? MANUAL_ROW_BG
+            : "transparent",
         borderRadius: "8px",
         paddingTop: isNew ? "10px" : "0",
         marginBottom: isNew ? "10px" : "0",
@@ -293,6 +299,7 @@ const FeedingStatusBar = () => {
       type: toPersianDigits(item.type),
       volume: toPersianDigits(item.volume),
       status: item.is_active ? "فعال" : "غیرفعال",
+      isManual: item.is_manual === true,
     }));
   }, [rawSchedule]);
 
@@ -344,6 +351,7 @@ const FeedingStatusBar = () => {
         volume: item.volume,
         isActive: item.is_active,
         status: item.status,
+        isManual: item.is_manual === true,
       }));
       setPlanRows(rows);
     } else {
@@ -465,6 +473,8 @@ const FeedingStatusBar = () => {
         justifyContent: "space-between",
         width: "98%",
         padding: "8px 0",
+        backgroundColor: row.isManual ? MANUAL_ROW_BG : "transparent",
+        borderRadius: row.isManual ? "6px" : 0,
         borderBottom:
           index < scheduleData.length - 1 ? "1px solid #E0E0E0" : "none",
         pointerEvents: "none", // جلوگیری از تداخل متن با اسکرول

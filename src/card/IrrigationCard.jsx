@@ -9,6 +9,8 @@ import ModalCloseButton from "../components/common/ModalCloseButton";
 import { uiIrrigationTankToApi, apiIrrigationTankToUi } from "../utils/tankMapping";
 import { toPersianDigits } from "../utils/persianDigits";
 
+const MANUAL_ROW_BG = "#EEEEEE";
+
 const IrrigationCard = ({
   storageNumber,
   storageCapacity,
@@ -349,7 +351,7 @@ const IrrigationCard = ({
             overflowX: "hidden",
             display: "flex",
             flexDirection: "column",
-            gap: 1,
+            gap: 0.5,
             WebkitOverflowScrolling: "touch",
             touchAction: "pan-y",
             overscrollBehavior: "contain",
@@ -376,6 +378,9 @@ const IrrigationCard = ({
                       alignItems: "center",
                       flexShrink: 0,
                       scale: "0.9",
+                      backgroundColor: item.is_manual ? MANUAL_ROW_BG : "transparent",
+                      borderRadius: item.is_manual ? "8px" : 0,
+                      px: item.is_manual ? 0.5 : 0,
                     }}
                   >
                     <div
@@ -396,7 +401,7 @@ const IrrigationCard = ({
                         sx={{
                           width: "65px",
                           height: "32px",
-                          border: "0.5px solid #9F9F9F",
+                          border: "0.3px solid #9F9F9F",
                           borderRadius: "10px",
                           display: "flex",
                           alignItems: "center",

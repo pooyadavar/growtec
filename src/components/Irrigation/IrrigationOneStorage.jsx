@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Typography, Box, Container, Divider, Modal, CircularProgress, Alert } from "@mui/material";
+import { Typography, Box, Container, Divider, Modal, Alert } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکمه
 import assets from "../../assets";
 import { Scale } from "@mui/icons-material";
@@ -10,6 +10,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import { AgCharts } from "ag-charts-react";
 import { useQuery } from "@tanstack/react-query";
 import { getIrrigationTanksStatusLogs } from "../../api/irrigationApi";
+import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits } from "../../utils/persianDigits";
 import { styled } from "@mui/system";
 import Calculator from "../tools/Calculator";
@@ -42,13 +43,16 @@ const StatusBox = styled(Box)(({ theme, status }) => ({
 }));
 
 const IrrigationOneStorage = ({ storageNumber }) => {
-  const { data: irrigationTankStatusLogs, isLoading, isError, error } = useQuery({
-    queryKey: ["irrigationTanksStatusLogs", storageNumber],
+  const { data: irrigationTankStatusLogs, isError, error } = useQuery({
+    queryKey: [...queryKeys.irrigationTanksStatusLogs(), storageNumber],
     queryFn: getIrrigationTanksStatusLogs,
-    enabled: !!storageNumber, // Only fetch if storageNumber is available
-    refetchInterval: 10000, // Refetch every 10 seconds
+    enabled: !!storageNumber,
+    refetchInterval: 10000,
     staleTime: 10000,
-    cacheTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    networkMode: "always",
+    retry: 1,
+    placeholderData: (previousData) => previousData,
     select: (response) => {
       const allLogs = Array.isArray(response) ? response : [];
 
@@ -235,22 +239,6 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     },
   ];
 
-  if (isLoading) {
-    return (
-      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
-        <Alert severity="error">خطا در بارگیری وضعیت مخزن: {error.message}</Alert>
-      </Container>
-    );
-  }
-
   return (
     <Container
       sx={{
@@ -268,6 +256,12 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         transform: "scale(0.88)",
       }}
     >
+      {isError && (
+        <Alert severity="warning" sx={{ width: "95%" }}>
+          خطا در بارگیری وضعیت مخزن. نمایش آخرین داده موجود.
+          {error?.message ? ` (${error.message})` : ""}
+        </Alert>
+      )}
       {/* بخش بالای کارت: حجم مخزن */}
       <Box
         className="irrigation-card-header"

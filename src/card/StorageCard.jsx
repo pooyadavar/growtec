@@ -7,6 +7,8 @@ import { getIrrigationSchedules } from "../api/irrigationApi";
 import { queryKeys } from "../api/queryKeys";
 import { toPersianDigits } from "../utils/persianDigits";
 
+const MANUAL_ROW_BG = "#EEEEEE";
+
 const style = {
   position: "absolute",
   top: "50%",
@@ -346,9 +348,14 @@ const StorageCard = ({
                       alignItems: "center",
                       direction: "rtl",
                       borderRadius: "6px",
-                      // یک سطر در میان خاکستری روشن (Zebra Striping)
-                      backgroundColor: index % 2 === 0 ? "#FFFFFF" : "#F4F5F7",
-                      "&:hover": { backgroundColor: "#EAF0F6" }, // افکت هاور یکپارچه
+                      backgroundColor: item.is_manual
+                        ? MANUAL_ROW_BG
+                        : index % 2 === 0
+                          ? "#FFFFFF"
+                          : "#F4F5F7",
+                      "&:hover": {
+                        backgroundColor: item.is_manual ? "#E4E4E4" : "#EAF0F6",
+                      },
                     }}
                   >
                     <Typography

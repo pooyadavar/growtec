@@ -11,7 +11,7 @@ import PayeshTimePlansPage from "./pages/PayeshTimePlansPage"; // Import PayeshT
 import AdminSetting from "./components/admin/AdminSetting"; // Import AdminSetting
 import Login from "./pages/Login"; // Import Login page
 import CalculatorPreviewPage from "./pages/CalculatorPreviewPage";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute, { SuperuserRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from 'react-hot-toast';
 
@@ -60,9 +60,9 @@ function App() {
           <Route
             path="/admin-settings"
             element={
-              <ProtectedRoute>
+              <SuperuserRoute>
                 <AdminSetting />
-              </ProtectedRoute>
+              </SuperuserRoute>
             }
           />
           <Route path="/login" element={<Login />} />
