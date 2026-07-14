@@ -526,7 +526,7 @@ const FeedingStatusBar = () => {
     textAlign: "center",
   };
 
-  if (isLoadingSchedule) {
+  if (isLoadingSchedule && !rawSchedule.length) {
     return (
       <Paper
         elevation={3}
@@ -546,7 +546,7 @@ const FeedingStatusBar = () => {
     );
   }
 
-  if (isErrorSchedule) {
+  if (isErrorSchedule && !rawSchedule.length) {
     return (
       <Paper
         elevation={3}

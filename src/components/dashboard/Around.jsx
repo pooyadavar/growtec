@@ -44,7 +44,7 @@ const Around = () => {
         refetchInterval: 5000,
       });
 
-  const fetchFailed = isError || isRefetchError;
+  const fetchFailed = (isError || isRefetchError) && !outsideData;
   const initialLoading = isLoading && !outsideData;
 
   if (initialLoading) {

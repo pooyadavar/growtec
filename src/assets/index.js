@@ -1,5 +1,3 @@
-import { Person } from "@mui/icons-material";
-
 const assets = {
   svg: {
     feeding: require("./svg/Feeding.svg").default,
@@ -87,7 +85,6 @@ const assets = {
     padAN: require("./image/ICONS/پد سلولزی.png"),
     pardeAn: require("./image/ICONS/پرده شید.png"),
     daricheAn: require("./image/ICONS/دریچه سقفی.png"),
-    mehPashAn: require("./image/ICONS/مه پاش.png"),
     fan2: require("./image/ICONS/Fan2/fan.png"),
     bokhari: require("./image/ICONS/بخاری/blaze.png"),
     pad: require("./image/ICONS/پد سلولزی/mesh.png"),

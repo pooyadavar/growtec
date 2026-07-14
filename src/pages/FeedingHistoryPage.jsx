@@ -93,7 +93,7 @@ const FeedingHistoryPage = ({ onClose, isModal = false }) => {
     navigate(-1);
   };
 
-  if (isLoading) {
+  if (isLoading && !historyData.length) {
     return (
       <Container
         sx={{
@@ -111,7 +111,7 @@ const FeedingHistoryPage = ({ onClose, isModal = false }) => {
     );
   }
 
-  if (isError) {
+  if (isError && !historyData.length) {
     return (
       <Container
         sx={{

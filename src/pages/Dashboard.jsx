@@ -43,9 +43,11 @@ const Dashboard = () => {
     },
   });
 
-  const mixTankFetchFailed = isMixTankError || isMixTankRefetchError;
+  const mixTankFetchFailed =
+    (isMixTankError || isMixTankRefetchError) && !mixTankData;
   const mixTankInitialLoading = isMixTankLoading && !mixTankData;
-  const storagesFetchFailed = isStoragesError || isStoragesRefetchError;
+  const storagesFetchFailed =
+    (isStoragesError || isStoragesRefetchError) && !storagesList?.length;
   const storagesInitialLoading = isStoragesLoading && !storagesList?.length;
 
   return (

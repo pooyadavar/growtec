@@ -7,11 +7,17 @@ import {
   Tooltip,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import assets from "../assets";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useIsSuperuser } from "../hooks/useIsSuperuser";
 import { UserAccountMenu, LoginNavButton } from "./UserAccountMenu";
+import logoType from "../assets/svg/Logotype.svg";
+import homeIcon from "../assets/svg/Home-icon.svg";
+import feedingIcon from "../assets/svg/Feeding.svg";
+import waterIcon from "../assets/svg/Water 1.svg";
+import monitoringIcon from "../assets/svg/Monitoring 1.svg";
+import settingIcon from "../assets/svg/Setting.svg";
+import historyIcon from "../assets/svg/History.svg";
 
 const LOGIN_REQUIRED_TOOLTIP = "ابتدا باید وارد شوید";
 
@@ -133,7 +139,7 @@ const Navbar = () => {
         <Toolbar className={classes.toolbar}>
           <div className={classes.logoSection}>
             <img
-              src={assets.svg.logoType}
+              src={logoType}
               alt="Growtec"
               style={{ scale: "1.3" }}
             />
@@ -151,7 +157,7 @@ const Navbar = () => {
             <NavTab
               to="/Home"
               label="خانه"
-              icon={assets.svg.homeIcon}
+              icon={homeIcon}
               alt="home"
               isActive={isActive("/Home")}
               requiresAuth={false}
@@ -160,7 +166,7 @@ const Navbar = () => {
             <NavTab
               to="/Feeding"
               label="تغذیه"
-              icon={assets.svg.feeding}
+              icon={feedingIcon}
               alt="feeding"
               isActive={isActive("/Feeding")}
               classes={classes}
@@ -168,7 +174,7 @@ const Navbar = () => {
             <NavTab
               to="/irrigation"
               label="آبیاری"
-              icon={assets.svg.water}
+              icon={waterIcon}
               alt="water"
               isActive={isActive("/irrigation")}
               classes={classes}
@@ -176,7 +182,7 @@ const Navbar = () => {
             <NavTab
               to="/payesh"
               label="اقلیم"
-              icon={assets.svg.monitoring}
+              icon={monitoringIcon}
               alt="Growtec"
               isActive={isActive("/payesh")}
               classes={classes}
@@ -185,7 +191,7 @@ const Navbar = () => {
               <NavTab
                 to="/admin-settings"
                 label="تنظیمات"
-                icon={assets.svg.setting}
+                icon={settingIcon}
                 alt="setting"
                 isActive={isActive("/admin-settings")}
                 classes={classes}
@@ -208,7 +214,7 @@ const Navbar = () => {
                   }}
                 >
                   <img
-                    src={assets.svg.history}
+                    src={historyIcon}
                     alt="history"
                     className={classes.iconImage}
                   />

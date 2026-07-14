@@ -78,7 +78,7 @@ const Eghlim = () => {
     refetchInterval: 5000,
   });
 
-  const fetchFailed = isError || isRefetchError;
+  const fetchFailed = (isError || isRefetchError) && !data;
   const initialLoading = isLoading && !data;
 
   const zones = React.useMemo(() => {

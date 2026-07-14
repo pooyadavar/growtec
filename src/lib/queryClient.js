@@ -7,7 +7,13 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 30,
       networkMode: "offlineFirst",
       refetchOnReconnect: true,
-      retry: 2,
+      refetchOnWindowFocus: false,
+      placeholderData: (previousData) => previousData,
+      retry: (failureCount, error) => {
+        const status = error?.response?.status;
+        if (status >= 500) return failureCount < 3;
+        return failureCount < 1;
+      },
     },
     mutations: {
       networkMode: "offlineFirst",

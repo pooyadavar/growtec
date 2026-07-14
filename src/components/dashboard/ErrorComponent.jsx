@@ -137,7 +137,7 @@ const ErrorComponent = () => {
     overflow: "hidden",
   };
 
-  if (isErrorLogsLoading) {
+  if (isErrorLogsLoading && !errorLogs?.length) {
     return (
       <Container
         sx={{
@@ -156,7 +156,7 @@ const ErrorComponent = () => {
     );
   }
 
-  if (isErrorLogsError) {
+  if (isErrorLogsError && !errorLogs?.length) {
     return (
       <Container
         sx={{

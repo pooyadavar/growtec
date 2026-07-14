@@ -12,9 +12,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import assets from "../assets";
 import { useAuth } from "../context/AuthContext";
 import ModalCloseButton from "./common/ModalCloseButton";
+import lockIcon from "../assets/svg/Locked 1.svg";
 
 const getAvatarLetter = (username) => {
   if (!username) return "?";
@@ -65,7 +65,7 @@ const UserAccountMenu = ({ classes }) => {
         }}
       >
         <img
-          src={assets.svg.lock}
+          src={lockIcon}
           alt="account"
           className={classes.iconImage}
         />
@@ -233,7 +233,7 @@ const LoginNavButton = ({ isActive, classes, onClick }) => (
       }),
     }}
   >
-    <img src={assets.svg.lock} alt="Sign" className={classes.iconImage} />
+    <img src={lockIcon} alt="Sign" className={classes.iconImage} />
     ورود
   </Button>
 );

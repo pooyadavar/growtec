@@ -8,6 +8,8 @@ const MixTankProcessStatus = ({ mixTankData, iconBoxSize = 80 }) => {
     [mixTankData],
   );
 
+  const isUnknown = processStatus.title === "نامشخص";
+
   const showFooter =
     processStatus.footerLabel || processStatus.footerValue;
 
@@ -23,6 +25,7 @@ const MixTankProcessStatus = ({ mixTankData, iconBoxSize = 80 }) => {
         display: "flex",
         flexDirection: "column",
         width: "100%",
+        visibility: isUnknown ? "hidden" : "visible",
       }}
     >
       <Box
