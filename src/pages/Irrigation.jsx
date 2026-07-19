@@ -20,7 +20,7 @@ import {
 import { queryKeys } from "../api/queryKeys";
 import IconTextButton from "../card/IconTextButton";
 import ModalCloseButton from "../components/common/ModalCloseButton";
-import assets from "../assets";
+import svgWatericonAsset from "../assets/svg/watericon.svg";
 import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
 
@@ -166,7 +166,7 @@ const Irrigation = () => {
       >
         <IconTextButton
           text="آبیاری دستی"
-          icon={assets.svg.watericon}
+          icon={svgWatericonAsset}
           height="35px"
           bgColor="#3fb07a"
           borderColor="#02ad5b"

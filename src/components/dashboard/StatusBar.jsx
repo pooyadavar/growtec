@@ -1,7 +1,6 @@
 import React from "react";
 import { Typography } from "@mui/material";
 import Container from "@mui/material/Container";
-import assets from "../../assets";
 import { formatMixTankInteger } from "../../utils/mixTankStockReport";
 import { getRangeBarStatusImage } from "../../utils/mixTankStatus";
 

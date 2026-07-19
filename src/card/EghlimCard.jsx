@@ -1,5 +1,35 @@
 import { Box, Typography } from "@mui/material";
-import assets from "../assets";
+import imgFan1GreenAnAsset from "../assets/image/ICONS/fan1Green.png";
+import imgColorGreenFan1Asset from "../assets/image/COLOR-ICONS/green-icons/fan1.png";
+import imgFan1AnAsset from "../assets/image/ICONS/fan1.png";
+import imgFan1Asset from "../assets/image/ICONS/Fan/fan3.png";
+import imgPadGreenAnAsset from "../assets/image/ICONS/padGreen.png";
+import imgColorGreenPadAsset from "../assets/image/COLOR-ICONS/green-icons/پد سلولزی.png";
+import imgPadANAsset from "../assets/image/ICONS/پد سلولزی.png";
+import imgPadAsset from "../assets/image/ICONS/پد سلولزی/mesh.png";
+import imgFan2GreenAnAsset from "../assets/image/ICONS/fan2Green.png";
+import imgColorGreenFan2Asset from "../assets/image/COLOR-ICONS/green-icons/fan2.png";
+import imgFan2AnAsset from "../assets/image/ICONS/fan2.png";
+import imgFan2Asset from "../assets/image/ICONS/Fan2/fan.png";
+import imgDaricheGreenAnAsset from "../assets/image/ICONS/daricheGreen.png";
+import imgColorGreenDaricheAsset from "../assets/image/COLOR-ICONS/green-icons/دریچه سقفی.png";
+import imgDaricheAnAsset from "../assets/image/ICONS/دریچه سقفی.png";
+import imgDaricheAsset from "../assets/image/ICONS/دریچه سقفی/window5.png";
+import imgMehPashGreenAnAsset from "../assets/image/ICONS/mehpashGreen.png";
+import imgColorGreenMehPashAsset from "../assets/image/COLOR-ICONS/green-icons/مه پاش.png";
+import imgMehPashAnAsset from "../assets/image/ICONS/مه پاش.png";
+import imgMehPashAsset from "../assets/image/ICONS/مه پاش/sprinkler4.png";
+import imgBokhariGreenAnAsset from "../assets/image/ICONS/bokhariGreen.png";
+import imgColorGreenBokhariAsset from "../assets/image/COLOR-ICONS/green-icons/بخاری.png";
+import imgBokhariAnAsset from "../assets/image/ICONS/بخاری.png";
+import imgBokhariAsset from "../assets/image/ICONS/بخاری/blaze.png";
+import imgPardeGreenAnAsset from "../assets/image/ICONS/pardehGreen.png";
+import imgColorGreenPardeAsset from "../assets/image/COLOR-ICONS/green-icons/پرده شید.png";
+import imgPardeAnAsset from "../assets/image/ICONS/پرده شید.png";
+import imgPardeAsset from "../assets/image/ICONS/پرده شید/curtain.png";
+import svgInBlueAsset from "../assets/svg/inBlue.svg";
+import svgInGreenAsset from "../assets/svg/inGreen.svg";
+import svgInRedAsset from "../assets/svg/inRed.svg";
 import { useQuery } from "@tanstack/react-query";
 import { getOperatorMode } from "../api/climateApi";
 import { queryKeys } from "../api/queryKeys";
@@ -91,10 +121,10 @@ const EghlimCard = ({
           <img
             src={getDeviceIcon(
               fan1,
-              assets.img.fan1GreenAn,
-              assets.img.colorGreen.fan1,
-              assets.img.fan1An,
-              assets.img.fan1,
+              imgFan1GreenAnAsset,
+              imgColorGreenFan1Asset,
+              imgFan1AnAsset,
+              imgFan1Asset,
             )}
             alt="fan1"
             width={"24px"}
@@ -102,10 +132,10 @@ const EghlimCard = ({
           <img
             src={getDeviceIcon(
               pad,
-              assets.img.padGreenAn,
-              assets.img.colorGreen.pad,
-              assets.img.padAN,
-              assets.img.pad,
+              imgPadGreenAnAsset,
+              imgColorGreenPadAsset,
+              imgPadANAsset,
+              imgPadAsset,
             )}
             alt="pad"
             width={"24px"}
@@ -113,10 +143,10 @@ const EghlimCard = ({
           <img
             src={getDeviceIcon(
               fan2,
-              assets.img.fan2GreenAn,
-              assets.img.colorGreen.fan2,
-              assets.img.fan2An,
-              assets.img.fan2,
+              imgFan2GreenAnAsset,
+              imgColorGreenFan2Asset,
+              imgFan2AnAsset,
+              imgFan2Asset,
             )}
             alt="fan2"
             width={"24px"}
@@ -124,10 +154,10 @@ const EghlimCard = ({
           <img
             src={getDeviceIcon(
               dariche,
-              assets.img.daricheGreenAn,
-              assets.img.colorGreen.dariche,
-              assets.img.daricheAn,
-              assets.img.dariche,
+              imgDaricheGreenAnAsset,
+              imgColorGreenDaricheAsset,
+              imgDaricheAnAsset,
+              imgDaricheAsset,
             )}
             alt="dariche"
             width={"24px"}
@@ -135,10 +165,10 @@ const EghlimCard = ({
           <img
             src={getDeviceIcon(
               mehpash,
-              assets.img.mehPashGreenAn,
-              assets.img.colorGreen.mehPash,
-              assets.img.mehPashAn,
-              assets.img.mehPash,
+              imgMehPashGreenAnAsset,
+              imgColorGreenMehPashAsset,
+              imgMehPashAnAsset,
+              imgMehPashAsset,
             )}
             alt="mehpash"
             width={"24px"}
@@ -146,10 +176,10 @@ const EghlimCard = ({
           <img
             src={getDeviceIcon(
               bokhari,
-              assets.img.bokhariGreenAn,
-              assets.img.colorGreen.bokhari,
-              assets.img.bokhariAn,
-              assets.img.bokhari,
+              imgBokhariGreenAnAsset,
+              imgColorGreenBokhariAsset,
+              imgBokhariAnAsset,
+              imgBokhariAsset,
             )}
             alt="bokhari"
             width={"24px"}
@@ -157,10 +187,10 @@ const EghlimCard = ({
           <img
             src={getDeviceIcon(
               parde,
-              assets.img.pardeGreenAn,
-              assets.img.colorGreen.parde,
-              assets.img.pardeAn,
-              assets.img.parde,
+              imgPardeGreenAnAsset,
+              imgColorGreenPardeAsset,
+              imgPardeAnAsset,
+              imgPardeAsset,
             )}
             alt="parde"
             width={"24px"}
@@ -180,9 +210,9 @@ const EghlimCard = ({
               alignItems: "center",
             }}
           >
-            {temp < 33 && <img src={assets.svg.inBlue} alt="" />}
-            {33 <= temp && temp < 66 && <img src={assets.svg.inGreen} alt="" />}
-            {66 <= temp && <img src={assets.svg.inRed} alt="" />}
+            {temp < 33 && <img src={svgInBlueAsset} alt="" />}
+            {33 <= temp && temp < 66 && <img src={svgInGreenAsset} alt="" />}
+            {66 <= temp && <img src={svgInRedAsset} alt="" />}
             <div
               style={{
                 display: "flex",
@@ -222,9 +252,9 @@ const EghlimCard = ({
               alignItems: "center",
             }}
           >
-            {hum < 33 && <img src={assets.svg.inBlue} alt="" />}
-            {33 <= hum && hum < 66 && <img src={assets.svg.inGreen} alt="" />}
-            {66 <= hum && <img src={assets.svg.inRed} alt="" />}
+            {hum < 33 && <img src={svgInBlueAsset} alt="" />}
+            {33 <= hum && hum < 66 && <img src={svgInGreenAsset} alt="" />}
+            {66 <= hum && <img src={svgInRedAsset} alt="" />}
             <div
               style={{
                 display: "flex",

@@ -4,7 +4,7 @@ import ErrorComponent from "../components/dashboard/ErrorComponent";
 import PhEcControlCard from "../components/dashboard/Mixer";
 import StatusBar from "../components/dashboard/StatusBar";
 import Storages from "../components/dashboard/Storages";
-import { Container, Typography, CircularProgress, Alert, Box, Paper } from "@mui/material";
+import { Container, Typography, CircularProgress, Alert, Paper } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus, getIrrigationTanksStatus } from "../api/dashboardApi";
 import { queryKeys } from "../api/queryKeys";

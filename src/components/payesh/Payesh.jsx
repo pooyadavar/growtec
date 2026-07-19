@@ -1,16 +1,46 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Box,
-  Button,
-  IconButton,
-  Select,
-  MenuItem,
   Modal,
-  TextField,
   Typography,
   Container,
 } from "@mui/material";
-import assets from "../../assets";
+import imgFan1GreenAnAsset from "../../assets/image/ICONS/fan1Green.png";
+import imgColorGreenFan1Asset from "../../assets/image/COLOR-ICONS/green-icons/fan1.png";
+import imgFan1AnAsset from "../../assets/image/ICONS/fan1.png";
+import imgFan1Asset from "../../assets/image/ICONS/Fan/fan3.png";
+import imgFan2GreenAnAsset from "../../assets/image/ICONS/fan2Green.png";
+import imgColorGreenFan2Asset from "../../assets/image/COLOR-ICONS/green-icons/fan2.png";
+import imgFan2AnAsset from "../../assets/image/ICONS/fan2.png";
+import imgFan2Asset from "../../assets/image/ICONS/Fan2/fan.png";
+import imgBokhariGreenAnAsset from "../../assets/image/ICONS/bokhariGreen.png";
+import imgColorGreenBokhariAsset from "../../assets/image/COLOR-ICONS/green-icons/بخاری.png";
+import imgBokhariAnAsset from "../../assets/image/ICONS/بخاری.png";
+import imgBokhariAsset from "../../assets/image/ICONS/بخاری/blaze.png";
+import imgPadGreenAnAsset from "../../assets/image/ICONS/padGreen.png";
+import imgColorGreenPadAsset from "../../assets/image/COLOR-ICONS/green-icons/پد سلولزی.png";
+import imgPadANAsset from "../../assets/image/ICONS/پد سلولزی.png";
+import imgPadAsset from "../../assets/image/ICONS/پد سلولزی/mesh.png";
+import imgPardeGreenAnAsset from "../../assets/image/ICONS/pardehGreen.png";
+import imgColorGreenPardeAsset from "../../assets/image/COLOR-ICONS/green-icons/پرده شید.png";
+import imgPardeAnAsset from "../../assets/image/ICONS/پرده شید.png";
+import imgPardeAsset from "../../assets/image/ICONS/پرده شید/curtain.png";
+import imgDaricheGreenAnAsset from "../../assets/image/ICONS/daricheGreen.png";
+import imgColorGreenDaricheAsset from "../../assets/image/COLOR-ICONS/green-icons/دریچه سقفی.png";
+import imgDaricheAnAsset from "../../assets/image/ICONS/دریچه سقفی.png";
+import imgDaricheAsset from "../../assets/image/ICONS/دریچه سقفی/window5.png";
+import imgMehPashGreenAnAsset from "../../assets/image/ICONS/mehpashGreen.png";
+import imgColorGreenMehPashAsset from "../../assets/image/COLOR-ICONS/green-icons/مه پاش.png";
+import imgMehPashAnAsset from "../../assets/image/ICONS/مه پاش.png";
+import imgMehPashAsset from "../../assets/image/ICONS/مه پاش/sprinkler4.png";
+import svgAutoAsset from "../../assets/svg/auto.svg";
+import svgButtonOnAsset from "../../assets/svg/buttonOn.svg";
+import svgButtonOffAsset from "../../assets/svg/buttonOff.svg";
+import svgNextBtnAsset from "../../assets/svg/nextBTN.svg";
+import svgPrevBtnAsset from "../../assets/svg/prevBTN.svg";
+import svgSetting2Asset from "../../assets/svg/setting2.svg";
+import svgWarningAsset from "../../assets/svg/warning.svg";
+import svgScheduleAsset from "../../assets/svg/schedule.svg";
 import { AgCharts } from "ag-charts-react";
 import PayeshSetting from "./PayeshSetting";
 import ModalCloseButton from "../common/ModalCloseButton";
@@ -30,7 +60,6 @@ import { toPersianDigits } from "../../utils/persianDigits";
 import {
   timeToMinutes,
   downsampleSeriesByTime,
-  shouldShowAdaptiveTimeLabel,
   payeshChartTheme,
 } from "../../utils/climateChart";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -440,57 +469,57 @@ const Payesh = () => {
   const getExhaustFanIcon = () => {
     const isAnyOn = Object.values(exhaustFanStates).some((s) => s);
     if (!activity) {
-      return isAnyOn ? assets.img.fan1GreenAn : assets.img.colorGreen.fan1;
+      return isAnyOn ? imgFan1GreenAnAsset : imgColorGreenFan1Asset;
     }
-    return isAnyOn ? assets.img.fan1An : assets.img.fan1;
+    return isAnyOn ? imgFan1AnAsset : imgFan1Asset;
   };
 
   const getCirculationFanIcon = () => {
     const isAnyOn = Object.values(circulationFanStates).some((s) => s);
     if (!activity) {
-      return isAnyOn ? assets.img.fan2GreenAn : assets.img.colorGreen.fan2;
+      return isAnyOn ? imgFan2GreenAnAsset : imgColorGreenFan2Asset;
     }
-    return isAnyOn ? assets.img.fan2An : assets.img.fan2;
+    return isAnyOn ? imgFan2AnAsset : imgFan2Asset;
   };
 
   const getHeaterIcon = () => {
     const isAnyOn = Object.values(heaterStates).some((s) => s);
     if (!activity) {
-      return isAnyOn ? assets.img.bokhariGreenAn : assets.img.colorGreen.bokhari;
+      return isAnyOn ? imgBokhariGreenAnAsset : imgColorGreenBokhariAsset;
     }
-    return isAnyOn ? assets.img.bokhariAn : assets.img.bokhari;
+    return isAnyOn ? imgBokhariAnAsset : imgBokhariAsset;
   };
 
   const getPadIcon = () => {
     const isAnyOn = padPumpState;
     if (!activity) {
-      return isAnyOn ? assets.img.padGreenAn : assets.img.colorGreen.pad;
+      return isAnyOn ? imgPadGreenAnAsset : imgColorGreenPadAsset;
     }
-    return isAnyOn ? assets.img.padAN : assets.img.pad;
+    return isAnyOn ? imgPadANAsset : imgPadAsset;
   };
 
   const getShadeIcon = () => {
     const isOpen = shadeStates.opening;
     if (!activity) {
-      return isOpen ? assets.img.pardeGreenAn : assets.img.colorGreen.parde;
+      return isOpen ? imgPardeGreenAnAsset : imgColorGreenPardeAsset;
     }
-    return isOpen ? assets.img.pardeAn : assets.img.parde;
+    return isOpen ? imgPardeAnAsset : imgPardeAsset;
   };
 
   const getHatchIcon = () => {
     const isOpen = hatchStates.opening;
     if (!activity) {
-      return isOpen ? assets.img.daricheGreenAn : assets.img.colorGreen.dariche;
+      return isOpen ? imgDaricheGreenAnAsset : imgColorGreenDaricheAsset;
     }
-    return isOpen ? assets.img.daricheAn : assets.img.dariche;
+    return isOpen ? imgDaricheAnAsset : imgDaricheAsset;
   };
 
   const getFoggerIcon = () => {
     const isAnyOn = foggerState;
     if (!activity) {
-      return isAnyOn ? assets.img.mehPashGreenAn : assets.img.colorGreen.mehPash;
+      return isAnyOn ? imgMehPashGreenAnAsset : imgColorGreenMehPashAsset;
     }
-    return isAnyOn ? assets.img.mehPashAn : assets.img.mehPash;
+    return isAnyOn ? imgMehPashAnAsset : imgMehPashAsset;
   };
 
   const { data: temperaturePartStatus = "" } = useQuery({
@@ -572,8 +601,6 @@ const Payesh = () => {
     () => climateChartData?.humData || [],
     [climateChartData],
   );
-  const lastTimeMinutes = climateChartData?.lastTimeMinutes ?? 0;
-
   const lineSeriesBase = useMemo(
     () => [
       { yKey: "sensor1", yName: "سنسور ۱", stroke: "#FF6B6B" },
@@ -781,14 +808,14 @@ const Payesh = () => {
                 paddingY: "6px",
               }}
             >
-              <img src={assets.svg.auto} alt="" />
+              <img src={svgAutoAsset} alt="" />
               <img
                 onClick={() => {
                   changOnAndOff(); // first function
                   //sendBoolean(); // second function
                 }}
                 className={`on-and-off-btn ${isChanging ? "changing" : ""}`}
-                src={operatorMode ? assets.svg.buttonOn : assets.svg.buttonOff}
+                src={operatorMode ? svgButtonOnAsset : svgButtonOffAsset}
                 alt=""
               />
             </Box>
@@ -842,7 +869,7 @@ const Payesh = () => {
               }}
             >
               <img
-                src={assets.svg.nextBtn}
+                src={svgNextBtnAsset}
                 alt=""
                 className="button"
                 onClick={() => {
@@ -898,7 +925,7 @@ const Payesh = () => {
                 </Typography>
               </Box>
               <img
-                src={assets.svg.prevBtn}
+                src={svgPrevBtnAsset}
                 alt=""
                 className="button"
                 onClick={() => {
@@ -1081,7 +1108,7 @@ const Payesh = () => {
             }}
           >
             <IconTextButton
-              icon={assets.svg.setting2}
+              icon={svgSetting2Asset}
               text="تنظیمات"
               onClick={handleOpen}
               bgColor="#6CCDB0"
@@ -1103,13 +1130,13 @@ const Payesh = () => {
               }}
               onClick={handleOpen}
             >
-              <img src={assets.svg.setting2} alt="" />
+              <img src={svgSetting2Asset} alt="" />
               <Typography fontFamily={"IRANSANS"} fontSize={19} color="#000000">
                 تنظیمات
               </Typography>
             </Button> */}
             <IconTextButton
-              icon={assets.svg.warning}
+              icon={svgWarningAsset}
               text="تداخلات عملگرها"
               bgColor="#FFCB82"
               textColor="#000000"
@@ -1130,14 +1157,14 @@ const Payesh = () => {
                 alignItems: "center",
               }}
             >
-              <img src={assets.svg.warning} alt="" />
+              <img src={svgWarningAsset} alt="" />
               <Typography fontFamily={"IRANSANS"} fontSize={19} color="#000000">
                 تداخلات عملگرها
               </Typography>
             </Button> */}
 
             <IconTextButton
-              icon={assets.svg.schedule}
+              icon={svgScheduleAsset}
               text="برنامه زمانی عملگرها"
               bgColor="#FFCB82"
               textColor="#000000"
@@ -1158,7 +1185,7 @@ const Payesh = () => {
                 color: "#000000",
               }}
             >
-              <img src={assets.svg.schedule} alt="" />
+              <img src={svgScheduleAsset} alt="" />
               <Typography fontFamily={"IRANSANS"} fontSize={19} color="#000000">
                 برنامه زمانی عملگرها
               </Typography>
@@ -1235,8 +1262,8 @@ const Payesh = () => {
                 <img
                   src={
                     exhaustFanStates[`fan${num}`]
-                      ? assets.svg.buttonOn
-                      : assets.svg.buttonOff
+                      ? svgButtonOnAsset
+                      : svgButtonOffAsset
                   }
                   alt="toggle"
                   style={{ width: "50px", cursor: "pointer" }}
@@ -1298,8 +1325,8 @@ const Payesh = () => {
                 <img
                   src={
                     circulationFanStates[`fan${num}`]
-                      ? assets.svg.buttonOn
-                      : assets.svg.buttonOff
+                      ? svgButtonOnAsset
+                      : svgButtonOffAsset
                   }
                   alt="toggle"
                   style={{ width: "50px", cursor: "pointer" }}
@@ -1357,7 +1384,7 @@ const Payesh = () => {
                 پمپ پد
               </Typography>
               <img
-                src={padPumpState ? assets.svg.buttonOn : assets.svg.buttonOff}
+                src={padPumpState ? svgButtonOnAsset : svgButtonOffAsset}
                 alt="toggle"
                 style={{ width: "50px", cursor: "pointer" }}
                 onClick={togglePadPump}
@@ -1413,7 +1440,7 @@ const Payesh = () => {
                 مه پاش
               </Typography>
               <img
-                src={foggerState ? assets.svg.buttonOn : assets.svg.buttonOff}
+                src={foggerState ? svgButtonOnAsset : svgButtonOffAsset}
                 alt="toggle"
                 style={{ width: "50px", cursor: "pointer" }}
                 onClick={toggleFogger}
@@ -1473,8 +1500,8 @@ const Payesh = () => {
                 <img
                   src={
                     hatchStates[action]
-                      ? assets.svg.buttonOn
-                      : assets.svg.buttonOff
+                      ? svgButtonOnAsset
+                      : svgButtonOffAsset
                   }
                   alt="toggle"
                   style={{ width: "50px", cursor: "pointer" }}
@@ -1536,8 +1563,8 @@ const Payesh = () => {
                 <img
                   src={
                     shadeStates[action]
-                      ? assets.svg.buttonOn
-                      : assets.svg.buttonOff
+                      ? svgButtonOnAsset
+                      : svgButtonOffAsset
                   }
                   alt="toggle"
                   style={{ width: "50px", cursor: "pointer" }}
@@ -1599,8 +1626,8 @@ const Payesh = () => {
                 <img
                   src={
                     heaterStates[`hiter${num}`]
-                      ? assets.svg.buttonOn
-                      : assets.svg.buttonOff
+                      ? svgButtonOnAsset
+                      : svgButtonOffAsset
                   }
                   alt="toggle"
                   style={{ width: "50px", cursor: "pointer" }}

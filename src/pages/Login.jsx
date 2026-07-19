@@ -11,7 +11,9 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import assets from "../assets";
+import svgLoginLogoAsset from "../assets/svg/LoginLogoType.svg";
+import svgLockAsset from "../assets/svg/Locked 1.svg";
+import svgLock2Asset from "../assets/svg/lock2.svg";
 import { useAuth } from "../context/AuthContext";
 import {
   showLoginErrorToast,
@@ -120,7 +122,7 @@ const Login = () => {
             }}
           >
             <img
-              src={assets.svg.loginLogo}
+              src={svgLoginLogoAsset}
               alt="Logo"
               style={{
                 width: "100%",
@@ -155,7 +157,7 @@ const Login = () => {
               }}
             >
               <img
-                src={assets.svg.lock}
+                src={svgLockAsset}
                 alt="Lock"
                 style={{ width: "80px", height: "80px", marginBottom: "8px" }} // سایز قفل منطقی‌تر شد
               />
@@ -256,7 +258,7 @@ const Login = () => {
                 )}
               </Typography>
               {!isSubmitting && (
-                <img src={assets.svg.lock2} alt="" style={{ width: "18px" }} />
+                <img src={svgLock2Asset} alt="" style={{ width: "18px" }} />
               )}
             </Button>
 

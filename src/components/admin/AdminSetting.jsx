@@ -16,7 +16,8 @@ import {
   DialogTitle,
 } from "@mui/material";
 import React, { useState, useEffect, useRef } from "react";
-import assets from "../../assets";
+import svgSetting2Asset from "../../assets/svg/setting2.svg";
+import svgPersonAsset from "../../assets/svg/person.svg";
 import ModalCloseButton from "../common/ModalCloseButton";
 import {
   getAllConfig,
@@ -626,7 +627,7 @@ const AccountManagementTab = () => {
               "&:hover": { backgroundColor: "#5bbd9e" },
             }}
           >
-            <img src={assets.svg.setting2} alt="" />
+            <img src={svgSetting2Asset} alt="" />
             <Typography fontFamily="IRANSANS" fontSize={17} color="#000000">
               {createMutation.isPending ? "در حال ایجاد..." : "ایجاد حساب"}
             </Typography>
@@ -862,7 +863,7 @@ const AdminSetting = () => {
             flexShrink: 0,
           }}
         >
-          <img src={assets.svg.person} alt="" />
+          <img src={svgPersonAsset} alt="" />
           <Typography fontFamily={"IRANSANS"} fontSize={19} color="#000000">
             تنظیمات ادمین
           </Typography>
@@ -1006,7 +1007,7 @@ const AdminSetting = () => {
                       "&:hover": { backgroundColor: "#5bbd9e" },
                     }}
                   >
-                    <img src={assets.svg.setting2} alt="" />
+                    <img src={svgSetting2Asset} alt="" />
                     <Typography
                       fontFamily={"IRANSANS"}
                       fontSize={17}
@@ -1080,7 +1081,7 @@ const AdminSetting = () => {
                       "&:hover": { backgroundColor: "#5bbd9e" },
                     }}
                   >
-                    <img src={assets.svg.setting2} alt="" />
+                    <img src={svgSetting2Asset} alt="" />
                     <Typography
                       fontFamily={"IRANSANS"}
                       fontSize={17}
@@ -1303,7 +1304,7 @@ const AdminSetting = () => {
                       "&:hover": { backgroundColor: "#5bbd9e" },
                     }}
                   >
-                    <img src={assets.svg.setting2} alt="" />
+                    <img src={svgSetting2Asset} alt="" />
                     <Typography
                       fontFamily={"IRANSANS"}
                       fontSize={17}

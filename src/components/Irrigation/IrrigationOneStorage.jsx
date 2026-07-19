@@ -1,12 +1,7 @@
 import * as React from "react";
 import { Typography, Box, Container, Divider, Modal, Alert } from "@mui/material";
-import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکمه
-import assets from "../../assets";
-import { Scale } from "@mui/icons-material";
-import CalculateIcon from "@mui/icons-material/Calculate";
-import SettingsIcon from "@mui/icons-material/Settings";
-import SaveIcon from "@mui/icons-material/Save";
-import HistoryIcon from "@mui/icons-material/History";
+import svgTikeAsset from "../../assets/svg/tike.svg";
+import svgCrossAsset from "../../assets/svg/cross.svg";
 import { AgCharts } from "ag-charts-react";
 import { useQuery } from "@tanstack/react-query";
 import { getIrrigationTanksStatusLogs } from "../../api/irrigationApi";
@@ -80,7 +75,10 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     },
   });
 
-  const tankData = irrigationTankStatusLogs || { current: null, history: [] };
+  const tankData = React.useMemo(
+    () => irrigationTankStatusLogs || { current: null, history: [] },
+    [irrigationTankStatusLogs],
+  );
 
   const chartOptions = React.useMemo(() => {
     const chartData = tankData.history;
@@ -189,30 +187,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     fontFamily: "IRANSANS",
   };
 
-  const modalStyle = {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 700,
-    height: 430, 
-    bgcolor: "#F0F0F0", 
-    border: "0.5px solid #000",
-    boxShadow: 24,
-    p: 2, 
-    borderRadius: "15px",
-    display: "flex",
-    justifyContent: "space-between",
-    fontFamily: "IRANSANS",
-  };
-
-
-  const [modalOpen, setModalOpen] = React.useState(false);
-  const handleModalOpen = () => setModalOpen(true);
-  const handleModalClose = () => setModalOpen(false);
-
   const [calculatorModalOpen, setCalculatorModalOpen] = React.useState(false);
-  const handleCalculatorModalOpen = () => setCalculatorModalOpen(true);
   const handleCalculatorModalClose = () => setCalculatorModalOpen(false);
 
   const tableData = [
@@ -550,13 +525,13 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 <StatusBox status={row.status === "green" ? 3 : 0}>
                   {row.status === "green" ? (
                     <img
-                      src={assets.svg.tike}
+                      src={svgTikeAsset}
                       alt="success"
                       style={{ width: 16, height: 16 }}
                     />
                   ) : (
                     <img
-                      src={assets.svg.cross}
+                      src={svgCrossAsset}
                       alt="failed"
                       style={{ width: 16, height: 16 }}
                     />

@@ -24,7 +24,11 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import IrrigationCard from "../../card/IrrigationCard";
 import IconTextButton from "../../card/IconTextButton";
-import assets from "../../assets";
+import svgTikeAsset from "../../assets/svg/tike.svg";
+import svgCrossAsset from "../../assets/svg/cross.svg";
+import svgButtonOnAsset from "../../assets/svg/buttonOn.svg";
+import svgButtonOffAsset from "../../assets/svg/buttonOff.svg";
+import svgAddFieldAsset from "../../assets/svg/addField.svg";
 import SaveIcon from "@mui/icons-material/Save";
 import { styled } from "@mui/system";
 import toast from "react-hot-toast";
@@ -93,7 +97,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
       case "tick":
         return (
           <img
-            src={assets.svg.tike}
+            src={svgTikeAsset}
             alt="Success"
             style={{ width: "16px", height: "16px" }}
           />
@@ -101,7 +105,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
       case "cross":
         return (
           <img
-            src={assets.svg.cross}
+            src={svgCrossAsset}
             alt="Error"
             style={{ width: "16px", height: "16px" }}
           />
@@ -293,7 +297,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, convert, isNew }) => {
       >
         <img
           onClick={handleToggleActive}
-          src={data.is_active ? assets.svg.buttonOn : assets.svg.buttonOff}
+          src={data.is_active ? svgButtonOnAsset : svgButtonOffAsset}
           alt="Toggle"
           style={{
             cursor: "pointer",
@@ -752,9 +756,9 @@ const IrrigationManyStorage = () => {
               <IconTextButton
                 text="اضافه کردن"
                 icon={
-                  assets.svg.addField ? (
+                  svgAddFieldAsset ? (
                     <img
-                      src={assets.svg.addField}
+                      src={svgAddFieldAsset}
                       alt="add"
                       style={{ width: 24, height: 24 }}
                     />

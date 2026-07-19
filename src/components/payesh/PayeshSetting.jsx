@@ -14,10 +14,10 @@ import {
   TextField,
   CircularProgress,
   Modal,
-  IconButton,
 } from "@mui/material";
 
-import assets from "../../assets";
+import svgDoneAsset from "../../assets/svg/Done.svg";
+import svgSaveIconAsset from "../../assets/svg/Save.svg";
 import ModalCloseButton from "../common/ModalCloseButton";
 import {
   getRangeStartTime,
@@ -1574,7 +1574,7 @@ const PayeshSetting = ({ zone, onClose }) => {
                                   key={ctrl.key}
                                   label={ctrl.label}
                                   isActive={tempControllers[ctrl.key]}
-                                  iconSrc={assets.svg.done}
+                                  iconSrc={svgDoneAsset}
                                   onClick={ctrl.onClick}
                                   useRedTick={ctrl.useRedTick}
                                 />
@@ -1641,7 +1641,7 @@ const PayeshSetting = ({ zone, onClose }) => {
                                   key={ctrl.key}
                                   label={ctrl.label}
                                   isActive={humControllers[ctrl.key]}
-                                  iconSrc={assets.svg.done}
+                                  iconSrc={svgDoneAsset}
                                   onClick={ctrl.onClick}
                                 />
                               ))}
@@ -1680,7 +1680,7 @@ const PayeshSetting = ({ zone, onClose }) => {
                   }}
                 >
                   <img
-                    src={assets.svg.saveIcon}
+                    src={svgSaveIconAsset}
                     alt="ذخیره"
                     style={{ height: "24px" }}
                   />{" "}

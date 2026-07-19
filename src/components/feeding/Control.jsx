@@ -14,7 +14,12 @@ import {
 import * as React from "react";
 import IconTextButton from "../../card/IconTextButton";
 import ModalCloseButton from "../common/ModalCloseButton";
-import assets from "../../assets";
+import svgChemicaliconAsset from "../../assets/svg/chemicalicon.svg";
+import svgWatericonAsset from "../../assets/svg/watericon.svg";
+import svgEditiconAsset from "../../assets/svg/editicon.svg";
+import svgMixericonAsset from "../../assets/svg/mixericon.svg";
+import svgClockiconAsset from "../../assets/svg/icon.svg";
+import svgStopiconAsset from "../../assets/svg/stopicon.svg";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import { useMutation } from "@tanstack/react-query";
@@ -31,7 +36,6 @@ import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
 const Control = () => {
-  const [pomp, setPomp] = React.useState(1);
   const [injectionType, setInjectionType] = React.useState("stock");
   const [selectedPomp, setSelectedPomp] = React.useState(0);
   const [injectionVolume, setInjectionVolume] = React.useState();
@@ -47,23 +51,18 @@ const Control = () => {
   const handlePompChange = (event) => {
     event.preventDefault();
     setSelectedPomp(event.target.value);
-    setPomp(event.target.value);
   };
 
-  const [zone, setZone] = React.useState(1);
   const [selectedZone, setSelectedZone] = React.useState(1);
   const handleZoneChange = (event) => {
     event.preventDefault();
     setSelectedZone(event.target.value);
-    setZone(event.target.value);
   };
 
-  const [type, setType] = React.useState(1);
   const [selectedType, setSelectedType] = React.useState(1);
   const handleTypeChange = (event) => {
     event.preventDefault();
     setSelectedType(event.target.value);
-    setType(event.target.value);
   };
 
   const handleInjectionTypeChange = (event) => {
@@ -257,7 +256,7 @@ const Control = () => {
       <Stack spacing={2}>
         <IconTextButton
           text="ساخت محلول دستی"
-          icon={assets.svg.chemicalicon}
+          icon={svgChemicaliconAsset}
           iconPosition="left"
           onClick={handleCreateOpen}
           width="195px"
@@ -265,7 +264,7 @@ const Control = () => {
 
         <IconTextButton
           text="تخلیه مخزن"
-          icon={assets.svg.watericon}
+          icon={svgWatericonAsset}
           iconPosition="left"
           onClick={handleClearOpen}
           width="195px"
@@ -273,7 +272,7 @@ const Control = () => {
 
         <IconTextButton
           text="تزریق دستی و کالیبره دوزینگ پمپ"
-          icon={assets.svg.editicon}
+          icon={svgEditiconAsset}
           iconPosition="left"
           onClick={handleInjectionOpen}
           width="195px"
@@ -281,7 +280,7 @@ const Control = () => {
 
         <IconTextButton
           text="میکسر"
-          icon={assets.svg.mixericon}
+          icon={svgMixericonAsset}
           iconPosition="left"
           bgColor={isMixerOn ? "#B8FFDD" : "#FFFFFF"}
           textColor={isMixerOn ? "#004323" : "#1E1E1E"}
@@ -295,7 +294,7 @@ const Control = () => {
 
         <IconTextButton
           text="همزن"
-          icon={assets.svg.clockicon}
+          icon={svgClockiconAsset}
           iconPosition="left"
           bgColor={isHemzanOn ? "#B8FFDD" : "#FFFFFF"}
           textColor={isHemzanOn ? "#004323" : "#1E1E1E"}
@@ -309,7 +308,7 @@ const Control = () => {
 
         <IconTextButton
           text="توقف"
-          icon={assets.svg.stopicon}
+          icon={svgStopiconAsset}
           iconPosition="left"
           bgColor="#FED9D9"
           textColor="#CC0000"
@@ -705,7 +704,6 @@ const Control = () => {
             alignItems: "center",
             gap: 2.5,
             fontFamily: "IRANSANS",
-            p: 3,
           }}
         >
           <Box

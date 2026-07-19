@@ -1,8 +1,9 @@
 import * as React from "react";
 import { Typography, Box, Paper, Divider, Button, Modal } from "@mui/material";
 import { AgCharts } from "ag-charts-react";
-import assets from "../assets/index";
-import IconTextButton from "./IconTextButton";
+import svgTikeAsset from "../assets/svg/tike.svg";
+import svgCrossAsset from "../assets/svg/cross.svg";
+import svgSetting2Asset from "../assets/svg/setting2.svg";
 import TankCalibrationModal from "../components/common/TankCalibrationModal";
 import Calculator from "../components/tools/Calculator";
 import ModalCloseButton from "../components/common/ModalCloseButton";
@@ -129,11 +130,6 @@ const IrrigationCard = ({
       background: { visible: false },
     };
   }, [chartData, maxStorageCapacity]);
-
-  const fillPercentage = Math.max(
-    0,
-    Math.min(100, (storageCapacity / (maxStorageCapacity || 100)) * 100),
-  );
 
   const handleCloseModalA = (e) => {
     if (e) e.stopPropagation();
@@ -541,14 +537,14 @@ const IrrigationCard = ({
                       >
                         {displayStatus === "tick" && (
                           <img
-                            src={assets.svg.tike}
+                            src={svgTikeAsset}
                             alt="Success"
                             style={{ width: "16px", height: "16px" }}
                           />
                         )}
                         {displayStatus === "cross" && (
                           <img
-                            src={assets.svg.cross}
+                            src={svgCrossAsset}
                             alt="Error"
                             style={{ width: "16px", height: "16px" }}
                           />
@@ -647,7 +643,7 @@ const IrrigationCard = ({
               }}
             >
               <img
-                src={assets.svg.setting2}
+                src={svgSetting2Asset}
                 alt="settings"
                 style={{ width: "18px", height: "18px" }}
               />

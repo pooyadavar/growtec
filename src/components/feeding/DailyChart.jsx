@@ -10,7 +10,7 @@ import {
 import ModalCloseButton from "../common/ModalCloseButton";
 import NavArrowButton from "../common/NavArrowButton";
 import { AgCharts } from "ag-charts-react";
-import assets from "../../assets";
+import svgCalibrationsvgAsset from "../../assets/svg/calibration.svg";
 import IconTextButton from "../../card/IconTextButton";
 import {
   calibrationEc,
@@ -736,7 +736,7 @@ const SlidingWindowChart = () => {
         </Box>
         <Box sx={{ scale: "0.85" }}>
           <IconTextButton
-            icon={assets.svg.calibrationsvg}
+            icon={svgCalibrationsvgAsset}
             text={`کالیبراسیون ${currentSensor.name}`}
             bgColor="#6CCDB0"
             textColor="black"

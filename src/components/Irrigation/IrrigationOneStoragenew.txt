@@ -1,7 +1,8 @@
 import * as React from "react";
 import { Typography, Box, Container, Divider, Modal, CircularProgress, Alert } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton"; // ایمپورت دکمه
-import assets from "../../assets";
+import svgTikeAsset from "../../assets/svg/tike.svg";
+import svgCrossAsset from "../../assets/svg/cross.svg";
 import { Scale } from "@mui/icons-material";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -563,13 +564,13 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 <StatusBox status={row.status === "green" ? 3 : 0}>
                   {row.status === "green" ? (
                     <img
-                      src={assets.svg.tike}
+                      src={svgTikeAsset}
                       alt="success"
                       style={{ width: 16, height: 16 }}
                     />
                   ) : (
                     <img
-                      src={assets.svg.cross}
+                      src={svgCrossAsset}
                       alt="failed"
                       style={{ width: 16, height: 16 }}
                     />

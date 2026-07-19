@@ -1,4 +1,16 @@
-import assets from "../assets";
+import svgVertical_barstatus_khonsaAsset from "../assets/svg/vertical-barstatus-khonsa.svg";
+import svgGoodStatusDashboardAsset from "../assets/svg/goodStatusDashboard.svg";
+import svgVertical_barstatus_bazAsset from "../assets/svg/vertical-barstatus-baz.svg";
+import svgHighStatusDashboardAsset from "../assets/svg/highStatusDashboard.svg";
+import svgVertical_barstatus_acidAsset from "../assets/svg/vertical-barstatus-acid.svg";
+import svgLowStatusDashboardAsset from "../assets/svg/lowStatusDashboard.svg";
+import svgStatusEmptyAsset from "../assets/svg/status/empty.gif";
+import svgOutputZoneAsset from "../assets/svg/outputZone.svg";
+import svgTikeAsset from "../assets/svg/tike.svg";
+import svgStatusPhAsset from "../assets/svg/status/pH.gif";
+import svgStatusMixAsset from "../assets/svg/status/mix.gif";
+import svgStatusEcAsset from "../assets/svg/status/EC.gif";
+import svgStatusFillAsset from "../assets/svg/status/fill.gif";
 import { toPersianDigits } from "./persianDigits";
 import { formatMixTankInteger } from "./mixTankStockReport";
 
@@ -7,16 +19,16 @@ const formatTarget = (value) => formatMixTankInteger(value);
 export const getRangeBarStatusImage = (range, variant = "dashboard") => {
   const good =
     variant === "vertical"
-      ? assets.svg.vertical_barstatus_khonsa
-      : assets.svg.goodStatusDashboard;
+      ? svgVertical_barstatus_khonsaAsset
+      : svgGoodStatusDashboardAsset;
   const high =
     variant === "vertical"
-      ? assets.svg.vertical_barstatus_baz
-      : assets.svg.highStatusDashboard;
+      ? svgVertical_barstatus_bazAsset
+      : svgHighStatusDashboardAsset;
   const low =
     variant === "vertical"
-      ? assets.svg.vertical_barstatus_acid
-      : assets.svg.lowStatusDashboard;
+      ? svgVertical_barstatus_acidAsset
+      : svgLowStatusDashboardAsset;
 
   if (!range) return good;
 
@@ -37,7 +49,7 @@ export const resolveMixTankProcessStatus = (data) => {
     title: "نامشخص",
     footerLabel: "",
     footerValue: "",
-    icon: assets.svg.statusEmpty,
+    icon: svgStatusEmptyAsset,
     iconWidth: 64,
     iconHeight: 64,
     bgColor: "#e0e0e0",
@@ -55,7 +67,7 @@ export const resolveMixTankProcessStatus = (data) => {
       title: "در حال خروجی",
       footerLabel: "خروج به زون",
       footerValue: zoneLabel,
-      icon: assets.svg.outputZone,
+      icon: svgOutputZoneAsset,
       iconWidth: 56,
       iconHeight: 56,
       bgColor: "#D1E7DD",
@@ -68,7 +80,7 @@ export const resolveMixTankProcessStatus = (data) => {
       title: "محلول آماده",
       footerLabel: "",
       footerValue: "",
-      icon: assets.svg.tike,
+      icon: svgTikeAsset,
       iconWidth: 48,
       iconHeight: 48,
       bgColor: "#D1E7DD",
@@ -83,7 +95,7 @@ export const resolveMixTankProcessStatus = (data) => {
       footerLabel: "pH هدف",
       footerValue:
         phTarget !== undefined && phTarget !== null ? formatTarget(phTarget) : "",
-      icon: assets.svg.statusPh,
+      icon: svgStatusPhAsset,
       iconWidth: 56,
       iconHeight: 56,
       bgColor: "#FFF3E0",
@@ -100,7 +112,7 @@ export const resolveMixTankProcessStatus = (data) => {
       title: "در حال همزدن",
       footerLabel: "",
       footerValue: "",
-      icon: assets.svg.statusMix,
+      icon: svgStatusMixAsset,
       iconWidth: 56,
       iconHeight: 56,
       bgColor: "#E3F2FD",
@@ -119,7 +131,7 @@ export const resolveMixTankProcessStatus = (data) => {
       footerLabel: "EC هدف",
       footerValue:
         ecTarget !== undefined && ecTarget !== null ? formatTarget(ecTarget) : "",
-      icon: assets.svg.statusEc,
+      icon: svgStatusEcAsset,
       iconWidth: 56,
       iconHeight: 56,
       bgColor: "#FFF8E1",
@@ -132,7 +144,7 @@ export const resolveMixTankProcessStatus = (data) => {
       title: "پر کردن آب",
       footerLabel: "",
       footerValue: "",
-      icon: assets.svg.statusFill,
+      icon: svgStatusFillAsset,
       iconWidth: 56,
       iconHeight: 56,
       bgColor: "#E3F2FD",
@@ -145,7 +157,7 @@ export const resolveMixTankProcessStatus = (data) => {
       title: "هم زدن اولیه",
       footerLabel: "",
       footerValue: "",
-      icon: assets.svg.statusMix,
+      icon: svgStatusMixAsset,
       iconWidth: 56,
       iconHeight: 56,
       bgColor: "#E3F2FD",

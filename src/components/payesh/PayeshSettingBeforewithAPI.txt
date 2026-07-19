@@ -10,7 +10,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import assets from "../../assets";
+import svgDoneAsset from "../../assets/svg/Done.svg";
+import svgSaveIconAsset from "../../assets/svg/Save.svg";
 import apiClient from "../../api/apiClient";
 import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -807,7 +808,7 @@ const PayeshSetting = ({ zone }) => {
                           key={ctrl.key}
                           label={ctrl.label}
                           isActive={tempControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
+                          iconSrc={svgDoneAsset}
                           onClick={ctrl.onClick}
                         />
                       ))}
@@ -827,7 +828,7 @@ const PayeshSetting = ({ zone }) => {
                           key={ctrl.key}
                           label={ctrl.label}
                           isActive={tempControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
+                          iconSrc={svgDoneAsset}
                           onClick={ctrl.onClick}
                         />
                       ))}
@@ -901,7 +902,7 @@ const PayeshSetting = ({ zone }) => {
                           key={ctrl.key}
                           label={ctrl.label}
                           isActive={humControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
+                          iconSrc={svgDoneAsset}
                           onClick={ctrl.onClick}
                         />
                       ))}
@@ -921,7 +922,7 @@ const PayeshSetting = ({ zone }) => {
                           key={ctrl.key}
                           label={ctrl.label}
                           isActive={humControllers[ctrl.key]}
-                          iconSrc={assets.svg.done}
+                          iconSrc={svgDoneAsset}
                           onClick={ctrl.onClick}
                         />
                       ))}
@@ -957,7 +958,7 @@ const PayeshSetting = ({ zone }) => {
                 }}
               >
                 <img
-                  src={assets.svg.saveIcon}
+                  src={svgSaveIconAsset}
                   alt="ذخیره"
                   style={{ height: "24px" }}
                 />

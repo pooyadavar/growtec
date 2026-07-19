@@ -4,10 +4,11 @@ import {
   Container, 
   Typography, 
   Divider, 
-  Box, // <- اضافه شد
   CircularProgress // <- اضافه شد
 } from "@mui/material";
-import assets from "../../assets";
+import svgTempAsset from "../../assets/svg/temp.svg";
+import svgLightAsset from "../../assets/svg/light.svg";
+import svgWindAsset from "../../assets/svg/Wind.svg";
 import { toPersianDigits } from "../../utils/persianDigits";
 // import axios from "axios"; // <- حذف شد
 
@@ -109,7 +110,7 @@ const Around = () => {
             {toPersianDigits(temp.toFixed(2))} C
           </Typography>
         </div>
-        <img src={assets.svg.temp} alt="" />
+        <img src={svgTempAsset} alt="" />
       </div>
       <Divider
         sx={{ width: "100%", marginBottom: "1rem", backgroundColor: "#9F9F9F" }}
@@ -135,7 +136,7 @@ const Around = () => {
             {toPersianDigits(light.toFixed(2))} lux
           </Typography>
         </div>
-        <img src={assets.svg.light} alt="" />
+        <img src={svgLightAsset} alt="" />
       </div>
       <Divider
         sx={{ width: "100%", marginBottom: "1rem", backgroundColor: "#9F9F9F" }}
@@ -161,7 +162,7 @@ const Around = () => {
             {toPersianDigits(wind.toFixed(2))} km/h
           </Typography>
         </div>
-        <img src={assets.svg.wind} alt="" />
+        <img src={svgWindAsset} alt="" />
       </div>
     </Container>
   );

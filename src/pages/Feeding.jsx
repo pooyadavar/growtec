@@ -14,7 +14,10 @@ import {
 import React, { useState } from "react";
 import PhEcControlCardMixer from "../components/feeding/FeedingMixer";
 import IconTextButton from "../card/IconTextButton";
-import assets from "../assets";
+import svgClockiconAsset from "../assets/svg/icon.svg";
+import svgSetting2Asset from "../assets/svg/setting2.svg";
+import svgTesttubeiconeAsset from "../assets/svg/TestTube.svg";
+import svgAiiconAsset from "../assets/svg/Ai.svg";
 import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus } from "../api/dashboardApi";
 import FeedingHistoryPage from "./FeedingHistoryPage";
@@ -225,7 +228,7 @@ const Feeding = () => {
             >
               <Box>
                 <IconTextButton
-                  icon={assets.svg.clockicon}
+                  icon={svgClockiconAsset}
                   text="تاریخچه ساخت "
                   bgColor="#FFD799"
                   textColor="#333"
@@ -237,7 +240,7 @@ const Feeding = () => {
 
               <Box>
                 <IconTextButton
-                  icon={assets.svg.setting2}
+                  icon={svgSetting2Asset}
                   text="کالیبره مخزن"
                   bgColor="#6CCDB0"
                   textColor="#333"
@@ -248,7 +251,7 @@ const Feeding = () => {
 
               <Box>
                 <IconTextButton
-                  icon={assets.svg.testtubeicone}
+                  icon={svgTesttubeiconeAsset}
                   text="تنظیمات محلول"
                   bgColor="#86CCB2"
                   textColor="#333"
@@ -259,7 +262,7 @@ const Feeding = () => {
 
               <Box>
                 <IconTextButton
-                  icon={assets.svg.aiicon}
+                  icon={svgAiiconAsset}
                   text="هوش مصنوعی"
                   bgColor="#FF9933"
                   textColor="#fff"

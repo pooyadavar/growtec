@@ -7,11 +7,10 @@ import {
   Box,
   Button,
   Modal,
-  IconButton,
   Divider,
 } from "@mui/material";
 import ModalCloseButton from "../common/ModalCloseButton";
-import assets from "../../assets";
+import svgLineAsset from "../../assets/svg/Line.svg";
 import { useQuery } from "@tanstack/react-query";
 import { getErrorCodes } from "../../api/dashboardApi";
 import { toPersianDigits } from "../../utils/persianDigits";
@@ -93,9 +92,8 @@ const ErrorComponent = () => {
     },
   });
 
-  const errorsToDisplay = errorLogs || [];
-
   const groupedErrors = useMemo(() => {
+    const errorsToDisplay = errorLogs || [];
     if (!errorsToDisplay || errorsToDisplay.length === 0) return [];
 
     const grouped = [];
@@ -118,7 +116,7 @@ const ErrorComponent = () => {
     }
     if (current) grouped.push(current);
     return grouped;
-  }, [errorsToDisplay]);
+  }, [errorLogs]);
 
   const modalStyle = {
     position: "absolute",
@@ -238,7 +236,7 @@ const ErrorComponent = () => {
 
           <Box
             component="img"
-            src={assets.svg.line}
+            src={svgLineAsset}
             alt=""
             sx={{ height: "24px", flexShrink: 0 }}
           />
@@ -334,7 +332,7 @@ const ErrorComponent = () => {
 
           <Box
             component="img"
-            src={assets.svg.line}
+            src={svgLineAsset}
             alt=""
             sx={{ pointerEvents: "none", flexShrink: 0 }}
           />

@@ -14,18 +14,18 @@ import {
   Alert,
   Collapse,
   Button,
-  FormControl,
-  Select,
-  MenuItem,
 } from "@mui/material";
 import { TransitionGroup } from "react-transition-group";
 import ModalCloseButton from "../common/ModalCloseButton";
 import NavArrowButton from "../common/NavArrowButton";
 import IrrigationCard from "../../card/IrrigationCard";
 import IconTextButton from "../../card/IconTextButton";
-import assets from "../../assets";
+import svgTikeAsset from "../../assets/svg/tike.svg";
+import svgCrossAsset from "../../assets/svg/cross.svg";
+import svgButtonOnAsset from "../../assets/svg/buttonOn.svg";
+import svgButtonOffAsset from "../../assets/svg/buttonOff.svg";
+import svgAddFieldAsset from "../../assets/svg/addField.svg";
 import SaveIcon from "@mui/icons-material/Save";
-import { styled } from "@mui/system";
 import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -39,33 +39,6 @@ import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import { uiIrrigationTankToApi } from "../../utils/tankMapping";
 import TimeInput from "../common/TimeInput";
-
-// Styled components for the modal
-const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
-  height: "40px",
-  border: "1px solid #ddd",
-  borderRadius: "8px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#f9f9f9",
-  padding: "0 4px",
-  ...(isStatus && {
-    backgroundColor: "transparent",
-    border: "none",
-  }),
-}));
-
-const StatusBox = styled(Box)(({ theme, status }) => ({
-  height: "40px",
-  width: "100%",
-  border: status === 3 ? "1px solid #4CAF50" : "1px solid #F44336",
-  borderRadius: "8px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: status === 3 ? "#E8F5E9" : "#FFEBEE",
-}));
 
 // Helper function to determine display status
 const getDisplayStatus = (startStatus, endStatus) => {
@@ -98,7 +71,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
       case "tick":
         return (
           <img
-            src={assets.svg.tike}
+            src={svgTikeAsset}
             alt="Success"
             style={{ width: "16px", height: "16px" }}
           />
@@ -106,7 +79,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
       case "cross":
         return (
           <img
-            src={assets.svg.cross}
+            src={svgCrossAsset}
             alt="Error"
             style={{ width: "16px", height: "16px" }}
           />
@@ -290,7 +263,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
       >
         <img
           onClick={handleToggleActive}
-          src={data.is_active ? assets.svg.buttonOn : assets.svg.buttonOff}
+          src={data.is_active ? svgButtonOnAsset : svgButtonOffAsset}
           alt="Toggle"
           style={{
             cursor: "pointer",
@@ -797,9 +770,9 @@ const IrrigationManyStorage = () => {
               <IconTextButton
                 text="اضافه کردن"
                 icon={
-                  assets.svg.addField ? (
+                  svgAddFieldAsset ? (
                     <img
-                      src={assets.svg.addField}
+                      src={svgAddFieldAsset}
                       alt="add"
                       style={{ width: 24, height: 24 }}
                     />
@@ -832,7 +805,6 @@ const IrrigationManyStorage = () => {
                 flexDirection: "column",
                 width: "calc(100% - 20px)",
                 alignItems: "center",
-                display: "flex",
               }}
             >
               <Typography fontFamily={"IRANSANS"} fontSize={12} mb={1}>

@@ -203,6 +203,8 @@ const ProgramColumn = ({ number, data, onChange }) => {
   );
 };
 
+const PROGRAM_NUMBERS = [1, 2, 3];
+
 const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const navigate = useNavigate();
   const [programs, setPrograms] = useState({});
@@ -212,8 +214,6 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const [isInputWaterInitialized, setIsInputWaterInitialized] = useState(false);
 
   const [inputWaterVolume, setInputWaterVolume] = useState("");
-
-  const programNumbers = [1, 2, 3];
 
   const { data: liveEcPhData } = useQuery({
     queryKey: queryKeys.solubleEcPhTemperature(),
@@ -226,7 +226,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const currentPh = primarySensor?.ph;
 
   const programQueries = useQueries({
-    queries: programNumbers.map((i) => ({
+    queries: PROGRAM_NUMBERS.map((i) => ({
       queryKey: queryKeys.foodstuffProgram(i),
       queryFn: () => getFoodstuffPreparationProgram(i),
       staleTime: 5 * 60 * 1000,
@@ -257,12 +257,12 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
       const newPrograms = {};
       programQueries.forEach((query, index) => {
         // اطمینان از اینکه اگر دیتایی از سمت بک‌اند نیامد، مقادیر پیش‌فرض ست شود
-        newPrograms[programNumbers[index]] = query.data || {};
+        newPrograms[PROGRAM_NUMBERS[index]] = query.data || {};
       });
       setPrograms(newPrograms);
       setInitialPrograms(JSON.parse(JSON.stringify(newPrograms)));
     }
-  }, [isDataReady]);
+  }, [initialPrograms, isDataReady, programQueries]);
 
   useEffect(() => {
     if (

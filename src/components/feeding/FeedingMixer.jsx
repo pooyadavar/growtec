@@ -10,10 +10,8 @@ import {
 import { styled } from "@mui/system";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 // مسیرهای ایمپورت را طبق پروژه خودتان چک کنید
-import assets from "../../assets";
-import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import { toPersianDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "../dashboard/BuildDetailsModal";
-import IconTextButton from "../../card/IconTextButton";
 import StatusModal from "../dashboard/StatusModal";
 import MixTankProcessStatus from "../common/MixTankProcessStatus";
 import { getRangeBarStatusImage } from "../../utils/mixTankStatus";

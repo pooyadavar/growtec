@@ -1,6 +1,8 @@
 import * as React from "react";
 import { Typography, Box, Modal, CircularProgress } from "@mui/material";
-import assets from "../assets/index";
+import imgMixerBGImageAsset from "../assets/image/bg-blue.jpg";
+import svgTikeAsset from "../assets/svg/tike.svg";
+import svgCrossAsset from "../assets/svg/cross.svg";
 import ModalCloseButton from "../components/common/ModalCloseButton";
 import { useQuery } from "@tanstack/react-query";
 import { getIrrigationSchedules } from "../api/irrigationApi";
@@ -42,7 +44,7 @@ const StorageCard = ({
   }
 
   const formattedCapacity = Number(capacity || 0).toFixed(2);
-  const image = `url(${assets.img.mixerBGImage})`;
+  const image = `url(${imgMixerBGImageAsset})`;
 
   const [open, setOpen] = React.useState(false);
   const handleClose = () => setOpen(false);
@@ -419,14 +421,14 @@ const StorageCard = ({
                       >
                         {displayStatus === "tick" && (
                           <img
-                            src={assets.svg.tike}
+                            src={svgTikeAsset}
                             alt="Success"
                             style={{ width: "14px", height: "14px" }}
                           />
                         )}
                         {displayStatus === "cross" && (
                           <img
-                            src={assets.svg.cross}
+                            src={svgCrossAsset}
                             alt="Error"
                             style={{ width: "14px", height: "14px" }}
                           />

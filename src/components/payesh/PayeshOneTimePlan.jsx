@@ -2,42 +2,12 @@ import * as React from "react";
 import { Typography, Box, Container, Divider, Modal } from "@mui/material";
 import IconTextButton from "../../card/IconTextButton";
 import ModalCloseButton from "../common/ModalCloseButton";
-import assets from "../../assets";
-import { Scale } from "@mui/icons-material";
+import svgAddFieldAsset from "../../assets/svg/addField.svg";
 import CalculateIcon from "@mui/icons-material/Calculate";
-import SettingsIcon from "@mui/icons-material/Settings";
 import SaveIcon from "@mui/icons-material/Save";
 import HistoryIcon from "@mui/icons-material/History";
 import { AgCharts } from "ag-charts-react";
-import apiClient from "../../api/apiClient";
-import { styled } from "@mui/system";
 import { toPersianDigits } from "../../utils/persianDigits";
-
-const DataCell = styled(Box)(({ theme, isStatus, hasBorder = false }) => ({
-  height: "40px",
-  border: "1px solid #ddd",
-  borderRadius: "8px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#f9f9f9",
-  padding: "0 4px",
-  ...(isStatus && {
-    backgroundColor: "transparent",
-    border: "none",
-  }),
-}));
-
-const StatusBox = styled(Box)(({ theme, status }) => ({
-  height: "40px",
-  width: "100%",
-  border: status === 3 ? "1px solid #4CAF50" : "1px solid #F44336",
-  borderRadius: "8px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: status === 3 ? "#E8F5E9" : "#FFEBEE",
-}));
 
 const PayeshOneTimePlan = ({ fanNumber }) => {
   // Using simplified state for now, mirroring IrrigationOneStorage logic
@@ -59,7 +29,7 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
         current: { value: 50 },
         history: history
     });
-  }, [fanNumber]);
+  }, []);
 
   React.useEffect(() => {
     fetchData();
@@ -129,7 +99,6 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
   };
 
   const [modalOpen, setModalOpen] = React.useState(false);
-  const handleModalOpen = () => setModalOpen(true);
   const handleModalClose = () => setModalOpen(false);
 
   const [rows, setRows] = React.useState([
@@ -214,7 +183,7 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
         <IconTextButton text="ماشین حساب" icon={<CalculateIcon />} iconPosition="left" bgColor="#86CCB2" textColor="#000000" width="32%" height="30px" borderColor="#77b39dff" />
         <IconTextButton
           text="اضافه کردن سطر"
-          icon={assets?.svg?.addField}
+          icon={svgAddFieldAsset}
           iconPosition="left"
           bgColor="#FFCB82"
           textColor="#000000"
@@ -225,7 +194,7 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
         />
         <IconTextButton
           text="ذخیره"
-          icon={assets?.svg?.Save}
+          icon={null}
           iconPosition="left"
           bgColor="#86CCB2"
           textColor="#000000"
@@ -255,7 +224,7 @@ const PayeshOneTimePlan = ({ fanNumber }) => {
             </Box>
             {/* Table in Modal */}
              <Box sx={{ display: "flex", flexGrow: 1, height: "100%", justifyContent: "flex-end" }}>
-                <Box sx={{ display: "flex", flexDirection: "column", width: "calc(100% - 40px)", alignItems: "center", display: "flex" }}>
+                <Box sx={{ display: "flex", flexDirection: "column", width: "calc(100% - 40px)", alignItems: "center" }}>
                     <Typography fontFamily={"IRANSANS"} fontSize={12} mb={1}>جدول برنامه</Typography>
                     {/* Header */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", marginBottom: "5px", px: "10px" }}>

@@ -1,11 +1,11 @@
 import React from "react";
 import { IconButton } from "@mui/material";
-import assets from "../../assets";
-
+import svgNextBtnAsset from "../../assets/svg/nextBTN.svg";
+import svgPrevBtnAsset from "../../assets/svg/prevBTN.svg";
 const NavArrowButton = ({ direction = "next", ...props }) => (
   <IconButton {...props}>
     <img
-      src={direction === "next" ? assets.svg.nextBtn : assets.svg.prevBtn}
+      src={direction === "next" ? svgNextBtnAsset : svgPrevBtnAsset}
       alt=""
       style={{ width: 20, height: 20, display: "block" }}
     />

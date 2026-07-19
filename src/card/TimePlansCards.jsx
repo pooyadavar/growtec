@@ -8,7 +8,9 @@ import {
   Collapse,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import assets from "../assets";
+import svgButtonOnAsset from "../assets/svg/buttonOn.svg";
+import svgButtonOffAsset from "../assets/svg/buttonOff.svg";
+import svgAddFieldAsset from "../assets/svg/addField.svg";
 import IconTextButton from "./IconTextButton";
 import { AgCharts } from "ag-charts-react";
 import { TransitionGroup } from "react-transition-group";
@@ -161,7 +163,7 @@ const TimePlansCards = ({
         return [...mappedServerRows, ...pendingNewRows];
       });
     }
-  }, [schedules]);
+  }, [schedules, fan]);
 
   const handleAddRow = () => {
     setRows((prevRows) => [
@@ -338,7 +340,7 @@ const TimePlansCards = ({
       background: { fill: "transparent" },
       padding: { top: 5, right: 10, bottom: 15, left: 40 },
     }),
-    [data, fan],
+    [data],
   );
 
   return (
@@ -538,8 +540,8 @@ const TimePlansCards = ({
                         className={`on-and-off-btn ${row.isChanging ? "changing" : ""}`}
                         src={
                           row.is_active
-                            ? assets.svg.buttonOn
-                            : assets.svg.buttonOff
+                            ? svgButtonOnAsset
+                            : svgButtonOffAsset
                         }
                         alt="Toggle"
                         style={{
@@ -644,7 +646,7 @@ const TimePlansCards = ({
         >
           <IconTextButton
             text="اضافه کردن سطر"
-            icon={assets?.svg?.addField}
+            icon={svgAddFieldAsset}
             iconPosition="left"
             bgColor="#FFCB82"
             textColor="#000000"
@@ -662,7 +664,7 @@ const TimePlansCards = ({
           />
           <IconTextButton
             text={loading ? "..." : "ذخیره"}
-            icon={!loading ? assets?.svg?.Save : null}
+            icon={null}
             iconPosition="left"
             bgColor={!loading && hasChanges ? "#86CCB2" : "#dbf5eb"}
             textColor={hasChanges ? "black" : "gray"}

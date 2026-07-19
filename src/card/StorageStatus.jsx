@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import assets from "../assets";
+import svgDoneAsset from "../assets/svg/Done.svg";
+import svgUnDoneAsset from "../assets/svg/Undone.svg";
 import { toPersianDigits } from "../utils/persianDigits";
 
 const StorageStatus = ({ start, end, size, status }) => {
@@ -66,7 +67,7 @@ const StorageStatus = ({ start, end, size, status }) => {
         }}
       >
         <img
-          src={status == "done" ? assets.svg.done : assets.svg.unDone}
+          src={status == "done" ? svgDoneAsset : svgUnDoneAsset}
           alt={status}
         />
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Paper,
   Typography,
@@ -15,7 +15,10 @@ import {
 } from "@mui/material";
 import { TransitionGroup } from "react-transition-group";
 import IconTextButton from "../../card/IconTextButton";
-import assets from "../../assets";
+import svgButtonOnAsset from "../../assets/svg/buttonOn.svg";
+import svgButtonOffAsset from "../../assets/svg/buttonOff.svg";
+import svgSetting2Asset from "../../assets/svg/setting2.svg";
+import svgAddFieldAsset from "../../assets/svg/addField.svg";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getFoodstuffSchedule,
@@ -78,7 +81,7 @@ const PlanRow = ({ id, data, onChange, onDelete, canBeDeleted, isNew }) => {
           <img
             onClick={handleToggleActive}
             className={`on-and-off-btn ${isChanging ? "changing" : ""}`}
-            src={data.isActive ? assets.svg.buttonOn : assets.svg.buttonOff}
+            src={data.isActive ? svgButtonOnAsset : svgButtonOffAsset}
             alt="Toggle Activity"
             style={{
               cursor: "pointer",
@@ -280,7 +283,6 @@ const FeedingStatusBar = () => {
     data: rawSchedule = [],
     isLoading: isLoadingSchedule,
     isError: isErrorSchedule,
-    error: scheduleError,
   } = useQuery({
     queryKey: ["foodstuffSchedule"],
     queryFn: getFoodstuffSchedule,
@@ -645,7 +647,7 @@ const FeedingStatusBar = () => {
         >
           <IconTextButton
             text="تنظیمات ساخت محلول"
-            icon={assets.svg.setting2}
+            icon={svgSetting2Asset}
             iconPosition="left"
             bgColor="#F7C98C"
             textColor="#333"
@@ -801,7 +803,7 @@ const FeedingStatusBar = () => {
                 اضافه کردن ردیف
               </Typography>
               <img
-                src={assets.svg.addField}
+                src={svgAddFieldAsset}
                 alt="Add Row"
                 style={{ scale: "1.3" }}
               />

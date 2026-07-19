@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, TextField, Typography, Grid } from "@mui/material";
+import { Box, TextField, Typography } from "@mui/material";
 import SaveIcon from "@mui/icons-material/SaveOutlined";
 import CalculateIcon from "@mui/icons-material/CalculateOutlined";
 import SwapCallsIcon from "@mui/icons-material/SwapCalls";
@@ -351,7 +351,7 @@ export default function IrrigationCalculatorPage({
         return createEmptyRow(i, headerOperator);
       }),
     );
-  }, [irrigationCount, operatorsCount]);
+  }, [headerOperator, irrigationCount, operatorsCount]);
 
   const buildProgramRows = () => {
     const first = parseTimeToSeconds(firstIrrigation);

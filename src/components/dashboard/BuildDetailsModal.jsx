@@ -4,15 +4,13 @@ import {
   Box,
   Paper,
   Typography,
-  IconButton,
-  Button,
-  Stack,
   Modal,
   Container, 
 } from "@mui/material";
 import { styled } from "@mui/system";
 import ModalCloseButton from "../common/ModalCloseButton";
-import assets from "../../assets"; 
+import svgTikeAsset from "../../assets/svg/tike.svg";
+import svgCrossAsset from "../../assets/svg/cross.svg";
 import { getFoodstuffSchedule } from "../../api/solubleApi";
 import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits } from "../../utils/persianDigits";
@@ -179,13 +177,13 @@ const BuildDetailsModal = ({ open, onClose }) => {
                     <StatusBox status={detail.status}>
                       {detail.status === 3 ? (
                         <img
-                          src={assets.svg.tike}
+                          src={svgTikeAsset}
                           alt="success"
                           style={{ width: 16, height: 16 }}
                         />
                       ) : (
                         <img
-                          src={assets.svg.cross} 
+                          src={svgCrossAsset} 
                           alt="failed"
                           style={{ width: 16, height: 16 }}
                         />

@@ -3,14 +3,12 @@ import {
   Box,
   Paper,
   Typography,
-  TextField,
   Button,
   Stack,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
-import assets from "../../assets";
-import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import { toPersianDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "./BuildDetailsModal";
 import StatusModal from "./StatusModal";
 import MixTankProcessStatus from "../common/MixTankProcessStatus";

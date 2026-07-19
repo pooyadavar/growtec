@@ -10,7 +10,8 @@ import {
   Typography,
   Container,
 } from "@mui/material";
-import assets from "../../assets";
+import svgNextBtnAsset from "../../assets/svg/nextBTN.svg";
+import svgPrevBtnAsset from "../../assets/svg/prevBTN.svg";
 import axios from "axios";
 import { AgCharts } from "ag-charts-react";
 import TimePlansCards from "../../card/TimePlansCards";
@@ -28,7 +29,7 @@ const TimePlans = () => {
       }}
     >
       <Box>
-        <img src={assets.svg.nextBtn} alt="" className="button" />
+        <img src={svgNextBtnAsset} alt="" className="button" />
       </Box>
       <Box
         sx={{
@@ -45,7 +46,7 @@ const TimePlans = () => {
         <TimePlansCards fan={3} float1={false} float2={false} float3={false} />
       </Box>
       <Box>
-        <img src={assets.svg.prevBtn} alt="" className="button" />
+        <img src={svgPrevBtnAsset} alt="" className="button" />
       </Box>
     </Container>
   );
