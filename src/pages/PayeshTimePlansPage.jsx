@@ -48,7 +48,7 @@ const PayeshTimePlansPage = () => {
           }
           sx={{ fontFamily: "IRANSANS", fontSize: "16px" , gap: 2 }}
         >
-          {selectedPlan ? "بازگشت به لیست" : "بازگشت به پایش"}
+          {selectedPlan ? "بازگشت به لیست" : "بازگشت به اقلیم"}
         </Button>
       </Box>
 

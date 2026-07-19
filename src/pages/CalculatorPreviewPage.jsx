@@ -41,7 +41,7 @@ const CalculatorPreviewPage = () => {
         <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}>
           <ModalCloseButton onClick={handleClose} />
         </Box>
-        <Calculator onClose={handleClose} operatorsCount={8} />
+        <Calculator onClose={handleClose} operatorsCount={10} />
       </Box>
     </Modal>
   );

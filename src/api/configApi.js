@@ -1,7 +1,7 @@
 import apiClient from "./apiClient";
 
 export const getIrrigationConfig = async () => {
-  return apiClient.get("/config/irrigation/");
+  return apiClient.get("/config");
 };
 
 export const getSolubleConfig = async () => {

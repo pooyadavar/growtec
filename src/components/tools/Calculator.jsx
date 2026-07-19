@@ -210,7 +210,6 @@ const DurationField = ({ value, onChange, underLabel = false }) => {
           whiteSpace: "nowrap",
         }}
       >
-        دقیقه
       </Typography>
       <TextField
         sx={durationInputSx}
@@ -240,7 +239,6 @@ const DurationField = ({ value, onChange, underLabel = false }) => {
           whiteSpace: "nowrap",
         }}
       >
-        ساعت
       </Typography>
       <TextField
         sx={durationInputSx}
@@ -461,13 +459,17 @@ export default function IrrigationCalculatorPage({
         fontFamily: "IRANSANS",
       }}
     >
-      <Grid
-        container
-        spacing={1.5}
-        alignItems="stretch"
-        sx={{ maxWidth: "1000px", margin: "0 auto", height: "100%" }}
+      <Box
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "row",
+          gap: 1.5,
+        }}
       >
-        <Grid item xs={12} md={7}>
+        {/* ستون اصلی: جدول عملگر/شروع/پایان/حذف */}
+        <Box sx={{ flex: "0 0 62%", height: "87%", minWidth: 0 }}>
           <Box
             sx={{ height: "100%", display: "flex", flexDirection: "column" }}
           >
@@ -490,7 +492,7 @@ export default function IrrigationCalculatorPage({
                 variant="subtitle1"
                 sx={{ fontWeight: "bold", fontFamily: "IRANSANS" }}
               >
-                ماشین حساب آبیاری عملگر (دراپ باکس)
+ماشین حساب آبیاری
               </Typography>
               <Box sx={{ width: 72, flexShrink: 0 }}>
                 <NumberSelect
@@ -638,54 +640,6 @@ export default function IrrigationCalculatorPage({
                 </Box>
               </Box>
 
-              <Box
-                sx={{
-                  width: 56,
-                  flexShrink: 0,
-                  bgcolor: COLORS.bgGrey,
-                  borderRight: "1px solid #9F9F9F",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  pt: 0.5,
-                  pb: 1,
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontWeight: "bold",
-                    fontSize: "0.85rem",
-                    fontFamily: "IRANSANS",
-                    mb: 1,
-                    textAlign: "center",
-                  }}
-                >
-                  ترتیب
-                </Typography>
-                <Box
-                  sx={{
-                    flex: 1,
-                    overflowY: "auto",
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 1,
-                    px: 0.5,
-                  }}
-                >
-                  {rows.map((row, idx) => (
-                    <NumberSelect
-                      key={idx}
-                      compact
-                      value={row.order}
-                      max={irrigationCount}
-                      onChange={(v) => handleRowChange(idx, "order", v)}
-                      sx={{ width: 44 }}
-                    />
-                  ))}
-                </Box>
-              </Box>
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -694,7 +648,8 @@ export default function IrrigationCalculatorPage({
                 icon={<CloseIcon />}
                 bgColor="#FFF"
                 textColor={COLORS.red}
-                width="200px"
+                width="180px"
+                height="50px"
                 onClick={handleClearTable}
                 sx={{
                   mt: 1.5,
@@ -708,149 +663,214 @@ export default function IrrigationCalculatorPage({
               />
             </Box>
           </Box>
-        </Grid>
+        </Box>
 
-        <Grid
-          item
-          xs={12}
-          md={5}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-            justifyContent: "flex-start",
-          }}
-        >
-          <LabeledField label="نام برنامه">
-            <TextField
-              fullWidth
-              sx={{
-                ...inputStyles,
-                ...labeledFieldBodySx,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 0,
-                  boxShadow: "none",
-                  backgroundColor: COLORS.white,
-                  "& fieldset": { border: "none" },
-                },
-              }}
-              value={programName}
-              onChange={(e) => setProgramName(e.target.value)}
-              inputProps={{ style: { fontFamily: "IRANSANS" } }}
-            />
-          </LabeledField>
-
-          <LabeledField label="ساعت شروع عملگر">
-            <TimeField
-              underLabel
-              value={firstIrrigation}
-              onChange={setFirstIrrigation}
-            />
-          </LabeledField>
-
-          <LabeledField label="تعداد دفعات روشن شدن عملگر">
-            <NumberSelect
-              underLabel
-              value={irrigationCount}
-              min={1}
-              max={20}
-              onChange={setIrrigationCount}
-            />
-          </LabeledField>
-
-          <LabeledField label="فاصله بین دو زمان کارکرد">
-            <DurationField
-              underLabel
-              value={irrigationInterval}
-              onChange={setIrrigationInterval}
-            />
-          </LabeledField>
-
-          <LabeledField label="مدت زمان کارکرد">
-            <DurationField
-              underLabel
-              value={irrigationDuration}
-              onChange={setIrrigationDuration}
-            />
-          </LabeledField>
-
-          <LabeledField label="فاصله بین دو عملگر">
-            <DurationField
-              underLabel
-              value={zoneInterval}
-              onChange={setZoneInterval}
-            />
-          </LabeledField>
-
-          <Box
+        {/* ستون چپ: ترتیب + فرم */}
+        <Box sx={{ flex: "0 0 calc(38% - 12px)", height: "100%", minWidth: 0 }}>
+                  <Box
             sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 3,
-              width: "90%",
-              alignSelf: "right",
-              mt: 0.5,
-            }}
-          >
-            <IconTextButton
-              text={isSaving ? "در حال ذخیره..." : "ساخت برنامه"}
-              icon={<SwapCallsIcon sx={{ transform: "rotate(90deg)" }} />}
-              bgColor={COLORS.green}
-              textColor="#000"
-              width="100%"
-              height="40px"
-              onClick={isSaving ? undefined : handleBuildProgram}
-              sx={{
-                borderRadius: "15px",
-                py: 0.8,
-                opacity: isSaving ? 0.7 : 1,
-                pointerEvents: isSaving ? "none" : "auto",
-                "&:hover": { filter: "brightness(0.95)" },
-                "& .MuiTypography-root": {
-                  fontSize: "0.95rem",
-                  fontWeight: "bold",
-                  fontFamily: "IRANSANS",
-                },
-              }}
-            />
+                                height: "100%",
+                                minHeight: 0,
+                                display: "flex",
+                                flexDirection: "row",
+                                gap: 1.2,
+                                direction: "ltr",
+                              }}
+                            >
+                    <Box
+                      sx={{
+                        width: 56,
+                        flexShrink: 0,
+                        bgcolor: COLORS.bgGrey,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        pt: 0.5,
+                        pb: 1,
+                        direction: "rtl",
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontWeight: "bold",
+                          fontSize: "0.85rem",
+                          fontFamily: "IRANSANS",
+                          mb: 1,
+                          textAlign: "center",
+                        }}
+                      >
+                        ترتیب
+                      </Typography>
+                      <Box
+                        sx={{
+                          flex: 1,
+                          overflowY: "auto",
+                          width: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 1,
+                          px: 0.5,
+                          maxHeight: "420px",
+                        }}
+                      >
+                        {rows.map((row, idx) => (
+                          <NumberSelect
+                            key={idx}
+                            compact
+                            value={row.order}
+                            max={15}
+                            onChange={(v) => handleRowChange(idx, "order", v)}
+                            sx={{ width: 44 }}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
 
-            <IconTextButton
-              text="پاک کردن"
-              icon={<CloseIcon />}
-              bgColor={COLORS.red}
-              textColor="#fff"
-              width="100%"
-              height="40px"
-              onClick={onClose}
-              sx={{
-                borderRadius: "15px",
-                py: 0.5,
-                "& .MuiTypography-root": {
-                  fontSize: "0.85rem",
-                  fontFamily: "IRANSANS",
-                },
-              }}
-            />
+                    <Box
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                                        justifyContent: "flex-start",
+                                        alignItems: "stretch",
+                                        direction: "rtl",
+                      }}
+                    >
+                      <LabeledField label="نام برنامه">
+                        <TextField
+                          fullWidth
+                          sx={{
+                            ...inputStyles,
+                            ...labeledFieldBodySx,
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 0,
+                              boxShadow: "none",
+                              backgroundColor: COLORS.white,
+                              "& fieldset": { border: "none" },
+                            },
+                          }}
+                          value={programName}
+                          onChange={(e) => setProgramName(e.target.value)}
+                          inputProps={{ style: { fontFamily: "IRANSANS" } }}
+                        />
+                      </LabeledField>
 
-            <IconTextButton
-              text="ذخیره"
-              icon={<SaveIcon />}
-              bgColor={COLORS.amber}
-              textColor="#000"
-              width="100%"
-              height="40px"
-              sx={{
-                borderRadius: "15px",
-                py: 0.5,
-                "& .MuiTypography-root": {
-                  fontSize: "0.85rem",
-                  fontFamily: "IRANSANS",
-                },
-              }}
-            />
-          </Box>
-        </Grid>
-      </Grid>
+                      <LabeledField label="ساعت شروع عملگر">
+                        <TimeField
+                          underLabel
+                          value={firstIrrigation}
+                          onChange={setFirstIrrigation}
+                        />
+                      </LabeledField>
+
+                      <LabeledField label="تعداد دفعات روشن شدن عملگر">
+                        <NumberSelect
+                          underLabel
+                          value={irrigationCount}
+                          min={1}
+                          max={20}
+                          onChange={setIrrigationCount}
+                        />
+                      </LabeledField>
+
+                      <LabeledField label="فاصله بین دو زمان کارکرد">
+                        <DurationField
+                          underLabel
+                          value={irrigationInterval}
+                          onChange={setIrrigationInterval}
+                        />
+                      </LabeledField>
+
+                      <LabeledField label="مدت زمان کارکرد">
+                        <DurationField
+                          underLabel
+                          value={irrigationDuration}
+                          onChange={setIrrigationDuration}
+                        />
+                      </LabeledField>
+
+                      <LabeledField label="فاصله بین دو عملگر">
+                        <DurationField
+                          underLabel
+                          value={zoneInterval}
+                          onChange={setZoneInterval}
+                        />
+                      </LabeledField>
+
+                      <Box
+                                              sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 3,
+                                                width: "100%",
+                                                alignSelf: "stretch",
+                                                mt: 0.5,
+                                              }}
+                                            >
+                        <IconTextButton
+                          text={isSaving ? "در حال ذخیره..." : "ساخت برنامه"}
+                                                    icon={<SwapCallsIcon sx={{ transform: "rotate(90deg)" }} />}
+                                                    bgColor={COLORS.green}
+                                                    textColor="#000"
+                                                    width="87%"
+                                                    height="35px"
+                          onClick={isSaving ? undefined : handleBuildProgram}
+                          sx={{
+                            borderRadius: "15px",
+                            py: 0.8,
+                            opacity: isSaving ? 0.7 : 1,
+                            pointerEvents: isSaving ? "none" : "auto",
+                            "&:hover": { filter: "brightness(0.95)" },
+                            "& .MuiTypography-root": {
+                              fontSize: "0.95rem",
+                              fontWeight: "bold",
+                              fontFamily: "IRANSANS",
+                            },
+                          }}
+                        />
+
+                        <IconTextButton
+                          text="پاک کردن"
+                                                    icon={<CloseIcon />}
+                                                    bgColor={COLORS.red}
+                                                    textColor="#fff"
+                                                    width="87%"
+                                                    height="35px"
+                          onClick={onClose}
+                          sx={{
+                            borderRadius: "15px",
+                            py: 0.5,
+                            "& .MuiTypography-root": {
+                              fontSize: "0.85rem",
+                              fontFamily: "IRANSANS",
+                            },
+                          }}
+                        />
+
+                        <IconTextButton
+                          text="ذخیره"
+                                                    icon={<SaveIcon />}
+                                                    bgColor={COLORS.amber}
+                                                    textColor="#000"
+                                                    width="87%"
+                                                    height="35px"
+                          sx={{
+                            borderRadius: "15px",
+                            py: 0.5,
+                            "& .MuiTypography-root": {
+                              fontSize: "0.85rem",
+                              fontFamily: "IRANSANS",
+                            },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+      </Box>
     </Box>
   );
 }
