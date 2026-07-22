@@ -184,6 +184,7 @@ const TimeInput = ({
 
   return (
     <Box
+      data-no-virtual-keyboard
       sx={{
         display: "flex",
         alignItems: "center",

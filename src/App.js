@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ProtectedRoute, { SuperuserRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
+import VirtualKeyboard from "./components/common/VirtualKeyboard";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Feeding = lazy(() => import("./pages/Feeding"));
@@ -24,6 +25,7 @@ function App() {
     <AuthProvider>
       <div className="App">
         <Toaster position="top-center" />
+        <VirtualKeyboard />
         <Outlet />
         <Navbar />
         <Suspense fallback={<PageFallback />}>

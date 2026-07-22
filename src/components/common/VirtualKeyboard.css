@@ -1,0 +1,155 @@
+.virtual-keyboard-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1400;
+  background: #f9fbf9;
+  border-top: 2px solid #379e79;
+  box-shadow: 0 -8px 24px rgba(17, 87, 62, 0.16);
+  padding: 8px 12px 12px;
+  direction: ltr;
+}
+
+.draggable-wrapper {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1400;
+  display: inline-block;
+}
+
+.virtual-keyboard-container.numpad-mode {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  top: auto;
+  transform: none;
+  border: 2px solid #379e79;
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(17, 87, 62, 0.25);
+  background: #ffffff;
+  width: auto;
+  overflow: hidden;
+}
+
+.numpad-drag-handle {
+  background: #eef7f3;
+  color: #11573e;
+  padding: 8px 12px;
+  font-family: IRANSANS, sans-serif;
+  font-size: 12px;
+  text-align: center;
+  border-bottom: 1px solid #d9e8e1;
+  cursor: grab;
+  user-select: none;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  margin: -8px -12px 8px -12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.numpad-drag-handle:active {
+  cursor: grabbing;
+}
+
+.virtual-keyboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  direction: rtl;
+  user-select: none;
+}
+
+.virtual-keyboard-toolbar button {
+  border: 1px solid #379e79;
+  background: #fff;
+  color: #11573e;
+  border-radius: 8px;
+  font-family: IRANSANS, sans-serif;
+  font-size: 14px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.virtual-keyboard-toolbar button:hover {
+  background: #eef7f3;
+}
+
+.virtual-keyboard-mode-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.virtual-keyboard-mode-group button.active {
+  background: #eef7f3;
+  border-color: #11573e;
+  font-weight: 600;
+}
+
+.virtual-keyboard-theme.hg-theme-default {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  background: transparent;
+  border-radius: 8px;
+  font-family: IRANSANS, sans-serif;
+}
+
+.virtual-keyboard-theme.hg-theme-default .hg-button {
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid #d9e8e1;
+  background: #fff;
+  color: #11573e;
+  box-shadow: none;
+  font-size: 16px;
+}
+
+.virtual-keyboard-theme.hg-theme-default .hg-button:active,
+.virtual-keyboard-theme.hg-theme-default .hg-button:hover {
+  background: #eef7f3;
+  border-color: #379e79;
+}
+
+.virtual-keyboard-theme.hg-theme-default .hg-row:not(:last-child) {
+  margin-bottom: 6px;
+}
+
+.virtual-keyboard-container.numpad-mode .virtual-keyboard-theme.hg-theme-default {
+  max-width: 320px;
+}
+
+.virtual-keyboard-container.numpad-mode .virtual-keyboard-theme.hg-theme-default .hg-button {
+  height: 52px;
+  min-width: 64px;
+  font-size: 20px;
+}
+
+.virtual-keyboard-container.letters-mode.farsi-mode {
+  direction: rtl;
+}
+
+.virtual-keyboard-container.letters-mode.farsi-mode .virtual-keyboard-theme.hg-theme-default {
+  direction: rtl;
+}
+
+.virtual-keyboard-container.letters-mode.english-mode {
+  direction: ltr;
+}
+
+body.virtual-keyboard-open:not(:has(.virtual-keyboard-container.numpad-mode)) {
+  padding-bottom: 300px;
+}
+
+body.virtual-keyboard-open .App {
+  padding-bottom: 12px;
+}
