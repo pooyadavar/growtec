@@ -74,6 +74,12 @@ const StatusBox = styled(Box)(({ theme, status }) => ({
   backgroundColor: status === 3 ? "#E8F5E9" : "#FFEBEE",
 }));
 
+const formatTwoDecimals = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  const num = Number(value);
+  return Number.isNaN(num) ? value : num.toFixed(2);
+};
+
 const BuildDetailsModal = ({ open, onClose }) => {
   const { data: scheduleData } = useQuery({
     queryKey: queryKeys.foodstuffSchedule(),
@@ -208,7 +214,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
                       fontSize="11px"
                       textAlign="center"
                     >
-                      {toPersianDigits(detail.volume)}
+                      {toPersianDigits(formatTwoDecimals(detail.volume))}
                     </Typography>
                   </DataCell>
 
@@ -219,7 +225,7 @@ const BuildDetailsModal = ({ open, onClose }) => {
                       fontSize="11px"
                       textAlign="center"
                     >
-                      {toPersianDigits(detail.type)}
+                      {toPersianDigits(formatTwoDecimals(detail.type))}
                     </Typography>
                   </DataCell>
 

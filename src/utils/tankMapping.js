@@ -1,10 +1,8 @@
 /** مخزن ساخت محلول (Feeding) */
 export const MIX_TANK_API_NUMBER = 1;
 
-/** UI مخزن آبیاری → API tank_number / zone */
-export const uiIrrigationTankToApi = (uiTankNumber) =>
-  Number(uiTankNumber) + 1;
+/** UI مخزن آبیاری = API tank_number */
+export const uiIrrigationTankToApi = (uiTankNumber) => Number(uiTankNumber);
 
-/** API → UI مخزن آبیاری */
-export const apiIrrigationTankToUi = (apiTankNumber) =>
-  Number(apiTankNumber) - 1;
+/** API tank_number = UI مخزن آبیاری */
+export const apiIrrigationTankToUi = (apiTankNumber) => Number(apiTankNumber);

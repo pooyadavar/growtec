@@ -22,20 +22,28 @@ import svgClockiconAsset from "../../assets/svg/icon.svg";
 import svgStopiconAsset from "../../assets/svg/stopicon.svg";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   makeManualSoluble,
   emptyingTank,
   manualInjection,
   controlMixer,
+  getMixerStatus,
   controlStocksMixer,
+  getStocksMixerStatus,
   emergencyStop,
 } from "../../api/solubleApi";
 import { calibrateDosingPump } from "../../api/calibrationApi";
+import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
+const isActiveStatus = (status) => status === "on" || status === "start";
+const getStatusValue = (data) =>
+  typeof data === "string" ? data : data?.status;
+
 const Control = () => {
+  const queryClient = useQueryClient();
   const [injectionType, setInjectionType] = React.useState("stock");
   const [selectedPomp, setSelectedPomp] = React.useState(0);
   const [injectionVolume, setInjectionVolume] = React.useState();
@@ -109,6 +117,54 @@ const Control = () => {
   const [emptyStatusText, setEmptyStatusText] = React.useState("");
 
   // --- API Mutations ---
+  const {
+    data: mixerStatusData,
+    isError: isMixerStatusError,
+    error: mixerStatusError,
+  } = useQuery({
+    queryKey: queryKeys.mixerStatus(),
+    queryFn: getMixerStatus,
+    refetchOnMount: "always",
+  });
+
+  const {
+    data: stocksMixerStatusData,
+    isError: isStocksMixerStatusError,
+    error: stocksMixerStatusError,
+  } = useQuery({
+    queryKey: queryKeys.stocksMixerStatus(),
+    queryFn: getStocksMixerStatus,
+    refetchOnMount: "always",
+  });
+
+  React.useEffect(() => {
+    const status = getStatusValue(mixerStatusData);
+    if (status) {
+      setIsMixerOn(isActiveStatus(status));
+    }
+  }, [mixerStatusData]);
+
+  React.useEffect(() => {
+    const status = getStatusValue(stocksMixerStatusData);
+    if (status) {
+      setIsHemzanOn(isActiveStatus(status));
+    }
+  }, [stocksMixerStatusData]);
+
+  React.useEffect(() => {
+    if (isMixerStatusError) {
+      console.error("Error getting mixer status:", mixerStatusError);
+      toast.error("خطا در دریافت وضعیت میکسر");
+    }
+  }, [isMixerStatusError, mixerStatusError]);
+
+  React.useEffect(() => {
+    if (isStocksMixerStatusError) {
+      console.error("Error getting stocks mixer status:", stocksMixerStatusError);
+      toast.error("خطا در دریافت وضعیت همزن");
+    }
+  }, [isStocksMixerStatusError, stocksMixerStatusError]);
+
   const { mutate: emptyTankMutation } = useMutation({
     mutationFn: emptyingTank,
     onSuccess: (data, variables) => {
@@ -151,6 +207,7 @@ const Control = () => {
     mutationFn: controlMixer,
     onSuccess: (data, variables) => {
       setIsMixerOn(variables.status === "on");
+      queryClient.invalidateQueries({ queryKey: queryKeys.mixerStatus() });
       toast.success(
         `میکسر ${variables.status === "on" ? "روشن شد" : "خاموش شد"}`,
       );
@@ -165,6 +222,9 @@ const Control = () => {
     mutationFn: controlStocksMixer,
     onSuccess: (data, variables) => {
       setIsHemzanOn(variables.status === "on");
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stocksMixerStatus(),
+      });
       toast.success(
         `همزن ${variables.status === "on" ? "روشن شد" : "خاموش شد"}`,
       );

@@ -6,7 +6,6 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { styled } from "@mui/system";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 import { toPersianDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "./BuildDetailsModal";
@@ -19,21 +18,6 @@ import {
   getStockRowCol1Value,
   getStockRowCol2Value,
 } from "../../utils/mixTankStockReport";
-
-const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
-  minWidth: "unset",
-  padding: "4px 6px",
-  borderRadius: "8px",
-  backgroundColor: selected ? "#FFEBCC" : "transparent",
-  color: selected ? "#E65100" : theme.palette.text.secondary,
-  border: selected ? "1px solid #FFCC80" : "1px solid #e0e0e0",
-  fontSize: "0.8rem",
-  fontWeight: "bold",
-  fontFamily: "IRANSANS",
-  "&:hover": {
-    backgroundColor: selected ? "#FFEBCC" : "#f5f5f5",
-  },
-}));
 
 const ReadonlyValueBox = ({ value, mode }) => (
   <Box
@@ -62,11 +46,11 @@ const ReadonlyValueBox = ({ value, mode }) => (
   </Box>
 );
 
-const PhEcControlCard = ({ contents, mixTankData }) => {
-  const [selectedStockType, setSelectedStockType] = React.useState("total");
+const PhEcControlCard = ({ contents, mixTankData, dosingPumpCount }) => {
+  const selectedStockType = "total";
   const stockRows = React.useMemo(
-    () => buildMixTankStockRows(mixTankData),
-    [mixTankData],
+    () => buildMixTankStockRows(mixTankData, dosingPumpCount),
+    [mixTankData, dosingPumpCount],
   );
 
   const [openBuildDetailsModal, setOpenBuildDetailsModal] =
@@ -124,7 +108,6 @@ const PhEcControlCard = ({ contents, mixTankData }) => {
       isDragging.current = false;
     }, 50);
   };
-  // =================================================
 
   const statusDetailsData = [
     { parameter: "پمپ A", status: "روشن" },
@@ -174,7 +157,6 @@ const PhEcControlCard = ({ contents, mixTankData }) => {
         borderRadius: "10px",
         px: 1,
         pr: 1.5,
-        // ✅ اعمال قفل ضدِ سلکت روی کل کامپوننت و تمام فرزندان
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
@@ -187,9 +169,10 @@ const PhEcControlCard = ({ contents, mixTankData }) => {
           justifyContent: "space-between",
           alignItems: "flex-start",
           gap: 1,
+          transform: "scaleY(1.12)",
         }}
       >
-        <Stack alignItems="center" spacing={0.25} sx={{ height: "95%" }}>
+        <Stack alignItems="center" spacing={0.25} sx={{ height: "100%" }}>
           <Stack
             direction="row"
             spacing={1}
@@ -327,31 +310,26 @@ const PhEcControlCard = ({ contents, mixTankData }) => {
           </Typography>
           <Stack
             direction="row"
-            gap={0}
+            gap={1}
             justifyContent={"space-between"}
             sx={{ mb: 1 }}
           >
-            <CustomToggleButton
-              selected={selectedStockType === "stock"}
-              onClick={() => setSelectedStockType("stock")}
-              size="small"
-            >
-              استوک
-            </CustomToggleButton>
-            <CustomToggleButton
-              selected={selectedStockType === "total"}
-              onClick={() => setSelectedStockType("total")}
-              size="small"
-            >
-              مجموع
-            </CustomToggleButton>
-            <CustomToggleButton
-              selected={selectedStockType === "time"}
-              onClick={() => setSelectedStockType("time")}
-              size="small"
-            >
-              زمان
-            </CustomToggleButton>
+            {["استوک", "مجموع", "زمان"].map((label) => (
+              <Typography
+                key={label}
+                fontFamily="IRANSANS"
+                sx={{
+                  width: label === "استوک" ? 30 : 40,
+                  color: "#E65100",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  lineHeight: 1.2,
+                }}
+              >
+                {label}
+              </Typography>
+            ))}
           </Stack>
 
           <Box

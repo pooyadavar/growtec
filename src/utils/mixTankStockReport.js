@@ -44,12 +44,22 @@ const sortNumericKeys = (obj = {}) =>
     .filter((key) => !Number.isNaN(key))
     .sort((a, b) => a - b);
 
-export const buildMixTankStockRows = (data) => {
+const buildStockKeys = (stockVolume, dosingPumpCount) => {
+  const pumpCount = Number(dosingPumpCount);
+  if (pumpCount > 0) {
+    const stockPumpCount = Math.max(0, pumpCount - 1);
+    return Array.from({ length: stockPumpCount }, (_, index) => index + 1);
+  }
+
+  return sortNumericKeys(stockVolume);
+};
+
+export const buildMixTankStockRows = (data, dosingPumpCount) => {
   if (!data) return [];
 
   const stockVolume = data.stock_volume || {};
   const stockTime = data.stock_dosing_pump_remaining_time || {};
-  const stockKeys = sortNumericKeys(stockVolume);
+  const stockKeys = buildStockKeys(stockVolume, dosingPumpCount);
 
   const rows = [
     {

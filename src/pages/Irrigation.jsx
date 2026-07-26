@@ -14,15 +14,19 @@ import {
 } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getIrrigationTanksStatusLogs,
   submitManualIrrigationWithSchedule,
 } from "../api/irrigationApi";
+import { getIrrigationConfig } from "../api/configApi";
 import { queryKeys } from "../api/queryKeys";
 import IconTextButton from "../card/IconTextButton";
 import ModalCloseButton from "../components/common/ModalCloseButton";
 import svgWatericonAsset from "../assets/svg/watericon.svg";
 import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
+import {
+  getActiveIrrigationTankIds,
+  getTankZoneOptions,
+} from "../utils/irrigationConfig";
 
 const inputStyle = {
   paddingRight: "8px",
@@ -37,38 +41,28 @@ const inputStyle = {
 const Irrigation = () => {
   const queryClient = useQueryClient();
 
-  const { data } = useQuery({
-    queryKey: queryKeys.irrigationTanksStatusLogs(),
-    queryFn: getIrrigationTanksStatusLogs,
-    staleTime: 60 * 1000,
-    gcTime: 5 * 60 * 1000,
-    networkMode: "always",
-    retry: 1,
-    placeholderData: (previousData) => previousData,
+  const { data: irrigationConfig } = useQuery({
+    queryKey: queryKeys.adminIrrigationConfig(),
+    queryFn: getIrrigationConfig,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const logs = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-
-  const [singleTankId, setSingleTankId] = useState(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState(1);
   const [irrigationNumber, setIrrigationNumber] = useState("");
+  const [isTankSelectOpen, setIsTankSelectOpen] = useState(false);
+  const [isIrrigationZoneSelectOpen, setIsIrrigationZoneSelectOpen] =
+    useState(false);
   const [volume, setVolume] = useState("");
   const [duration, setDuration] = useState("");
 
-  useEffect(() => {
-    const uniqueTanks = new Set(
-      logs.map((log) => log.log_data?.number).filter((num) => num != null),
-    );
-    if (uniqueTanks.size === 1) {
-      setSingleTankId([...uniqueTanks][0]);
-    } else {
-      setSingleTankId(null);
-    }
-  }, [logs]);
+  const tankIds = useMemo(
+    () => getActiveIrrigationTankIds(irrigationConfig),
+    [irrigationConfig],
+  );
 
   const resetManualForm = () => {
-    setSelectedZone(1);
+    setSelectedZone(tankIds[0] ?? 1);
     setIrrigationNumber("");
     setVolume("");
     setDuration("");
@@ -80,6 +74,30 @@ const Irrigation = () => {
   };
 
   const handleManualOpen = () => setManualOpen(true);
+
+  const manualZoneOptions = useMemo(
+    () => getTankZoneOptions(irrigationConfig, selectedZone),
+    [irrigationConfig, selectedZone],
+  );
+
+  useEffect(() => {
+    if (tankIds.length === 0) return;
+    if (!tankIds.includes(Number(selectedZone))) {
+      setSelectedZone(tankIds[0]);
+      setIrrigationNumber("");
+    }
+  }, [tankIds, selectedZone]);
+
+  useEffect(() => {
+    if (manualZoneOptions.length === 0) {
+      setIrrigationNumber("");
+      return;
+    }
+
+    if (!manualZoneOptions.includes(Number(irrigationNumber))) {
+      setIrrigationNumber(String(manualZoneOptions[0]));
+    }
+  }, [manualZoneOptions, irrigationNumber]);
 
   const handleNumberChange = (setter) => (event) => {
     const raw = toEnglishDigits(event.target.value);
@@ -106,6 +124,15 @@ const Irrigation = () => {
     });
 
   const handleManualSubmit = () => {
+    if (irrigationNumber === "") {
+      toast.error("لطفاً زون آبیاری را انتخاب کنید");
+      return;
+    }
+    if (tankIds.length === 0) {
+      toast.error("مخزن آبیاری فعالی وجود ندارد");
+      return;
+    }
+
     const manualPayload = { status: "start" };
 
     if (irrigationNumber !== "") {
@@ -125,7 +152,7 @@ const Irrigation = () => {
       manualPayload,
       scheduleInput: {
         status: "start",
-        zone: selectedZone,
+        zone: irrigationNumber,
         volume,
         duration,
       },
@@ -147,8 +174,8 @@ const Irrigation = () => {
         pb: 1,
       }}
     >
-      {singleTankId ? (
-        <IrrigationOneStorage storageNumber={singleTankId} />
+      {tankIds.length === 1 ? (
+        <IrrigationOneStorage storageNumber={tankIds[0]} />
       ) : (
         <IrrigationManyStorage />
       )}
@@ -222,6 +249,12 @@ const Irrigation = () => {
                 height: "40px",
                 borderRadius: "10px",
                 fontFamily: "IRANSANS",
+                cursor: "pointer",
+              }}
+              onMouseDown={(e) => {
+                if (isTankSelectOpen) return;
+                e.preventDefault();
+                setIsTankSelectOpen(true);
               }}
             >
               <InputLabel
@@ -235,29 +268,96 @@ const Irrigation = () => {
               </InputLabel>
               <Select
                 value={selectedZone}
-                onChange={(e) => setSelectedZone(Number(e.target.value))}
+                open={isTankSelectOpen}
+                onOpen={() => setIsTankSelectOpen(true)}
+                onClose={() => setIsTankSelectOpen(false)}
+                onChange={(e) => {
+                  setSelectedZone(Number(e.target.value));
+                  setIrrigationNumber("");
+                  setIsTankSelectOpen(false);
+                }}
                 label="مخزن"
                 sx={{
                   height: "40px",
                   fontFamily: "IRANSANS",
                   borderRadius: "10px",
+                  cursor: "pointer",
+                  "& .MuiSelect-select": {
+                    height: "100%",
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems: "center",
+                  },
                 }}
               >
-                {[1, 2, 3, 4].map((num) => (
+                {tankIds.map((num) => (
                   <MenuItem key={num} value={num} sx={{ fontFamily: "IRANSANS" }}>
                     {toPersianDigits(num)}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="زون آبیاری"
-              value={toPersianDigits(irrigationNumber)}
-              onChange={handleNumberChange(setIrrigationNumber)}
-              style={inputStyle}
-            />
+            <FormControl
+              sx={{
+                width: "154px",
+                height: "40px",
+                borderRadius: "10px",
+                fontFamily: "IRANSANS",
+                cursor: "pointer",
+              }}
+              onMouseDown={(e) => {
+                if (isIrrigationZoneSelectOpen) return;
+                e.preventDefault();
+                setIsIrrigationZoneSelectOpen(true);
+              }}
+            >
+              <InputLabel
+                sx={{
+                  fontFamily: "IRANSANS",
+                  fontSize: "14px",
+                  lineHeight: "unset",
+                }}
+              >
+                زون آبیاری
+              </InputLabel>
+              <Select
+                value={irrigationNumber}
+                open={isIrrigationZoneSelectOpen}
+                onOpen={() => setIsIrrigationZoneSelectOpen(true)}
+                onClose={() => setIsIrrigationZoneSelectOpen(false)}
+                onChange={(e) => {
+                  setIrrigationNumber(String(e.target.value));
+                  setIsIrrigationZoneSelectOpen(false);
+                }}
+                label="زون آبیاری"
+                renderValue={(value) => {
+                  const index = manualZoneOptions.indexOf(Number(value));
+                  return toPersianDigits(index >= 0 ? index + 1 : value);
+                }}
+                sx={{
+                  height: "40px",
+                  fontFamily: "IRANSANS",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  "& .MuiSelect-select": {
+                    height: "100%",
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems: "center",
+                  },
+                }}
+              >
+                {manualZoneOptions.map((zone, index) => (
+                  <MenuItem
+                    key={zone}
+                    value={String(zone)}
+                    sx={{ fontFamily: "IRANSANS" }}
+                  >
+                    {toPersianDigits(index + 1)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <input
               type="text"
               inputMode="decimal"

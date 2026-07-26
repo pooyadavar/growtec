@@ -1,5 +1,4 @@
 import apiClient from "./apiClient";
-import { uiIrrigationTankToApi } from "../utils/tankMapping";
 
 export const normalizeIrrigationTanksStatusLogs = (response) => {
   if (Array.isArray(response)) return response;
@@ -41,7 +40,7 @@ export const deleteIrrigationSchedule = async (id) => {
 };
 
 export const makeManualIrrigation = async (data) => {
-  return apiClient.post("/log/irrigation/manual-irrigation/", data);
+  return apiClient.post("/irrigation/manual-irrigation/", data);
 };
 
 const formatScheduleTime = (date) => {
@@ -75,7 +74,7 @@ export const buildManualIrrigationSchedulePayload = ({
     is_manual: true,
     start_status: 0,
     end_status: 0,
-    zone: uiIrrigationTankToApi(zone),
+    zone: Number(zone),
     volume: volume !== "" && volume != null ? Number(volume) : 0,
     start_time: formatScheduleTime(startDate),
     end_time: formatScheduleTime(endDate),

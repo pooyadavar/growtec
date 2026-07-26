@@ -9,15 +9,15 @@ export const cleanDecimal = (val) => {
 export const parseAdminConfig = ({ irrRes, solRes, cliRes }) => {
   let newData = {};
 
-  if (irrRes.status === "fulfilled") {
+  if (irrRes?.status === "fulfilled") {
     const data = irrRes.value.data || irrRes.value;
     for (let key in data) newData[key] = cleanDecimal(data[key]);
   }
-  if (solRes.status === "fulfilled") {
+  if (solRes?.status === "fulfilled") {
     const data = solRes.value.data || solRes.value;
     for (let key in data) newData[key] = cleanDecimal(data[key]);
   }
-  if (cliRes.status === "fulfilled") {
+  if (cliRes?.status === "fulfilled") {
     const data = cliRes.value.data || cliRes.value;
     if (data.zones) {
       for (let i = 1; i <= 5; i++) {

@@ -54,7 +54,7 @@ const assets = {
     vertical_barstatus_baz:require("./svg/vertical-barstatus-baz.svg").default, 
     vertical_barstatus_khonsa:require("./svg/vertical-barstatus-khonsa.svg").default,
     clockicon:require("./svg/icon.svg").default,
-    aiicon:require("./svg/Ai.svg").default,
+    aiicon:require("./svg/Ai.svg").default,  
     testtubeicone:require("./svg/TestTube.svg").default,
     editicon:require("./svg/editicon.svg").default,
     chemicalicon:require("./svg/chemicalicon.svg").default,

@@ -7,6 +7,7 @@ import Storages from "../components/dashboard/Storages";
 import { Container, Typography, CircularProgress, Alert, Paper } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { getMixTankStatus, getIrrigationTanksStatus } from "../api/dashboardApi";
+import { getSolubleConfig } from "../api/configApi";
 import { queryKeys } from "../api/queryKeys";
 
 const Dashboard = () => {
@@ -42,6 +43,16 @@ const Dashboard = () => {
         .filter((item) => item.max_volume != null);
     },
   });
+
+  const { data: solubleConfig } = useQuery({
+    queryKey: queryKeys.solubleConfig(),
+    queryFn: getSolubleConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dosingPumpCount =
+    solubleConfig?.number_of_dosing_pumps ??
+    solubleConfig?.data?.number_of_dosing_pumps;
 
   const mixTankFetchFailed =
     (isMixTankError || isMixTankRefetchError) && !mixTankData;
@@ -108,6 +119,7 @@ const Dashboard = () => {
             <PhEcControlCard
               contents={mixTankData?.contents}
               mixTankData={mixTankData}
+              dosingPumpCount={dosingPumpCount}
             />
           )}
         </div>

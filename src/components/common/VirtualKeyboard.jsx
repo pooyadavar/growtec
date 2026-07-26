@@ -31,6 +31,14 @@ const NON_TEXT_INPUT_TYPES = new Set([
 const isEditableField = (element) => {
   if (!element || !(element instanceof HTMLElement)) return false;
   if (element.closest("[data-no-virtual-keyboard]")) return false;
+  if (
+    element.tagName === "SELECT" ||
+    element.closest(
+      "select, [role='combobox'], [aria-haspopup='listbox'], .MuiSelect-root, .MuiSelect-select",
+    )
+  ) {
+    return false;
+  }
 
   if (element.tagName === "TEXTAREA") {
     return !element.disabled && !element.readOnly;

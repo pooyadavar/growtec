@@ -7,9 +7,7 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { styled } from "@mui/system";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
-// مسیرهای ایمپورت را طبق پروژه خودتان چک کنید
 import { toPersianDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "../dashboard/BuildDetailsModal";
 import StatusModal from "../dashboard/StatusModal";
@@ -23,22 +21,6 @@ import {
   getStockRowCol2Value,
 } from "../../utils/mixTankStockReport";
 
-// استایل دکمه‌های تاگل
-const CustomToggleButton = styled(Button)(({ theme, selected }) => ({
-  minWidth: "unset",
-  padding: "4px 6px",
-  borderRadius: "8px",
-  backgroundColor: selected ? "#FFEBCC" : "transparent",
-  color: selected ? "#E65100" : theme.palette.text.secondary,
-  border: selected ? "1px solid #FFCC80" : "1px solid #e0e0e0",
-  fontSize: "0.8rem",
-  fontWeight: "bold",
-  fontFamily: "IRANSANS",
-  "&:hover": {
-    backgroundColor: selected ? "#FFEBCC" : "#f5f5f5",
-  },
-}));
-
 const PhEcControlCardMixer = ({
   contents,
   mixTankData,
@@ -46,12 +28,13 @@ const PhEcControlCardMixer = ({
   phValue,
   ecRange,
   phRange,
+  dosingPumpCount,
 }) => {
-  const [selectedStockType, setSelectedStockType] = React.useState("total");
+  const selectedStockType = "total";
 
   const stockRows = React.useMemo(
-    () => buildMixTankStockRows(mixTankData),
-    [mixTankData],
+    () => buildMixTankStockRows(mixTankData, dosingPumpCount),
+    [mixTankData, dosingPumpCount],
   );
 
   const [openBuildDetailsModal, setOpenBuildDetailsModal] =
@@ -59,14 +42,12 @@ const PhEcControlCardMixer = ({
   const handleOpenBuildDetailsModal = () => setOpenBuildDetailsModal(true);
   const handleCloseBuildDetailsModal = () => setOpenBuildDetailsModal(false);
 
-  // === منطق اسکرول عمودی با درگ (Drag to Scroll) ===
   const scrollRef = useRef(null);
   const isDown = useRef(false);
   const isDragging = useRef(false);
   const startY = useRef(0);
   const scrollTopState = useRef(0);
 
-  // رویدادهای دسکتاپ (موس)
   const handleMouseDown = (e) => {
     isDown.current = true;
     isDragging.current = false;
@@ -154,7 +135,6 @@ const PhEcControlCardMixer = ({
         flexDirection: "column",
         alignItems: "center",
         borderRadius: "10px",
-        // ✅ جلوگیری کامل از انتخاب شدن متن
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
@@ -380,19 +360,21 @@ const PhEcControlCardMixer = ({
             justifyContent={"space-between"}
             sx={{ mb: 1 }}
           >
-            {["stock", "total", "time"].map((type) => (
-              <CustomToggleButton
-                key={type}
-                selected={selectedStockType === type}
-                onClick={() => setSelectedStockType(type)}
-                size="small"
+            {["استوک", "مجموع", "زمان"].map((label) => (
+              <Typography
+                key={label}
+                fontFamily="IRANSANS"
+                sx={{
+                  width: label === "استوک" ? 30 : 37,
+                  color: "#E65100",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  lineHeight: 1.2,
+                }}
               >
-                {type === "stock"
-                  ? "استوک"
-                  : type === "total"
-                    ? "مجموع"
-                    : "زمان"}
-              </CustomToggleButton>
+                {label}
+              </Typography>
             ))}
           </Stack>
           <Box

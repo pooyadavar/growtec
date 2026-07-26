@@ -54,9 +54,11 @@ import {
   getTemperaturePart,
   getHumidityPart,
 } from "../../api/climateApi";
+import { getClimateConfig } from "../../api/configApi";
 import { getClimateTemperatureHumidityLogs } from "../../api/logsApi";
 import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits } from "../../utils/persianDigits";
+import { getActiveClimateZoneIds } from "../../utils/irrigationConfig";
 import {
   timeToMinutes,
   downsampleSeriesByTime,
@@ -125,15 +127,40 @@ const Payesh = () => {
   const [activity, setActivity] = React.useState(true);
   const [zone, setZone] = useState(1);
 
+  const { data: climateConfig } = useQuery({
+    queryKey: queryKeys.adminClimateConfig(),
+    queryFn: getClimateConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const activeZoneIds = useMemo(
+    () => getActiveClimateZoneIds(climateConfig),
+    [climateConfig],
+  );
+
+  useEffect(() => {
+    if (activeZoneIds.length === 0) return;
+    if (!activeZoneIds.includes(Number(zone))) {
+      setZone(activeZoneIds[0]);
+    }
+  }, [activeZoneIds, zone]);
+
+  const currentZoneIndex = activeZoneIds.indexOf(Number(zone));
+  const canGoNextZone =
+    currentZoneIndex >= 0 && currentZoneIndex < activeZoneIds.length - 1;
+  const canGoPrevZone = currentZoneIndex > 0;
+
   const { data: operatorModeData } = useQuery({
     queryKey: queryKeys.operatorMode(zone),
     queryFn: () => getOperatorMode(zone),
+    enabled: activeZoneIds.length > 0,
     refetchInterval: 30_000,
   });
 
   const { data: operatorStatusData } = useQuery({
     queryKey: queryKeys.operatorStatus(zone),
     queryFn: () => getOperatorStatus(zone),
+    enabled: activeZoneIds.length > 0,
     refetchInterval: 30_000,
   });
 
@@ -525,6 +552,7 @@ const Payesh = () => {
   const { data: temperaturePartStatus = "" } = useQuery({
     queryKey: queryKeys.payesh.temperaturePart(zone),
     queryFn: () => getTemperaturePart(zone),
+    enabled: activeZoneIds.length > 0,
     staleTime: 20_000,
     gcTime: 5 * 60_000,
     refetchInterval: 30_000,
@@ -533,10 +561,19 @@ const Payesh = () => {
   const { data: humidityPartStatus = "" } = useQuery({
     queryKey: queryKeys.payesh.humidityPart(zone),
     queryFn: () => getHumidityPart(zone),
+    enabled: activeZoneIds.length > 0,
     staleTime: 20_000,
     gcTime: 5 * 60_000,
     refetchInterval: 30_000,
   });
+
+  const sensorCount = useMemo(() => {
+    const zoneConfig =
+      climateConfig?.zones?.[String(zone)] ??
+      climateConfig?.data?.zones?.[String(zone)];
+    const count = Number(zoneConfig?.number_of_sensors);
+    return count > 0 ? Math.min(count, 6) : 6;
+  }, [climateConfig, zone]);
 
   const { data: climateChartData } = useQuery({
     queryKey: queryKeys.payesh.temperatureHumidity(zone),
@@ -588,6 +625,7 @@ const Payesh = () => {
         lastTimeMinutes,
       };
     },
+    enabled: activeZoneIds.length > 0,
     staleTime: 20_000,
     gcTime: 10 * 60_000,
     refetchInterval: 20_000,
@@ -611,6 +649,10 @@ const Payesh = () => {
       { yKey: "sensor6", yName: "سنسور ۶", stroke: "#F7DC6F" },
     ],
     [],
+  );
+  const visibleLineSeries = useMemo(
+    () => lineSeriesBase.slice(0, sensorCount),
+    [lineSeriesBase, sensorCount],
   );
 
   // توزیع کاملاً مساوی لیبل‌ها بر اساس ایندکس آرایه برای حل مشکل بصری
@@ -651,7 +693,7 @@ const Payesh = () => {
       theme: payeshChartTheme,
       title: { text: "دما", fontFamily: "IRANSANS" },
       data: temp,
-      series: lineSeriesBase.map((series) => ({
+      series: visibleLineSeries.map((series) => ({
         type: "line",
         xKey: "time",
         marker: { enabled: false },
@@ -679,9 +721,24 @@ const Payesh = () => {
           },
         },
       ],
-      legend: { enabled: false },
+      legend: {
+        enabled: true,
+        position: "bottom",
+        spacing: 10,
+        item: {
+          spacing: 24,
+          marker: {
+            shape: "circle",
+            size: 12,
+          },
+          label: {
+            fontFamily: "IRANSANS",
+            direction: "rtl",
+          },
+        },
+      },
     }),
-    [temp, lineSeriesBase, getXAxisFormatter],
+    [temp, visibleLineSeries, getXAxisFormatter],
   );
 
   const humOptions = useMemo(
@@ -689,7 +746,7 @@ const Payesh = () => {
       theme: payeshChartTheme,
       title: { text: "رطوبت", fontFamily: "IRANSANS" },
       data: humidity,
-      series: lineSeriesBase.map((series) => ({
+      series: visibleLineSeries.map((series) => ({
         type: "line",
         xKey: "time",
         marker: { enabled: false },
@@ -734,7 +791,7 @@ const Payesh = () => {
         },
       },
     }),
-    [humidity, lineSeriesBase, getXAxisFormatter],
+    [humidity, visibleLineSeries, getXAxisFormatter],
   );
 
   // const sendBoolean = async () => {
@@ -873,7 +930,9 @@ const Payesh = () => {
                 alt=""
                 className="button"
                 onClick={() => {
-                  setZone((prev) => Math.min(prev + 1, 5));
+                  if (canGoNextZone) {
+                    setZone(activeZoneIds[currentZoneIndex + 1]);
+                  }
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.15)")
@@ -881,6 +940,7 @@ const Payesh = () => {
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
+                style={{ opacity: canGoNextZone ? 1 : 0.45 }}
               />
               <Box
                 sx={{
@@ -921,7 +981,7 @@ const Payesh = () => {
                   fontFamily="IRANSANS"
                   alignContent={"center"}
                 >
-                  {toPersianDigits(zone)}
+                  {activeZoneIds.length > 0 ? toPersianDigits(zone) : "-"}
                 </Typography>
               </Box>
               <img
@@ -929,7 +989,9 @@ const Payesh = () => {
                 alt=""
                 className="button"
                 onClick={() => {
-                  setZone((prev) => Math.max(prev - 1, 1));
+                  if (canGoPrevZone) {
+                    setZone(activeZoneIds[currentZoneIndex - 1]);
+                  }
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.15)")
@@ -937,6 +999,7 @@ const Payesh = () => {
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
+                style={{ opacity: canGoPrevZone ? 1 : 0.45 }}
               />
             </Box>
           </Box>

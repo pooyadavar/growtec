@@ -14,6 +14,8 @@ import {
   Alert,
   Collapse,
   Button,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { TransitionGroup } from "react-transition-group";
 import ModalCloseButton from "../common/ModalCloseButton";
@@ -35,9 +37,14 @@ import {
   updateIrrigationSchedule,
   deleteIrrigationSchedule,
 } from "../../api/irrigationApi";
+import { getIrrigationConfig } from "../../api/configApi";
 import { queryKeys } from "../../api/queryKeys";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import { uiIrrigationTankToApi } from "../../utils/tankMapping";
+import {
+  getActiveIrrigationTankIds,
+  getTankZoneOptions,
+} from "../../utils/irrigationConfig";
 import TimeInput from "../common/TimeInput";
 
 // Helper function to determine display status
@@ -53,8 +60,16 @@ const getDisplayStatus = (startStatus, endStatus) => {
 
 const MANUAL_ROW_BG = "#EEEEEE";
 
-const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
+const ScheduleRow = ({
+  id,
+  data,
+  onChange,
+  onDelete,
+  isNew,
+  zoneOptions = [],
+}) => {
   const [isChanging, setIsChanging] = useState(false);
+  const [isZoneOpen, setIsZoneOpen] = useState(false);
 
   const handleToggleActive = () => {
     setIsChanging(true);
@@ -65,6 +80,18 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
   };
 
   const displayStatus = getDisplayStatus(data.start_status, data.end_status);
+  const availableZoneOptions = useMemo(() => {
+    const currentZone = Number(data.zone);
+    const options = [...zoneOptions];
+    if (currentZone && !options.includes(currentZone)) {
+      options.push(currentZone);
+    }
+    return options.sort((a, b) => a - b);
+  }, [data.zone, zoneOptions]);
+  const getDisplayZone = (zone) => {
+    const index = availableZoneOptions.indexOf(Number(zone));
+    return index >= 0 ? index + 1 : zone;
+  };
 
   const statusContent = useMemo(() => {
     switch (displayStatus) {
@@ -181,7 +208,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
         />
       </Box>
 
-      {/* Zone (Read-Only) */}
+      {/* Zone */}
       <Box
         sx={{
           height: "35px",
@@ -190,13 +217,62 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew }) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          bgcolor: "#E0E0E0",
+          bgcolor: "#FFFFFF",
           fontFamily: "IRANSANS",
           fontSize: "12px",
           color: "#333",
+          overflow: "hidden",
+          cursor: "pointer",
+          position: "relative",
+        }}
+        onMouseDown={(e) => {
+          if (isZoneOpen) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setIsZoneOpen(true);
         }}
       >
-        {toPersianDigits(data.zone)}
+        <Select
+          value={data.zone ?? ""}
+          renderValue={(value) => toPersianDigits(getDisplayZone(value))}
+          open={isZoneOpen}
+          onOpen={() => setIsZoneOpen(true)}
+          onClose={() => setIsZoneOpen(false)}
+          onChange={(e) => {
+            onChange(id, "zone", Number(e.target.value));
+            setIsZoneOpen(false);
+          }}
+          variant="standard"
+          disableUnderline
+          sx={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            fontFamily: "IRANSANS",
+            fontSize: "12px",
+            textAlign: "center",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            "& .MuiSelect-select": {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: "100%",
+              boxSizing: "border-box",
+              py: 0,
+              cursor: "pointer",
+            },
+          }}
+        >
+          {availableZoneOptions.map((zone) => (
+            <MenuItem key={zone} value={zone} sx={{ fontFamily: "IRANSANS" }}>
+              {toPersianDigits(getDisplayZone(zone))}
+            </MenuItem>
+          ))}
+        </Select>
       </Box>
 
       {/* Volume */}
@@ -340,6 +416,12 @@ const IrrigationManyStorage = () => {
     },
   });
 
+  const { data: irrigationConfig } = useQuery({
+    queryKey: queryKeys.adminIrrigationConfig(),
+    queryFn: getIrrigationConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const deleteIrrigationScheduleMutation = useMutation({
     mutationFn: deleteIrrigationSchedule,
     onSuccess: () => {
@@ -376,7 +458,10 @@ const IrrigationManyStorage = () => {
     },
   });
 
-  const tankIds = [1, 2, 3, 4];
+  const tankIds = useMemo(
+    () => getActiveIrrigationTankIds(irrigationConfig),
+    [irrigationConfig],
+  );
 
   const slide = (direction) => {
     const el = scrollRef.current;
@@ -422,10 +507,21 @@ const IrrigationManyStorage = () => {
     return timeStr;
   };
 
+  const getZoneOptions = useCallback(
+    (tankId) => getTankZoneOptions(irrigationConfig, tankId),
+    [irrigationConfig],
+  );
+
   const handleSettingsClick = (id) => {
+    const zoneOptions = getZoneOptions(id);
+    const fallbackZone = uiIrrigationTankToApi(id);
     setSelectedTankId(id);
     const filteredRows = rawSchedules
-      .filter((item) => item.zone === uiIrrigationTankToApi(id))
+      .filter((item) =>
+        zoneOptions.length > 0
+          ? zoneOptions.includes(Number(item.zone))
+          : item.zone === fallbackZone,
+      )
       .map((item) => ({
         ...item,
         tempId: item.id || crypto.randomUUID(),
@@ -448,11 +544,12 @@ const IrrigationManyStorage = () => {
 
   // CRUD Operations for Modal
   const handleAddRow = () => {
+    const zoneOptions = getZoneOptions(selectedTankId);
     const newRow = {
       tempId: crypto.randomUUID(),
       start_time: "00:00:00",
       end_time: "00:00:00",
-      zone: uiIrrigationTankToApi(selectedTankId),
+      zone: zoneOptions[0] ?? uiIrrigationTankToApi(selectedTankId),
       volume: 0,
       is_active: true,
       start_status: 0,
@@ -562,6 +659,8 @@ const IrrigationManyStorage = () => {
     fontFamily: "IRANSANS",
   };
 
+  const selectedTankZoneOptions = getZoneOptions(selectedTankId);
+
   return (
     <Container
       disableGutters
@@ -635,9 +734,12 @@ const IrrigationManyStorage = () => {
           const tank = tanksData[apiTankKey] ?? tanksData[String(apiTankKey)];
           const current = tank ? tank.current : {};
           const history = tank ? tank.history : [];
+          const zoneOptions = getZoneOptions(id);
 
-          const tankSchedules = rawSchedules.filter(
-            (s) => s.zone === apiTankKey,
+          const tankSchedules = rawSchedules.filter((s) =>
+            zoneOptions.length > 0
+              ? zoneOptions.includes(Number(s.zone))
+              : s.zone === apiTankKey,
           );
 
           return (
@@ -658,6 +760,7 @@ const IrrigationManyStorage = () => {
                 chartData={history}
                 onClickSettings={() => handleSettingsClick(id)}
                 irrigationScheduleItems={tankSchedules}
+                zoneOptions={zoneOptions}
                 allSchedulesLoading={false}
               />
             </Box>
@@ -891,6 +994,7 @@ const IrrigationManyStorage = () => {
                         onChange={handleRowChange}
                         onDelete={handleDeleteRow}
                         isNew={row.isNew}
+                        zoneOptions={selectedTankZoneOptions}
                       />
                       <Divider sx={{ my: 1 }} />
                     </Collapse>

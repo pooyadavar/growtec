@@ -16,8 +16,16 @@ export const controlMixer = async (data) => {
   return apiClient.post('/soluble/mix-mix-tank/', data);
 };
 
+export const getMixerStatus = async () => {
+  return apiClient.get('/soluble/mix-mix-tank/');
+};
+
 export const controlStocksMixer = async (data) => {
   return apiClient.post('/soluble/mix-stocks/', data);
+};
+
+export const getStocksMixerStatus = async () => {
+  return apiClient.get('/soluble/mix-stocks/');
 };
 
 export const emergencyStop = async () => {
@@ -46,6 +54,14 @@ export const getFoodstuffScheduleById = async (id) => {
 
 export const getMixTankStatus = async () => {
   return apiClient.get('/soluble/mix-tank-status/');
+};
+
+export const getAiStatus = async () => {
+  return apiClient.get('/soluble/ai/');
+};
+
+export const setAiStatus = async (data) => {
+  return apiClient.post('/soluble/ai/', data);
 };
 
 const STOCK_PERCENT_KEYS = Array.from({ length: 10 }, (_, i) =>

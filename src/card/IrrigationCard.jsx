@@ -23,6 +23,7 @@ const IrrigationCard = ({
   onClick,
   onClickSettings,
   irrigationScheduleItems = [],
+  zoneOptions = [],
 }) => {
   const [isModalAOpen, setIsModalAOpen] = React.useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = React.useState(false);
@@ -43,6 +44,11 @@ const IrrigationCard = ({
       return "cross";
     }
     return "blank";
+  };
+
+  const getDisplayZone = (zone) => {
+    const index = zoneOptions.indexOf(Number(zone));
+    return index >= 0 ? index + 1 : apiIrrigationTankToUi(zone);
   };
 
   const chartOptions = React.useMemo(() => {
@@ -469,7 +475,7 @@ const IrrigationCard = ({
                           fontFamily: "IRANSANS",
                         }}
                       >
-                        {toPersianDigits(apiIrrigationTankToUi(item.zone))}
+                        {toPersianDigits(getDisplayZone(item.zone))}
                       </Box>
                     </div>
                     <div

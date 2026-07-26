@@ -61,6 +61,23 @@ const FIELD_TRANSLATIONS = {
   acid_injection_count: "تعداد تزریق اسید",
 };
 
+const TWO_DECIMAL_FIELDS = new Set([
+  "stock_injection_volume",
+  "acid_injection_volume",
+]);
+
+const formatDetailValue = (key, value) => {
+  if (!TWO_DECIMAL_FIELDS.has(key)) return value;
+  if (value === null || value === undefined || value === "") return "";
+
+  const raw = String(value);
+  const baseValue = /e/i.test(raw) ? raw.split(/e/i)[0] : raw;
+  const num = Number(baseValue);
+
+  if (Number.isNaN(num)) return value;
+  return num === 0 ? "" : num.toFixed(2);
+};
+
 const StatusModal = ({ open, onClose, title }) => {
   const { data: mixTankData } = useQuery({
     queryKey: queryKeys.mixTankStatusDetail(),
@@ -72,7 +89,7 @@ const StatusModal = ({ open, onClose, title }) => {
     const data = mixTankData?.detail || {};
     return Object.entries(data).map(([key, value]) => ({
       name: FIELD_TRANSLATIONS[key] || key,
-      value: value,
+      value: formatDetailValue(key, value),
     }));
   }, [mixTankData]);
 

@@ -205,6 +205,16 @@ const ProgramColumn = ({ number, data, onChange }) => {
 
 const PROGRAM_NUMBERS = [1, 2, 3];
 
+const combineProgramQueries = (results) => ({
+  isSuccess: results.length > 0 && results.every((query) => query.isSuccess),
+  dataUpdatedAt: results.map((query) => query.dataUpdatedAt).join("|"),
+  programs: results.reduce((acc, query, index) => {
+    acc[PROGRAM_NUMBERS[index]] = query.data || {};
+    return acc;
+  }, {}),
+  refetchAll: () => results.forEach((query) => query.refetch()),
+});
+
 const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const navigate = useNavigate();
   const [programs, setPrograms] = useState({});
@@ -225,44 +235,44 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const currentEc = primarySensor?.ec;
   const currentPh = primarySensor?.ph;
 
-  const programQueries = useQueries({
+  const programQueryResult = useQueries({
     queries: PROGRAM_NUMBERS.map((i) => ({
       queryKey: queryKeys.foodstuffProgram(i),
       queryFn: () => getFoodstuffPreparationProgram(i),
-      staleTime: 5 * 60 * 1000,
+      staleTime: 0,
       gcTime: 10 * 60 * 1000,
+      refetchOnMount: "always",
     })),
+    combine: combineProgramQueries,
   });
 
-  const isDataReady = programQueries.length > 0 && programQueries.every((q) => q.isSuccess);
+  const isDataReady = programQueryResult.isSuccess;
+  const programDataSignature = programQueryResult.dataUpdatedAt;
 
   const inputWaterRatioQuery = useQuery({
     queryKey: queryKeys.foodstuffInputWaterRatio(),
     queryFn: getFoodstuffPreparationProgramInputWaterRatio,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 10 * 60 * 1000,
+    refetchOnMount: "always",
   });
 
   useEffect(() => {
-    if (inputWaterRatioQuery.isSuccess && !isInputWaterInitialized) {
+    if (inputWaterRatioQuery.isSuccess) {
       const value = formatOneDecimal(inputWaterRatioQuery.data ?? "");
       setInputWaterVolume(value);
       setInitialInputWaterVolume(value);
       setIsInputWaterInitialized(true);
     }
-  }, [inputWaterRatioQuery.isSuccess, inputWaterRatioQuery.data, isInputWaterInitialized]);
+  }, [inputWaterRatioQuery.isSuccess, inputWaterRatioQuery.data]);
 
   useEffect(() => {
-    if (isDataReady && Object.keys(initialPrograms).length === 0) {
-      const newPrograms = {};
-      programQueries.forEach((query, index) => {
-        // اطمینان از اینکه اگر دیتایی از سمت بک‌اند نیامد، مقادیر پیش‌فرض ست شود
-        newPrograms[PROGRAM_NUMBERS[index]] = query.data || {};
-      });
+    if (isDataReady) {
+      const newPrograms = programQueryResult.programs;
       setPrograms(newPrograms);
       setInitialPrograms(JSON.parse(JSON.stringify(newPrograms)));
     }
-  }, [initialPrograms, isDataReady, programQueries]);
+  }, [isDataReady, programDataSignature, programQueryResult.programs]);
 
   useEffect(() => {
     if (
@@ -346,7 +356,7 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
 
     try {
       await Promise.all(updatePromises);
-      programQueries.forEach((query) => query.refetch());
+      programQueryResult.refetchAll();
       inputWaterRatioQuery.refetch();
       setInitialPrograms(JSON.parse(JSON.stringify(programs)));
       setInitialInputWaterVolume(inputWaterVolume);

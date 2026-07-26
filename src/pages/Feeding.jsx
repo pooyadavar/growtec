@@ -18,16 +18,20 @@ import svgClockiconAsset from "../assets/svg/icon.svg";
 import svgSetting2Asset from "../assets/svg/setting2.svg";
 import svgTesttubeiconeAsset from "../assets/svg/TestTube.svg";
 import svgAiiconAsset from "../assets/svg/Ai.svg";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMixTankStatus } from "../api/dashboardApi";
+import { getAiStatus, setAiStatus } from "../api/solubleApi";
+import { getSolubleConfig } from "../api/configApi";
 import FeedingHistoryPage from "./FeedingHistoryPage";
 import FeedingSettingsPage from "./FeedingSettingsPage";
 import TankCalibrationModal from "../components/common/TankCalibrationModal";
 import ModalCloseButton from "../components/common/ModalCloseButton";
 import { MIX_TANK_API_NUMBER } from "../utils/tankMapping";
 import { queryKeys } from "../api/queryKeys";
+import toast from "react-hot-toast";
 
 const Feeding = () => {
+  const queryClient = useQueryClient();
   const modalFrameStyle = {
     position: "absolute",
     top: "50%",
@@ -65,12 +69,55 @@ const Feeding = () => {
     placeholderData: (previousData) => previousData,
   });
 
+  const { data: solubleConfig } = useQuery({
+    queryKey: queryKeys.solubleConfig(),
+    queryFn: getSolubleConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dosingPumpCount =
+    solubleConfig?.number_of_dosing_pumps ??
+    solubleConfig?.data?.number_of_dosing_pumps;
+
+  const {
+    data: aiStatusData,
+    isLoading: isAiStatusLoading,
+    isError: isAiStatusError,
+  } = useQuery({
+    queryKey: queryKeys.aiStatus(),
+    queryFn: getAiStatus,
+    refetchOnMount: "always",
+  });
+
+  const isAiOn = aiStatusData?.status === "on";
+  const isAiButtonDisabled = isAiStatusLoading || isAiStatusError;
+
+  const { mutate: toggleAiStatus, isPending: isAiStatusPending } = useMutation({
+    mutationFn: setAiStatus,
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(queryKeys.aiStatus(), {
+        status: variables.status,
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiStatus() });
+      toast.success(
+        `هوش مصنوعی ${variables.status === "on" ? "فعال شد" : "غیرفعال شد"}`,
+      );
+    },
+    onError: (error) => {
+      console.error("Error setting AI status:", error);
+      toast.error("خطا در تغییر وضعیت هوش مصنوعی");
+    },
+  });
+
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isCalibModalOpen, setIsCalibModalOpen] = useState(false);
 
   const handleHistoryClick = () => setIsHistoryModalOpen(true);
-  const handleAiClick = () => console.log("هوش مصنوعی کلیک شد");
+  const handleAiClick = () => {
+    if (isAiButtonDisabled || isAiStatusPending) return;
+    toggleAiStatus({ status: isAiOn ? "off" : "on" });
+  };
   const handleSettingsClick = () => setIsSettingsModalOpen(true);
   const handleCalibClick = () => setIsCalibModalOpen(true);
 
@@ -201,6 +248,7 @@ const Feeding = () => {
               phValue={mixTankData?.ec_ph?.ph}
               ecRange={mixTankData?.ec_ph?.range?.ec}
               phRange={mixTankData?.ec_ph?.range?.ph}
+              dosingPumpCount={dosingPumpCount}
             />
           )}
           <Paper
@@ -263,11 +311,20 @@ const Feeding = () => {
               <Box>
                 <IconTextButton
                   icon={svgAiiconAsset}
-                  text="هوش مصنوعی"
-                  bgColor="#FF9933"
-                  textColor="#fff"
+                  text={isAiOn ? "هوش مصنوعی فعال" : "هوش مصنوعی غیرفعال"}
+                  bgColor={isAiOn ? "#B8FFDD" : "#FED9D9"}
+                  textColor={isAiOn ? "#004323" : "#CC0000"}
+                  borderColor={isAiOn ? "#004323" : "#CC0000"}
                   onClick={handleAiClick}
-                  width="110px"
+                  width="100px"
+                  sx={{
+                    transform: "scaleY(0.79)",
+                    opacity: isAiButtonDisabled || isAiStatusPending ? 0.65 : 1,
+                    cursor:
+                      isAiButtonDisabled || isAiStatusPending
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
                 />
               </Box>
 
@@ -317,6 +374,7 @@ const Feeding = () => {
         onClose={() => setIsCalibModalOpen(false)}
         displayNumber="ساخت محلول"
         apiTankNumber={MIX_TANK_API_NUMBER}
+        tankType="mix"
         float1={mixTankData?.contents?.buttom_float_switch}
         float2={mixTankData?.contents?.middle_float_switch}
         float3={mixTankData?.contents?.top_float_switch}

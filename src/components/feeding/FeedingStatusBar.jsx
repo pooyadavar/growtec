@@ -30,6 +30,7 @@ import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import TimeInput from "../common/TimeInput";
 import ModalCloseButton from "../common/ModalCloseButton";
+import { queryKeys } from "../../api/queryKeys";
 
 const MANUAL_ROW_BG = "#EEEEEE";
 
@@ -283,10 +284,12 @@ const FeedingStatusBar = () => {
     data: rawSchedule = [],
     isLoading: isLoadingSchedule,
     isError: isErrorSchedule,
+    refetch: refetchSchedule,
   } = useQuery({
-    queryKey: ["foodstuffSchedule"],
+    queryKey: queryKeys.foodstuffSchedule(),
     queryFn: getFoodstuffSchedule,
     refetchInterval: 5000,
+    refetchOnMount: "always",
     select: (response) => {
       const data = response.data || response;
       return Array.isArray(data) ? data : [];
@@ -308,7 +311,7 @@ const FeedingStatusBar = () => {
   const deleteScheduleMutation = useMutation({
     mutationFn: deleteFoodstuffSchedule,
     onSuccess: () => {
-      queryClient.invalidateQueries(["foodstuffSchedule"]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.foodstuffSchedule() });
       toast.success("ردیف با موفقیت حذف شد");
     },
     onError: (error) => {
@@ -320,7 +323,7 @@ const FeedingStatusBar = () => {
   const saveScheduleMutation = useMutation({
     mutationFn: saveFoodstuffSchedule,
     onSuccess: () => {
-      queryClient.invalidateQueries(["foodstuffSchedule"]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.foodstuffSchedule() });
       toast.success("برنامه با موفقیت ذخیره شد.");
     },
     onError: (error) => {
@@ -332,7 +335,7 @@ const FeedingStatusBar = () => {
   const updateScheduleMutation = useMutation({
     mutationFn: ({ id, payload }) => updateFoodstuffSchedule(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries(["foodstuffSchedule"]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.foodstuffSchedule() });
       toast.success("برنامه با موفقیت به روز شد.");
     },
     onError: (error) => {
@@ -343,9 +346,9 @@ const FeedingStatusBar = () => {
 
   const handleModalPlansClose = () => setModalPlans(false);
 
-  const handleModalPlansOpen = () => {
-    if (rawSchedule && rawSchedule.length > 0) {
-      const rows = rawSchedule.map((item) => ({
+  const buildRowsFromSchedule = (schedule) => {
+    if (schedule && schedule.length > 0) {
+      return schedule.map((item) => ({
         id: item.id || crypto.randomUUID(),
         zone: item.zone,
         type: item.type,
@@ -355,20 +358,30 @@ const FeedingStatusBar = () => {
         status: item.status,
         isManual: item.is_manual === true,
       }));
-      setPlanRows(rows);
-    } else {
-      setPlanRows([
-        {
-          id: crypto.randomUUID(),
-          zone: "",
-          type: "",
-          time: "",
-          volume: "",
-          isActive: false,
-        },
-      ]);
     }
+
+    return [
+      {
+        id: crypto.randomUUID(),
+        zone: "",
+        type: "",
+        time: "",
+        volume: "",
+        isActive: false,
+      },
+    ];
+  };
+
+  const handleModalPlansOpen = async () => {
     setModalPlans(true);
+    try {
+      const result = await refetchSchedule();
+      setPlanRows(buildRowsFromSchedule(result.data || []));
+    } catch (error) {
+      console.error("Error refetching foodstuff schedule:", error);
+      setPlanRows(buildRowsFromSchedule(rawSchedule));
+      toast.error("خطا در دریافت برنامه ساخت محلول");
+    }
   };
 
   const handleAddRow = () => {

@@ -21,18 +21,17 @@ import {
   getSolubleEcPhTemperatureLogs,
   parseSolubleEcPhLogs,
 } from "../../api/logsApi";
+import { getSolubleConfig } from "../../api/configApi";
 import { queryKeys } from "../../api/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
-const SENSORS = [
-  { id: 1, name: "سنسور شماره ۱" },
-  { id: 2, name: "سنسور شماره ۲" },
-  { id: 3, name: "سنسور شماره ۳" },
-  { id: 4, name: "سنسور شماره ۴" },
-  { id: 5, name: "سنسور شماره ۵" },
-];
+const buildSensors = (count) =>
+  Array.from({ length: count }, (_, index) => ({
+    id: index + 1,
+    name: `سنسور شماره ${toPersianDigits(index + 1)}`,
+  }));
 
 // --- کامپوننت مودال کالیبراسیون سنسورهای EC و pH ---
 const CalibrationModalContent = ({
@@ -675,6 +674,19 @@ const SlidingWindowChart = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastUpdateTime, setLastUpdateTime] = useState("---");
 
+  const { data: solubleConfig } = useQuery({
+    queryKey: queryKeys.solubleConfig(),
+    queryFn: getSolubleConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const sensorCount =
+    Number(
+      solubleConfig?.number_of_sensors ??
+        solubleConfig?.data?.number_of_sensors,
+    ) || 0;
+  const sensors = buildSensors(Math.max(0, sensorCount));
+
   // فیکس باگ اصلی: تابع آپدیت زمان رو با useCallback کش (Cache) کردیم که باعث رندر مجدد بچه‌ها نشه
   const handleTimeUpdate = useCallback((t) => {
     setLastUpdateTime(t);
@@ -688,15 +700,25 @@ const SlidingWindowChart = () => {
     }
   }, [activeIndex]);
 
+  useEffect(() => {
+    if (sensors.length === 0) {
+      setActiveIndex(0);
+      return;
+    }
+    if (activeIndex > sensors.length - 1) {
+      setActiveIndex(sensors.length - 1);
+    }
+  }, [activeIndex, sensors.length]);
+
   const slideNext = () => {
-    if (activeIndex < SENSORS.length - 1) setActiveIndex((prev) => prev + 1);
+    if (activeIndex < sensors.length - 1) setActiveIndex((prev) => prev + 1);
   };
 
   const slidePrev = () => {
     if (activeIndex > 0) setActiveIndex((prev) => prev - 1);
   };
 
-  const currentSensor = SENSORS[activeIndex] || SENSORS[0];
+  const currentSensor = sensors[activeIndex] || sensors[0];
 
   return (
     <Container
@@ -725,7 +747,7 @@ const SlidingWindowChart = () => {
       >
         <Box sx={{ display: "flex", gap: "2rem" }}>
           <Typography fontFamily={"IRANSANS"} fontWeight="bold" fontSize={12}>
-            نمودار وضعیت مخزن - {currentSensor.name}
+            نمودار وضعیت مخزن - {currentSensor?.name || "سنسور"}
           </Typography>
           <Typography fontFamily={"IRANSANS"} fontSize={12} color="#666">
             -- آخرین داده:{" "}
@@ -737,13 +759,15 @@ const SlidingWindowChart = () => {
         <Box sx={{ scale: "0.85" }}>
           <IconTextButton
             icon={svgCalibrationsvgAsset}
-            text={`کالیبراسیون ${currentSensor.name}`}
+            text={`کالیبراسیون ${currentSensor?.name || "سنسور"}`}
             bgColor="#6CCDB0"
             textColor="black"
             height="12px"
             iconPosition="left"
             sx={{ marginLeft: "auto", fontSize: "12px", mt: "-20px" }}
-            onClick={() => setIsCalibrateOpen(true)}
+            onClick={() => {
+              if (currentSensor) setIsCalibrateOpen(true);
+            }}
           />
         </Box>
       </Box>
@@ -763,14 +787,15 @@ const SlidingWindowChart = () => {
         <NavArrowButton
           direction="next"
           onClick={slideNext}
-          disabled={activeIndex === SENSORS.length - 1}
+          disabled={!currentSensor || activeIndex === sensors.length - 1}
           sx={{
             width: "30px",
             height: "40px",
             borderRadius: "5px",
             backgroundColor: "#E3E3E3",
             border: "0.5px solid #9F9F9F",
-            opacity: activeIndex === SENSORS.length - 1 ? 0.5 : 1,
+            opacity:
+              !currentSensor || activeIndex === sensors.length - 1 ? 0.5 : 1,
           }}
         />
 
@@ -784,7 +809,7 @@ const SlidingWindowChart = () => {
             direction: "ltr",
           }}
         >
-          {SENSORS.map((sensor, index) => (
+          {sensors.map((sensor, index) => (
             <Box
               key={sensor.id}
               sx={{
@@ -827,7 +852,7 @@ const SlidingWindowChart = () => {
         calibrateValues={calibrateValues}
         setCalibrateValues={setCalibrateValues}
         sensorName={currentSensor.name}
-        sensorId={currentSensor.id}
+        sensorId={currentSensor?.id}
       />
     </Container>
   );

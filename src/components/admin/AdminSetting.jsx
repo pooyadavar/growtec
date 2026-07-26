@@ -15,12 +15,14 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import svgSetting2Asset from "../../assets/svg/setting2.svg";
 import svgPersonAsset from "../../assets/svg/person.svg";
 import ModalCloseButton from "../common/ModalCloseButton";
 import {
-  getAllConfig,
+  getIrrigationConfig,
+  getSolubleConfig,
+  getClimateConfig,
   updateIrrigationConfig,
   updateSolubleConfig,
   updateClimateConfig,
@@ -34,6 +36,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { showErrorToast } from "../../utils/appToast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import { getActiveClimateZoneIds } from "../../utils/irrigationConfig";
 
 const FormRow = ({ label, name, value, onChange, compact = false }) => (
   <Box
@@ -727,19 +730,53 @@ const AdminSetting = () => {
     ...getInitialClimateState(),
   });
 
-  const { data: configData } = useQuery({
-    queryKey: queryKeys.adminConfig(),
-    queryFn: getAllConfig,
-    staleTime: 5 * 60 * 1000,
+  const { data: irrigationConfigData } = useQuery({
+    queryKey: queryKeys.adminIrrigationConfig(),
+    queryFn: getIrrigationConfig,
+    enabled: activeTab === 0,
+    networkMode: "always",
+  });
+
+  const { data: solubleConfigData } = useQuery({
+    queryKey: queryKeys.adminSolubleConfig(),
+    queryFn: getSolubleConfig,
+    enabled: activeTab === 1,
+    networkMode: "always",
+  });
+
+  const { data: climateConfigData } = useQuery({
+    queryKey: queryKeys.adminClimateConfig(),
+    queryFn: getClimateConfig,
+    enabled: activeTab === 2,
     networkMode: "always",
   });
 
   useEffect(() => {
-    if (configData) {
-      const newData = parseAdminConfig(configData);
+    if (irrigationConfigData) {
+      const newData = parseAdminConfig({
+        irrRes: { status: "fulfilled", value: irrigationConfigData },
+      });
       setSettings((prev) => ({ ...prev, ...newData }));
     }
-  }, [configData]);
+  }, [irrigationConfigData]);
+
+  useEffect(() => {
+    if (solubleConfigData) {
+      const newData = parseAdminConfig({
+        solRes: { status: "fulfilled", value: solubleConfigData },
+      });
+      setSettings((prev) => ({ ...prev, ...newData }));
+    }
+  }, [solubleConfigData]);
+
+  useEffect(() => {
+    if (climateConfigData) {
+      const newData = parseAdminConfig({
+        cliRes: { status: "fulfilled", value: climateConfigData },
+      });
+      setSettings((prev) => ({ ...prev, ...newData }));
+    }
+  }, [climateConfigData]);
 
   const saveMutation = useMutation({
     mutationFn: async ({ tab, settings: currentSettings }) => {
@@ -806,8 +843,16 @@ const AdminSetting = () => {
         "تنظیمات تغذیه با موفقیت ذخیره شد",
         "تنظیمات اقلیم با موفقیت ذخیره شد",
       ];
+      const tabQueryKeys = [
+        queryKeys.adminIrrigationConfig(),
+        queryKeys.adminSolubleConfig(),
+        queryKeys.adminClimateConfig(),
+      ];
       toast.success(messages[tab]);
-      queryClient.invalidateQueries({ queryKey: queryKeys.adminConfig() });
+      queryClient.invalidateQueries({ queryKey: tabQueryKeys[tab] });
+      if (tab === 1) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.solubleConfig() });
+      }
     },
     onError: () => {
       toast.error("خطا در ذخیره تنظیمات");
@@ -815,6 +860,19 @@ const AdminSetting = () => {
   });
 
   const handleSave = () => {
+    if (activeTab === 0) {
+      const totalPumps = [1, 2, 3, 4].reduce(
+        (sum, num) =>
+          sum + (Number(settings[`number_of_pumps_zone_${num}`]) || 0),
+        0,
+      );
+
+      if (totalPumps > 40) {
+        toast.error("جمع پمپ‌های زون ۱ تا ۴ نباید بیشتر از ۴۰ باشد");
+        return;
+      }
+    }
+
     saveMutation.mutate({ tab: activeTab, settings });
   };
 
@@ -822,6 +880,20 @@ const AdminSetting = () => {
     const { name, value } = e.target;
     setSettings((prev) => ({ ...prev, [name]: value }));
   };
+
+  const activeClimateZoneIds = useMemo(
+    () => getActiveClimateZoneIds(settings),
+    [settings],
+  );
+
+  useEffect(() => {
+    if (activeClimateZoneIds.length === 0) return;
+    if (activeZoneTab > activeClimateZoneIds.length - 1) {
+      setActiveZoneTab(0);
+    }
+  }, [activeClimateZoneIds, activeZoneTab]);
+
+  const activeClimateZone = activeClimateZoneIds[activeZoneTab] ?? 1;
 
   return (
     <Container
@@ -976,7 +1048,7 @@ const AdminSetting = () => {
                         <FormRow
                           key={`pump-${num}`}
                           compact
-                          label={`پمپ زون ${toPersianDigits(num)}`}
+                          label={` شیر برقی ${toPersianDigits(num)}`}
                           name={`number_of_pumps_zone_${num}`}
                           value={settings[`number_of_pumps_zone_${num}`]}
                           onChange={handleChange}
@@ -1107,7 +1179,7 @@ const AdminSetting = () => {
                 }}
               >
                 <Tabs
-                  value={activeZoneTab}
+                  value={activeClimateZoneIds.length > 0 ? activeZoneTab : false}
                   onChange={(e, v) => setActiveZoneTab(v)}
                   variant="fullWidth"
                   sx={{
@@ -1122,11 +1194,23 @@ const AdminSetting = () => {
                     },
                   }}
                 >
-                  {[1, 2, 3, 4, 5].map((z) => (
+                  {activeClimateZoneIds.map((z) => (
                     <Tab key={z} label={`زون ${toPersianDigits(z)}`} />
                   ))}
                 </Tabs>
 
+                {activeClimateZoneIds.length === 0 ? (
+                  <Typography
+                    fontFamily="IRANSANS"
+                    fontSize={15}
+                    color="#777"
+                    textAlign="center"
+                    sx={{ mt: 6 }}
+                  >
+                    زون اقلیم فعالی وجود ندارد
+                  </Typography>
+                ) : (
+                  <>
                 <Box
                   sx={{
                     width: "100%",
@@ -1157,10 +1241,10 @@ const AdminSetting = () => {
                   >
                     <VerticalSelect
                       label="فن سیرکوله"
-                      name={`climate_z${activeZoneTab + 1}_number_of_circulating_fans`}
+                      name={`climate_z${activeClimateZone}_number_of_circulating_fans`}
                       value={
                         settings[
-                          `climate_z${activeZoneTab + 1}_number_of_circulating_fans`
+                          `climate_z${activeClimateZone}_number_of_circulating_fans`
                         ]
                       }
                       onChange={handleChange}
@@ -1168,10 +1252,10 @@ const AdminSetting = () => {
                     />
                     <VerticalSelect
                       label=" فن اگزاست"
-                      name={`climate_z${activeZoneTab + 1}_number_of_exhaust_fans`}
+                      name={`climate_z${activeClimateZone}_number_of_exhaust_fans`}
                       value={
                         settings[
-                          `climate_z${activeZoneTab + 1}_number_of_exhaust_fans`
+                          `climate_z${activeClimateZone}_number_of_exhaust_fans`
                         ]
                       }
                       onChange={handleChange}
@@ -1179,8 +1263,8 @@ const AdminSetting = () => {
                     />
                     <VerticalToggle
                       label="بخاری"
-                      name={`climate_z${activeZoneTab + 1}_heater`}
-                      value={settings[`climate_z${activeZoneTab + 1}_heater`]}
+                      name={`climate_z${activeClimateZone}_heater`}
+                      value={settings[`climate_z${activeClimateZone}_heater`]}
                       onChange={handleChange}
                     />
                   </Box>
@@ -1223,24 +1307,24 @@ const AdminSetting = () => {
                     >
                       <VerticalSelect
                         label="مه پاش"
-                        name={`climate_z${activeZoneTab + 1}_fogger`}
-                        value={settings[`climate_z${activeZoneTab + 1}_fogger`]}
+                        name={`climate_z${activeClimateZone}_fogger`}
+                        value={settings[`climate_z${activeClimateZone}_fogger`]}
                         onChange={handleChange}
                         maxCount={2}
                       />
                       <VerticalToggle
                         label="پمپ پد"
-                        name={`climate_z${activeZoneTab + 1}_pump_pad`}
+                        name={`climate_z${activeClimateZone}_pump_pad`}
                         value={
-                          settings[`climate_z${activeZoneTab + 1}_pump_pad`]
+                          settings[`climate_z${activeClimateZone}_pump_pad`]
                         }
                         onChange={handleChange}
                       />
                       <VerticalToggle
                         label="دریچه (سقف)"
-                        name={`climate_z${activeZoneTab + 1}_roof_hatch`}
+                        name={`climate_z${activeClimateZone}_roof_hatch`}
                         value={
-                          settings[`climate_z${activeZoneTab + 1}_roof_hatch`]
+                          settings[`climate_z${activeClimateZone}_roof_hatch`]
                         }
                         onChange={handleChange}
                       />
@@ -1264,18 +1348,18 @@ const AdminSetting = () => {
                   >
                     <VerticalInput
                       label="تعداد سنسور در این زون"
-                      name={`climate_z${activeZoneTab + 1}_number_of_sensors`}
+                      name={`climate_z${activeClimateZone}_number_of_sensors`}
                       value={
                         settings[
-                          `climate_z${activeZoneTab + 1}_number_of_sensors`
+                          `climate_z${activeClimateZone}_number_of_sensors`
                         ]
                       }
                       onChange={handleChange}
                     />
                     <VerticalToggle
                       label="شید"
-                      name={`climate_z${activeZoneTab + 1}_shade`}
-                      value={settings[`climate_z${activeZoneTab + 1}_shade`]}
+                      name={`climate_z${activeClimateZone}_shade`}
+                      value={settings[`climate_z${activeClimateZone}_shade`]}
                       onChange={handleChange}
                     />
                   </Box>
@@ -1316,6 +1400,8 @@ const AdminSetting = () => {
                     </Typography>
                   </Button>
                 </Box>
+                  </>
+                )}
               </Box>
             )}
 

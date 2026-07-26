@@ -19,6 +19,7 @@ const TankCalibrationModal = ({
   fallbackVolume = 0,
   fallbackMaxVolume = 100,
   externalContents = null,
+  tankType = "irrigation",
 }) => {
   const [lowConfirmed, setLowConfirmed] = React.useState(false);
   const [highConfirmed, setHighConfirmed] = React.useState(false);
@@ -86,22 +87,27 @@ const TankCalibrationModal = ({
     },
   });
 
+  const buildCalibrationPayload = (status) => {
+    const payload = {
+      tank: tankType,
+      status,
+    };
+
+    if (tankType === "irrigation") {
+      payload.tank_number = Number(apiTankNumber);
+    }
+
+    return payload;
+  };
+
   const handleCalibrateStep1 = (e) => {
     e?.stopPropagation?.();
-    calibrateTankMutation({
-      tank: "irrigation",
-      tank_number: Number(apiTankNumber),
-      status: "empty",
-    });
+    calibrateTankMutation(buildCalibrationPayload("empty"));
   };
 
   const handleCalibrateStep2 = (e) => {
     e?.stopPropagation?.();
-    calibrateTankMutation({
-      tank: "irrigation",
-      tank_number: Number(apiTankNumber),
-      status: "full",
-    });
+    calibrateTankMutation(buildCalibrationPayload("full"));
   };
 
   const handleClose = (e) => {
