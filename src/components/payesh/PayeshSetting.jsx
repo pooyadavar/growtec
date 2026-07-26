@@ -33,7 +33,7 @@ import {
 import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
 import { showErrorToast } from "../../utils/appToast";
-import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { flushSync } from "react-dom";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 
@@ -639,21 +639,16 @@ const PayeshSetting = ({ zone, onClose }) => {
     }
   }, [rangeData]);
 
-  const climatePartQueries = useQueries({
-    queries: [1, 2, 3, 4].map((climatePart) => ({
-      queryKey: queryKeys.climateSettings(zone, climatePart),
-      queryFn: () => getClimateSettings(zone, climatePart),
-      staleTime: 5 * 60 * 1000,
-    })),
+  const {
+    data: queryData,
+    isLoading: isClimateLoading,
+    isError: isClimateError,
+  } = useQuery({
+    queryKey: queryKeys.climateSettings(zone, part),
+    queryFn: () => getClimateSettings(zone, part),
+    staleTime: 5 * 60 * 1000,
+    enabled: selected !== "ویژه",
   });
-
-  const queryData = climatePartQueries[part - 1]?.data;
-  const isClimateLoading = climatePartQueries.some(
-    (climateQuery) => climateQuery.isLoading && !climateQuery.data,
-  );
-  const isClimateError = climatePartQueries.some(
-    (climateQuery) => climateQuery.isError && !climateQuery.data,
-  );
 
   const {
     data: specialParamsData,
@@ -663,14 +658,15 @@ const PayeshSetting = ({ zone, onClose }) => {
     queryKey: queryKeys.climateSpecialParameters(),
     queryFn: getSpecialParameters,
     staleTime: 5 * 60 * 1000,
+    enabled: selected === "ویژه",
     placeholderData: (previousData) => previousData,
   });
 
-  const currentPartData = climatePartQueries[part - 1]?.data;
+  const currentPartData = queryData;
 
   useEffect(() => {
     seedClimateBaselines();
-  }, [climatePartQueries, seedClimateBaselines]);
+  }, [queryData, seedClimateBaselines]);
 
   useEffect(() => {
     if (!specialParamsData) return;
@@ -976,7 +972,9 @@ const PayeshSetting = ({ zone, onClose }) => {
       setPart(newPart);
       setSelected(label);
     });
-    hydratedPartsRef.current.add(newPart);
+    if (nextForm) {
+      hydratedPartsRef.current.add(newPart);
+    }
   };
 
   const closeUnsavedDialog = () => {

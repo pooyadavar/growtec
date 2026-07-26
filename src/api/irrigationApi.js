@@ -9,7 +9,10 @@ export const normalizeIrrigationTanksStatusLogs = (response) => {
 };
 
 export const getIrrigationTanksStatusLogs = async () => {
-  const response = await apiClient.post("/log/irrigation/irrigation-tanks-status/");
+  const response = await apiClient.post(
+    "/log/irrigation/irrigation-tanks-status/",
+    { limit: 400 },
+  );
   return normalizeIrrigationTanksStatusLogs(response);
 };
 

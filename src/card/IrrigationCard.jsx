@@ -27,6 +27,8 @@ const IrrigationCard = ({
   const [isModalAOpen, setIsModalAOpen] = React.useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = React.useState(false);
   const apiTankNumber = uiIrrigationTankToApi(storageNumber);
+  const displayStorageCapacity = Math.round(Number(storageCapacity || 0));
+  const displayMaxStorageCapacity = Math.round(Number(maxStorageCapacity || 0));
 
   const formatTime = (timeString) => {
     if (!timeString) return "";
@@ -77,7 +79,7 @@ const IrrigationCard = ({
                 : "";
               return {
                 title: toPersianDigits(timeString),
-                content: `Volume: ${toPersianDigits(datum[yKey])}`,
+                content: `Volume: ${toPersianDigits(Math.round(Number(datum[yKey] || 0)))}`,
               };
             },
           },
@@ -119,7 +121,8 @@ const IrrigationCard = ({
             enabled: true,
             fontSize: 9,
             color: "#333",
-            formatter: ({ value }) => toPersianDigits(value),
+            formatter: ({ value }) =>
+              toPersianDigits(Math.round(Number(value || 0))),
           },
           tick: { count: 3, enabled: true },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
@@ -227,7 +230,7 @@ const IrrigationCard = ({
             flexGrow={1}
             alignContent={"center"}
           >
-            {toPersianDigits(storageCapacity)}
+            {toPersianDigits(displayStorageCapacity)}
           </Typography>
         </Box>
         <Typography color="#5B5B5B" fontFamily={"IRANSANS"} fontSize={18}>
@@ -683,8 +686,8 @@ const IrrigationCard = ({
         float1={float1}
         float2={float2}
         float3={float3}
-        fallbackVolume={storageCapacity}
-        fallbackMaxVolume={maxStorageCapacity}
+        fallbackVolume={displayStorageCapacity}
+        fallbackMaxVolume={displayMaxStorageCapacity}
       />
 
       <Modal

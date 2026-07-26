@@ -38,6 +38,7 @@ const TankCalibrationModal = ({
 
   const realTimeVolume = tankRealTimeData?.filled_volume ?? fallbackVolume;
   const realTimeMax = tankRealTimeData?.max_volume ?? fallbackMaxVolume;
+  const displayRealTimeVolume = Math.round(Number(realTimeVolume || 0));
 
   const realTimeFillPercentage = Math.max(
     0,
@@ -161,7 +162,7 @@ const TankCalibrationModal = ({
           <Typography fontFamily="IRANSANS" fontSize={16}>
             حجم مخزن:{" "}
             <strong style={{ color: "#004323" }}>
-              {toPersianDigits(realTimeVolume)}
+              {toPersianDigits(displayRealTimeVolume)}
             </strong>{" "}
             لیتر
           </Typography>

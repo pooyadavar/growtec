@@ -43,7 +43,7 @@ const StorageCard = ({
     waterHeight = 100;
   }
 
-  const formattedCapacity = Number(capacity || 0).toFixed(2);
+  const formattedCapacity = Math.round(Number(capacity || 0));
   const image = `url(${imgMixerBGImageAsset})`;
 
   const [open, setOpen] = React.useState(false);

@@ -115,7 +115,9 @@ const IrrigationOneStorage = ({ storageNumber }) => {
                 : "";
               return {
                 title: toPersianDigits(timeString),
-                content: toPersianDigits(`Volume: ${datum[yKey]}`),
+                content: toPersianDigits(
+                  `Volume: ${Math.round(Number(datum[yKey] || 0))}`,
+                ),
               };
             },
           },
@@ -157,7 +159,8 @@ const IrrigationOneStorage = ({ storageNumber }) => {
             enabled: true,
             fontSize: 9,
             color: "#333",
-            formatter: (params) => toPersianDigits(params.value),
+            formatter: (params) =>
+              toPersianDigits(Math.round(Number(params.value || 0))),
           },
           tick: { count: 3, enabled: true },
           gridStyle: [{ stroke: "#eee", lineDash: [2, 2] }],
@@ -267,7 +270,9 @@ const IrrigationOneStorage = ({ storageNumber }) => {
             textAlign={"center"}
             flexGrow={1}
           >
-            {toPersianDigits(tankData.current?.filled_volume || 0)}
+            {toPersianDigits(
+              Math.round(Number(tankData.current?.filled_volume || 0)),
+            )}
           </Typography>
           <Box
             sx={{

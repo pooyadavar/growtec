@@ -8,6 +8,7 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -55,12 +56,28 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  const getLoginErrorMessage = (error) => {
+    const data = error?.response?.data;
+
+    if (typeof data === "string") return data;
+    if (data?.detail) return data.detail;
+    if (data?.non_field_errors?.[0]) return data.non_field_errors[0];
+    if (data?.username?.[0]) return data.username[0];
+    if (data?.password?.[0]) return data.password[0];
+
+    return "نام کاربری یا رمز عبور اشتباه است.";
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoginError("");
 
     if (!username.trim() || !password.trim()) {
-      showLoginErrorToast("نام کاربری و رمز عبور را وارد کنید.");
+      const message = "نام کاربری و رمز عبور را وارد کنید.";
+      setLoginError(message);
+      showLoginErrorToast(message);
       return;
     }
 
@@ -70,10 +87,8 @@ const Login = () => {
       showLoginSuccessToast();
       navigate("/Home", { replace: true });
     } catch (error) {
-      const message =
-        error?.response?.data?.detail ||
-        error?.response?.data?.non_field_errors?.[0] ||
-        "نام کاربری یا رمز عبور اشتباه است.";
+      const message = getLoginErrorMessage(error);
+      setLoginError(message);
       showLoginErrorToast(message);
     } finally {
       setIsSubmitting(false);
@@ -195,8 +210,12 @@ const Login = () => {
                 autoComplete="username"
                 placeholder="نام کاربری ..."
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (loginError) setLoginError("");
+                }}
                 disabled={isSubmitting}
+                error={Boolean(loginError)}
                 sx={inputSx}
               />
               <TextField
@@ -205,8 +224,12 @@ const Login = () => {
                 autoComplete="current-password"
                 placeholder="رمز عبور ..."
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (loginError) setLoginError("");
+                }}
                 disabled={isSubmitting}
+                error={Boolean(loginError)}
                 sx={inputSx}
                 InputProps={{
                   endAdornment: (
@@ -222,6 +245,25 @@ const Login = () => {
                   ),
                 }}
               />
+              {loginError && (
+                <Alert
+                  severity="error"
+                  sx={{
+                    direction: "rtl",
+                    textAlign: "right",
+                    fontFamily: "IRANSANS",
+                    fontSize: 13,
+                    borderRadius: "10px",
+                    alignItems: "center",
+                    "& .MuiAlert-message": {
+                      width: "100%",
+                      fontFamily: "IRANSANS",
+                    },
+                  }}
+                >
+                  {loginError}
+                </Alert>
+              )}
             </Box>
 
             {/* دکمه ارسال */}

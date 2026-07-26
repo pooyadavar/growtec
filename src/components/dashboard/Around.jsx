@@ -80,9 +80,9 @@ const Around = () => {
     );
   }
 
-  const temp = Number(outsideData.temperature ?? 0);
-  const light = Number(outsideData.light ?? 0);
-  const wind = Number(outsideData.wind ?? 0);
+  const temp = Math.round(Number(outsideData.temperature ?? 0));
+  const light = Math.round(Number(outsideData.light ?? 0));
+  const wind = Math.round(Number(outsideData.wind ?? 0));
 
   return (
     <Container sx={containerStyles}>
@@ -107,7 +107,7 @@ const Around = () => {
             دما:
           </Typography>
           <Typography fontFamily={"IRANSANS"} fontWeight={"bold"}>
-            {toPersianDigits(temp.toFixed(2))} C
+            {toPersianDigits(temp)} C
           </Typography>
         </div>
         <img src={svgTempAsset} alt="" />
@@ -133,7 +133,7 @@ const Around = () => {
             نور:
           </Typography>
           <Typography fontFamily={"IRANSANS"} fontWeight={"bold"}>
-            {toPersianDigits(light.toFixed(2))} lux
+            {toPersianDigits(light)} lux
           </Typography>
         </div>
         <img src={svgLightAsset} alt="" />
@@ -159,7 +159,7 @@ const Around = () => {
             باد:
           </Typography>
           <Typography fontFamily={"IRANSANS"} fontWeight={"bold"}>
-            {toPersianDigits(wind.toFixed(2))} km/h
+            {toPersianDigits(wind)} km/h
           </Typography>
         </div>
         <img src={svgWindAsset} alt="" />
