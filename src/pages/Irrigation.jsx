@@ -13,9 +13,7 @@ import {
   Button,
 } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  submitManualIrrigationWithSchedule,
-} from "../api/irrigationApi";
+import { makeManualIrrigation } from "../api/irrigationApi";
 import { getIrrigationConfig } from "../api/configApi";
 import { queryKeys } from "../api/queryKeys";
 import IconTextButton from "../card/IconTextButton";
@@ -106,7 +104,7 @@ const Irrigation = () => {
 
   const { mutate: submitManualIrrigationMutation, isPending: isSubmitting } =
     useMutation({
-      mutationFn: submitManualIrrigationWithSchedule,
+      mutationFn: makeManualIrrigation,
       onSuccess: () => {
         queryClient.invalidateQueries({
           queryKey: queryKeys.irrigationSchedules(),
@@ -133,30 +131,30 @@ const Irrigation = () => {
       return;
     }
 
+    const hasVolume = volume !== "";
+    const hasDuration = duration !== "";
+
+    if (!hasVolume && !hasDuration) {
+      toast.error("لطفاً حجم یا مدت آبیاری را وارد کنید");
+      return;
+    }
+
     const manualPayload = { status: "start" };
 
     if (irrigationNumber !== "") {
       const num = parseInt(irrigationNumber, 10);
       if (!Number.isNaN(num)) manualPayload.irrigation_number = num;
     }
-    if (volume !== "") {
+    if (hasVolume) {
       const vol = parseFloat(volume);
       if (!Number.isNaN(vol)) manualPayload.volume = vol;
     }
-    if (duration !== "") {
+    if (hasDuration) {
       const dur = parseInt(duration, 10);
       if (!Number.isNaN(dur)) manualPayload.duration = dur;
     }
 
-    submitManualIrrigationMutation({
-      manualPayload,
-      scheduleInput: {
-        status: "start",
-        zone: irrigationNumber,
-        volume,
-        duration,
-      },
-    });
+    submitManualIrrigationMutation(manualPayload);
   };
 
   return (

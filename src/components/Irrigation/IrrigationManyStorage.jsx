@@ -60,6 +60,15 @@ const getDisplayStatus = (startStatus, endStatus) => {
 
 const MANUAL_ROW_BG = "#EEEEEE";
 
+const hasEndTimeOrVolume = (row) => {
+  const endTime = String(row.end_time ?? "").trim();
+  const volume = Number(row.volume);
+  const hasVolume =
+    row.volume !== "" && row.volume != null && !Number.isNaN(volume) && volume > 0;
+
+  return endTime !== "" || hasVolume;
+};
+
 const ScheduleRow = ({
   id,
   data,
@@ -548,9 +557,9 @@ const IrrigationManyStorage = () => {
     const newRow = {
       tempId: crypto.randomUUID(),
       start_time: "00:00:00",
-      end_time: "00:00:00",
+      end_time: "",
       zone: zoneOptions[0] ?? uiIrrigationTankToApi(selectedTankId),
-      volume: 0,
+      volume: "",
       is_active: true,
       start_status: 0,
       end_status: 0,
@@ -598,6 +607,11 @@ const IrrigationManyStorage = () => {
       return;
     }
 
+    if (newRows.some((row) => !hasEndTimeOrVolume(row))) {
+      toast.error("برای ردیف جدید، زمان پایان یا حجم را وارد کنید.");
+      return;
+    }
+
     const convertToISO = (timeString) => {
       if (!timeString) return null;
       const parts = timeString.split(":");
@@ -611,7 +625,7 @@ const IrrigationManyStorage = () => {
         start_status: 1, // Default status for new rows
         end_status: 1, // Default status for new rows
         zone: row.zone,
-        volume: row.volume,
+        volume: row.volume === "" ? 0 : row.volume,
         start_time: convertToISO(row.start_time),
         end_time: convertToISO(row.end_time),
       };

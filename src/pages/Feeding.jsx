@@ -94,16 +94,30 @@ const Feeding = () => {
 
   const { mutate: toggleAiStatus, isPending: isAiStatusPending } = useMutation({
     mutationFn: setAiStatus,
-    onSuccess: (data, variables) => {
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.aiStatus() });
+      const previousAiStatus = queryClient.getQueryData(queryKeys.aiStatus());
       queryClient.setQueryData(queryKeys.aiStatus(), {
+        ...previousAiStatus,
         status: variables.status,
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.aiStatus() });
+
+      return { previousAiStatus };
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(queryKeys.aiStatus(), {
+        ...data,
+        status: variables.status,
+      });
       toast.success(
         `هوش مصنوعی ${variables.status === "on" ? "فعال شد" : "غیرفعال شد"}`,
       );
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(
+        queryKeys.aiStatus(),
+        context?.previousAiStatus ?? { status: variables.status === "on" ? "off" : "on" },
+      );
       console.error("Error setting AI status:", error);
       toast.error("خطا در تغییر وضعیت هوش مصنوعی");
     },

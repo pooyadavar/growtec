@@ -56,6 +56,15 @@ const convertToISO = (timeString) => {
   return `${parts.join(":")}.000Z`;
 };
 
+const hasEndTimeOrVolume = (row) => {
+  const endTime = String(row.end_time ?? "").trim();
+  const volume = Number(row.volume);
+  const hasVolume =
+    row.volume !== "" && row.volume != null && !Number.isNaN(volume) && volume > 0;
+
+  return endTime !== "" || hasVolume;
+};
+
 const ScheduleRow = ({ id, data, onChange, onDelete, isNew, zoneOptions }) => {
   const [isChanging, setIsChanging] = useState(false);
   const [isZoneOpen, setIsZoneOpen] = useState(false);
@@ -364,9 +373,9 @@ const IrrigationOneStorage = ({ storageNumber }) => {
       {
         tempId: crypto.randomUUID(),
         start_time: "00:00:00",
-        end_time: "00:00:00",
+        end_time: "",
         zone: zoneOptions[0] ?? uiIrrigationTankToApi(storageNumber),
-        volume: 0,
+        volume: "",
         is_active: true,
         start_status: 0,
         end_status: 0,
@@ -409,6 +418,11 @@ const IrrigationOneStorage = ({ storageNumber }) => {
       return;
     }
 
+    if (newRows.some((row) => !hasEndTimeOrVolume(row))) {
+      toast.error("برای ردیف جدید، زمان پایان یا حجم را وارد کنید.");
+      return;
+    }
+
     try {
       await Promise.all([
         ...newRows.map((row) =>
@@ -417,7 +431,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
             start_status: 1,
             end_status: 1,
             zone: row.zone,
-            volume: row.volume,
+            volume: row.volume === "" ? 0 : row.volume,
             start_time: convertToISO(row.start_time),
             end_time: convertToISO(row.end_time),
           }),
