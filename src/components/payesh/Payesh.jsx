@@ -598,6 +598,7 @@ const Payesh = () => {
           sensor4: t?.["4"] ?? 0,
           sensor5: t?.["5"] ?? 0,
           sensor6: t?.["6"] ?? 0,
+          avg: t?.avg ?? null,
         });
 
         humData.push({
@@ -608,6 +609,7 @@ const Payesh = () => {
           sensor4: h?.["4"] ?? 0,
           sensor5: h?.["5"] ?? 0,
           sensor6: h?.["6"] ?? 0,
+          avg: h?.avg ?? null,
         });
       });
 
@@ -651,7 +653,10 @@ const Payesh = () => {
     [],
   );
   const visibleLineSeries = useMemo(
-    () => lineSeriesBase.slice(0, sensorCount),
+    () => [
+      ...lineSeriesBase.slice(0, sensorCount),
+      { yKey: "avg", yName: "میانگین", stroke: "#2F3437", strokeWidth: 4 },
+    ],
     [lineSeriesBase, sensorCount],
   );
 

@@ -41,6 +41,8 @@ import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 const isActiveStatus = (status) => status === "on" || status === "start";
 const getStatusValue = (data) =>
   typeof data === "string" ? data : data?.status;
+const buildStatusData = (currentData, status) =>
+  typeof currentData === "string" ? status : { ...(currentData || {}), status };
 
 const Control = () => {
   const queryClient = useQueryClient();
@@ -125,6 +127,7 @@ const Control = () => {
     queryKey: queryKeys.mixerStatus(),
     queryFn: getMixerStatus,
     refetchOnMount: "always",
+    refetchInterval: 10000,
   });
 
   const {
@@ -135,6 +138,7 @@ const Control = () => {
     queryKey: queryKeys.stocksMixerStatus(),
     queryFn: getStocksMixerStatus,
     refetchOnMount: "always",
+    refetchInterval: 10000,
   });
 
   React.useEffect(() => {
@@ -238,6 +242,14 @@ const Control = () => {
   const { mutate: emergencyStopMutation } = useMutation({
     mutationFn: emergencyStop,
     onSuccess: () => {
+      setIsMixerOn(false);
+      setIsHemzanOn(false);
+      queryClient.setQueryData(queryKeys.mixerStatus(), (currentData) =>
+        buildStatusData(currentData, "off"),
+      );
+      queryClient.setQueryData(queryKeys.stocksMixerStatus(), (currentData) =>
+        buildStatusData(currentData, "off"),
+      );
       toast.success("توقف اضطراری ارسال شد");
     },
     onError: (error) => {

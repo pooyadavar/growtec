@@ -15,7 +15,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import svgSetting2Asset from "../../assets/svg/setting2.svg";
 import svgPersonAsset from "../../assets/svg/person.svg";
 import ModalCloseButton from "../common/ModalCloseButton";
@@ -36,7 +36,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { showErrorToast } from "../../utils/appToast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
-import { getActiveClimateZoneIds } from "../../utils/irrigationConfig";
+
+const CLIMATE_ZONE_IDS = [1, 2, 3, 4, 5];
 
 const FormRow = ({ label, name, value, onChange, compact = false }) => (
   <Box
@@ -881,19 +882,13 @@ const AdminSetting = () => {
     setSettings((prev) => ({ ...prev, [name]: value }));
   };
 
-  const activeClimateZoneIds = useMemo(
-    () => getActiveClimateZoneIds(settings),
-    [settings],
-  );
-
   useEffect(() => {
-    if (activeClimateZoneIds.length === 0) return;
-    if (activeZoneTab > activeClimateZoneIds.length - 1) {
+    if (activeZoneTab > CLIMATE_ZONE_IDS.length - 1) {
       setActiveZoneTab(0);
     }
-  }, [activeClimateZoneIds, activeZoneTab]);
+  }, [activeZoneTab]);
 
-  const activeClimateZone = activeClimateZoneIds[activeZoneTab] ?? 1;
+  const activeClimateZone = CLIMATE_ZONE_IDS[activeZoneTab] ?? 1;
 
   return (
     <Container
@@ -1179,7 +1174,7 @@ const AdminSetting = () => {
                 }}
               >
                 <Tabs
-                  value={activeClimateZoneIds.length > 0 ? activeZoneTab : false}
+                  value={activeZoneTab}
                   onChange={(e, v) => setActiveZoneTab(v)}
                   variant="fullWidth"
                   sx={{
@@ -1194,23 +1189,12 @@ const AdminSetting = () => {
                     },
                   }}
                 >
-                  {activeClimateZoneIds.map((z) => (
+                  {CLIMATE_ZONE_IDS.map((z) => (
                     <Tab key={z} label={`زون ${toPersianDigits(z)}`} />
                   ))}
                 </Tabs>
 
-                {activeClimateZoneIds.length === 0 ? (
-                  <Typography
-                    fontFamily="IRANSANS"
-                    fontSize={15}
-                    color="#777"
-                    textAlign="center"
-                    sx={{ mt: 6 }}
-                  >
-                    زون اقلیم فعالی وجود ندارد
-                  </Typography>
-                ) : (
-                  <>
+                <>
                 <Box
                   sx={{
                     width: "100%",
@@ -1401,7 +1385,6 @@ const AdminSetting = () => {
                   </Button>
                 </Box>
                   </>
-                )}
               </Box>
             )}
 

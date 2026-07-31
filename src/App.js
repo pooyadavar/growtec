@@ -6,6 +6,7 @@ import ProtectedRoute, { SuperuserRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import VirtualKeyboard from "./components/common/VirtualKeyboard";
+import ModalRequestPause from "./components/common/ModalRequestPause";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Feeding = lazy(() => import("./pages/Feeding"));
@@ -26,6 +27,7 @@ function App() {
       <div className="App">
         <Toaster position="top-center" />
         <VirtualKeyboard />
+        <ModalRequestPause />
         <Outlet />
         <Navbar />
         <Suspense fallback={<PageFallback />}>
@@ -99,5 +101,4 @@ function App() {
 }
 
 export default App;
-
 

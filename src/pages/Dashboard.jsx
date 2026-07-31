@@ -168,8 +168,7 @@ const Dashboard = () => {
               <StatusBar
                 ecValue={mixTankData?.ec_ph?.ec}
                 phValue={mixTankData?.ec_ph?.ph}
-                ecRange={mixTankData?.ec_ph?.range?.ec}
-                phRange={mixTankData?.ec_ph?.range?.ph}
+                mixTankData={mixTankData}
               />
             )}
           </div>

@@ -845,13 +845,13 @@ const SlidingWindowChart = () => {
       </Box>
 
       <CalibrationModalContent
-        open={isCalibrateOpen}
+        open={isCalibrateOpen && Boolean(currentSensor)}
         onClose={() => setIsCalibrateOpen(false)}
         calibrateTab={calibrateTab}
         setCalibrateTab={setCalibrateTab}
         calibrateValues={calibrateValues}
         setCalibrateValues={setCalibrateValues}
-        sensorName={currentSensor.name}
+        sensorName={currentSensor?.name || "سنسور"}
         sensorId={currentSensor?.id}
       />
     </Container>

@@ -15,6 +15,46 @@ import { useQuery } from "@tanstack/react-query";
 import { getErrorCodes } from "../../api/dashboardApi";
 import { toPersianDigits } from "../../utils/persianDigits";
 
+const getErrorLogList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.logs)) return data.logs;
+  return [];
+};
+
+const parseLogData = (logData) => {
+  if (!logData) return {};
+  if (typeof logData === "string") {
+    try {
+      return JSON.parse(logData);
+    } catch {
+      return {};
+    }
+  }
+  return logData;
+};
+
+const getLogTime = (log) => {
+  const rawTime =
+    log.log_date_time ||
+    log.date_time ||
+    log.created_at ||
+    log.time ||
+    log.timestamp;
+
+  if (!rawTime) return "";
+
+  const date = new Date(rawTime);
+  if (Number.isNaN(date.getTime())) return rawTime;
+
+  return date.toLocaleTimeString("fa-IR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+
 const ErrorComponent = () => {
   const [openModal, setOpenModal] = useState(false);
   const handleOpen = () => setOpenModal(true);
@@ -79,16 +119,24 @@ const ErrorComponent = () => {
     queryFn: getErrorCodes,
     refetchInterval: 5000,
     select: (data) => {
-      if (!Array.isArray(data)) return [];
-      return data.map((log) => ({
-        code: log.log_data.code,
-        description: errorDescriptions[log.log_data.code] || "خطای ناشناخته",
-        time: new Date(log.log_date_time).toLocaleTimeString("fa-IR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }),
-      }));
+      return getErrorLogList(data)
+        .map((log) => {
+          const logData = parseLogData(log.log_data);
+          const code = logData.code ?? log.code ?? log.error_code;
+
+          if (code === null || code === undefined || code === "") return null;
+
+          return {
+            code,
+            description:
+              logData.description ||
+              log.description ||
+              errorDescriptions[code] ||
+              "خطای ناشناخته",
+            time: getLogTime(log),
+          };
+        })
+        .filter(Boolean);
     },
   });
 
@@ -124,6 +172,7 @@ const ErrorComponent = () => {
     left: "50%",
     transform: "translate(-50%, -50%)",
     width: 600,
+    maxWidth: "calc(100vw - 32px)",
     maxHeight: "80vh",
     bgcolor: "background.paper",
     border: "1px solid #000",
@@ -133,6 +182,8 @@ const ErrorComponent = () => {
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
+    direction: "rtl",
+    outline: "none",
   };
 
   if (isErrorLogsLoading && !errorLogs?.length) {
@@ -423,7 +474,7 @@ const ErrorComponent = () => {
 
           <Divider sx={{ mb: 2 }} />
 
-          <Box sx={{ overflowY: "auto", flex: "1 1 0", minHeight: 0, pr: 1 }}>
+          <Box sx={{ overflowY: "auto", maxHeight: "60vh", pr: 1 }}>
             <Box
               sx={{
                 display: "flex",

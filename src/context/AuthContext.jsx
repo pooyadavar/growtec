@@ -27,13 +27,16 @@ const prefetchAccountConfig = () =>
     queryFn: getAccounts,
   });
 
+const prefetchAccountConfigSafely = () =>
+  prefetchAccountConfig().catch(() => undefined);
+
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => getAccessToken());
   const [username, setUsernameState] = useState(() => getUsername());
 
   useEffect(() => {
     if (token && username && !hasSuperuserBypass(username)) {
-      prefetchAccountConfig();
+      prefetchAccountConfigSafely();
     }
   }, [token, username]);
 
@@ -52,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     setUsernameState(resolvedUsername);
 
     if (!hasSuperuserBypass(resolvedUsername)) {
-      await prefetchAccountConfig();
+      await prefetchAccountConfigSafely();
     }
   }, []);
 

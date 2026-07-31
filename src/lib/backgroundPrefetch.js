@@ -45,6 +45,7 @@ const normalizeTemperatureHumidity = (response, zone) => {
       sensor4: t?.["4"] ?? 0,
       sensor5: t?.["5"] ?? 0,
       sensor6: t?.["6"] ?? 0,
+      avg: t?.avg ?? null,
     });
 
     humData.push({
@@ -55,6 +56,7 @@ const normalizeTemperatureHumidity = (response, zone) => {
       sensor4: h?.["4"] ?? 0,
       sensor5: h?.["5"] ?? 0,
       sensor6: h?.["6"] ?? 0,
+      avg: h?.avg ?? null,
     });
   });
 
@@ -75,6 +77,9 @@ const prefetchSection = (queryClient, queries) =>
   );
 
 const preloadSection = (loadModule) => loadModule().catch(() => undefined);
+
+const isPathActive = (...paths) =>
+  paths.some((path) => window.location.pathname.startsWith(path));
 
 const waitForIdle = () =>
   new Promise((resolve) => {
@@ -120,6 +125,7 @@ export const startBackgroundPrefetch = async (queryClient) => {
     },
     {
       loadModule: () => import("../components/payesh/Payesh"),
+      enabled: () => isPathActive("/payesh", "/payesh-time-plans"),
       queries: [
         {
           queryKey: queryKeys.operatorMode(zone),
@@ -180,6 +186,8 @@ export const startBackgroundPrefetch = async (queryClient) => {
   ];
 
   for (const section of sections) {
+    if (section.enabled && !section.enabled()) continue;
+
     await Promise.all([
       preloadSection(section.loadModule),
       prefetchSection(queryClient, section.queries),

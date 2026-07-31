@@ -12,7 +12,9 @@ import { toPersianDigits } from "../../utils/persianDigits";
 import BuildDetailsModal from "../dashboard/BuildDetailsModal";
 import StatusModal from "../dashboard/StatusModal";
 import MixTankProcessStatus from "../common/MixTankProcessStatus";
-import { getRangeBarStatusImage } from "../../utils/mixTankStatus";
+import svgVerticalEcMehvarAsset from "../../assets/svg/vertical-ec-mehvar.svg";
+import svgVerticalPhMehvarAsset from "../../assets/svg/vertical-ph-mehvar.svg";
+import svgNeshangarAsset from "../../assets/svg/neshangar.svg";
 import {
   buildMixTankStockRows,
   formatMixTankInteger,
@@ -21,16 +23,147 @@ import {
   getStockRowCol2Value,
 } from "../../utils/mixTankStockReport";
 
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const formatSensorValue = (value) => {
+  if (value === null || value === undefined || value === "") return "۰";
+
+  const numberValue = Number(value);
+  if (Number.isNaN(numberValue)) return toPersianDigits(value);
+
+  const formatted =
+    Number.isInteger(numberValue) || numberValue >= 100
+      ? String(Math.round(numberValue))
+      : numberValue.toFixed(1);
+
+  return toPersianDigits(formatted);
+};
+
+const getMarkerTop = (value, min, max) => {
+  const numberValue = Number(value);
+  const safeValue = Number.isNaN(numberValue)
+    ? min
+    : clamp(numberValue, min, max);
+  const ratio = (safeValue - min) / (max - min);
+  return `${(1 - ratio) * 100}%`;
+};
+
+const getDesiredRange = (data, type) => {
+  const program = data?.foodstuff_preparation_program || {};
+  const ecPh = data?.ec_ph || {};
+  const target = program[`target_${type}`] ?? ecPh[`target_${type}`];
+  const acceptableError =
+    program[`${type}_acceptable_error`] ?? ecPh[`${type}_acceptable_error`];
+
+  const targetNumber = Number(target);
+  const errorNumber = Number(acceptableError);
+
+  if (Number.isNaN(targetNumber) || Number.isNaN(errorNumber)) return null;
+
+  return {
+    low: targetNumber - errorNumber,
+    high: targetNumber + errorNumber,
+  };
+};
+
+const isInDesiredRange = (value, desiredRange) => {
+  if (!desiredRange) return false;
+
+  const numberValue = Number(value);
+  if (Number.isNaN(numberValue)) return false;
+
+  return numberValue >= desiredRange.low && numberValue <= desiredRange.high;
+};
+
+const getGaugeMarkerTop = (value, min, max, desiredRange) => {
+  if (isInDesiredRange(value, desiredRange)) return "50%";
+  return getMarkerTop(value, min, max);
+};
+
+const GAUGE_HEIGHT = 220;
+const AXIS_SCALE = 1.18;
+const INDICATOR_SCALE = 1.3;
+
+const VerticalSensorGauge = ({
+  label,
+  value,
+  min,
+  max,
+  axisSrc,
+  desiredRange,
+}) => (
+  <>
+    <Box
+      sx={{
+        position: "relative",
+        width: 34,
+        height: GAUGE_HEIGHT,
+        display: "flex",
+        justifyContent: "flex-start",
+        alignItems: "center",
+      }}
+    >
+      <Box
+        component="img"
+        src={axisSrc}
+        alt={`${label} axis`}
+        sx={{
+          width: 14,
+          height: GAUGE_HEIGHT,
+          display: "block",
+          transform: `scale(${AXIS_SCALE})`,
+          transformOrigin: "center",
+        }}
+      />
+      <Box
+        component="img"
+        src={svgNeshangarAsset}
+        alt={`${label} indicator`}
+        sx={{
+          position: "absolute",
+          left: 22,
+          top: getGaugeMarkerTop(value, min, max, desiredRange),
+          width: 15,
+          height: 10,
+          transform: `translateY(-50%) scale(${INDICATOR_SCALE})`,
+          transformOrigin: "left center",
+          transition: "top 0.25s ease",
+        }}
+      />
+    </Box>
+    <Typography fontFamily="IRANSANS" fontSize={13}>
+      {label} :{" "}
+    </Typography>
+    <TextField
+      variant="outlined"
+      size="small"
+      value={formatSensorValue(value)}
+      InputProps={{ readOnly: true }}
+      sx={{
+        width: 50,
+        backgroundColor: "#f0f0f0",
+        "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+        "& input": {
+          fontFamily: "IRANSANS",
+          textAlign: "center",
+          padding: "8px",
+          height: "unset",
+        },
+      }}
+    />
+  </>
+);
+
 const PhEcControlCardMixer = ({
   contents,
   mixTankData,
   ecValue,
   phValue,
-  ecRange,
-  phRange,
   dosingPumpCount,
 }) => {
   const selectedStockType = "total";
+  const ecDesiredRange = getDesiredRange(mixTankData, "ec");
+  const phDesiredRange = getDesiredRange(mixTankData, "ph");
 
   const stockRows = React.useMemo(
     () => buildMixTankStockRows(mixTankData, dosingPumpCount),
@@ -115,9 +248,6 @@ const PhEcControlCardMixer = ({
     { time: "14:00", type: "EC", volume: "15L", tank: "B", status: "success" },
   ];
 
-  const phStatusBarImage = getRangeBarStatusImage(phRange, "vertical");
-  const ecStatusBarImage = getRangeBarStatusImage(ecRange, "vertical");
-
   const [openStatusModal, setOpenStatusModal] = React.useState(false);
   const handleOpenStatusModal = () => setOpenStatusModal(true);
   const handleCloseStatusModal = () => setOpenStatusModal(false);
@@ -141,14 +271,15 @@ const PhEcControlCardMixer = ({
         msUserSelect: "none",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 3,
-        }}
-      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 3,
+            height: "100%",
+          }}
+        >
         {/* بخش نمایشگرهای گیج (Gauge) */}
         <Stack
           direction="row"
@@ -170,33 +301,17 @@ const PhEcControlCardMixer = ({
                 border: "0.5px solid gray",
                 px: 0.5,
                 borderRadius: "15px",
-                py: 1,
+                py: 0.1,
+                height: "100%",
               }}
             >
-              <img
-                src={phStatusBarImage}
-                alt="vertical_barstatus_ph"
-                style={{ height: "100%" }}
-              />
-              <Typography fontFamily={"IRANSANS"} fontSize={13}>
-                pH :{" "}
-              </Typography>
-              <TextField
-                variant="outlined"
-                size="small"
-                value={formatMixTankInteger(phValue)}
-                InputProps={{ readOnly: true }}
-                sx={{
-                  width: 50,
-                  backgroundColor: "#f0f0f0",
-                  "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-                  "& input": {
-                    fontFamily: "IRANSANS",
-                    textAlign: "center",
-                    padding: "8px",
-                    height: "unset",
-                  },
-                }}
+              <VerticalSensorGauge
+                label="pH" 
+                value={phValue}
+                min={4}     
+                max={8}
+                axisSrc={svgVerticalPhMehvarAsset}
+                desiredRange={phDesiredRange}
               />
             </Box>
             <Box
@@ -207,33 +322,17 @@ const PhEcControlCardMixer = ({
                 border: "0.5px solid gray",
                 px: 0.5,
                 borderRadius: "15px",
-                py: 1,
+                py: 0.1,
+                height: "100%",
               }}
             >
-              <img
-                src={ecStatusBarImage}
-                alt="vertical_barstatus_ec"
-                style={{ height: "100%" }}
-              />
-              <Typography fontFamily={"IRANSANS"} fontSize={13}>
-                EC :{" "}
-              </Typography>
-              <TextField
-                variant="outlined"
-                size="small"
-                value={formatMixTankInteger(ecValue)}
-                InputProps={{ readOnly: true }}
-                sx={{
-                  width: 50,
-                  backgroundColor: "#f0f0f0",
-                  "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-                  "& input": {
-                    fontFamily: "IRANSANS",
-                    textAlign: "center",
-                    padding: "8px",
-                    height: "unset",
-                  },
-                }}
+              <VerticalSensorGauge
+                label="EC"
+                value={ecValue}
+                min={500}
+                max={2000}
+                axisSrc={svgVerticalEcMehvarAsset}
+                desiredRange={ecDesiredRange}
               />
             </Box>
           </Box>

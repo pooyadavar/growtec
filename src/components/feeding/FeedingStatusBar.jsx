@@ -596,7 +596,6 @@ const FeedingStatusBar = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          // جلوگیری کامل از انتخاب شدن متن
           userSelect: "none",
           WebkitUserSelect: "none",
           MozUserSelect: "none",
