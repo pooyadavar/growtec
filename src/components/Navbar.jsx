@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useIsSuperuser } from "../hooks/useIsSuperuser";
 import { UserAccountMenu, LoginNavButton } from "./UserAccountMenu";
+import NetworkStatusBar from "./common/NetworkStatusBar";
 import logoType from "../assets/svg/Logotype.svg";
 import homeIcon from "../assets/svg/Home-icon.svg";
 import feedingIcon from "../assets/svg/Feeding.svg";
@@ -129,8 +130,14 @@ const Navbar = () => {
 
   return (
     <Container
-      sx={{ display: "flex", justifyContent: "center", height: "6rem" }}
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        height: "6rem",
+        position: "relative",
+      }}
     >
+      <NetworkStatusBar />
       <AppBar
         position="static"
         className={classes.appBar}

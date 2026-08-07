@@ -12,6 +12,7 @@ export const queryKeys = {
   foodstuffProgram: (num) => ["foodstuffProgram", num],
   foodstuffInputWaterRatio: () => ["foodstuffInputWaterRatio"],
   irrigationTanksStatusLogs: () => ["irrigationTanksStatusLogs"],
+  irrigationStatus: () => ["irrigationStatus"],
   irrigationSchedules: () => ["irrigationSchedules"],
   storageIrrigationSchedule: (zone) => ["storageIrrigationSchedule", zone],
   irrigationTanksStatusCalib: () => ["irrigationTanksStatus_calib"],

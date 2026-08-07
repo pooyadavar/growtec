@@ -313,7 +313,7 @@ const Feeding = () => {
 
               <Box>
                 <IconTextButton
-                  icon={svgTesttubeiconeAsset}
+                  icon={svgSetting2Asset}
                   text="تنظیمات محلول"
                   bgColor="#86CCB2"
                   textColor="#333"

@@ -38,3 +38,25 @@ export const getTankZoneOptions = (config, tankId) => {
 
   return Array.from({ length: count }, (_, index) => start + index);
 };
+
+export const getActiveIrrigationZonesForTank = (
+  config,
+  tankId,
+  irrigationStatus = [],
+) => {
+  const zoneOptions = getTankZoneOptions(config, tankId);
+  return zoneOptions.reduce((activeZones, zone, index) => {
+    if (irrigationStatus[zone - 1] === true) {
+      activeZones.push(index + 1);
+    }
+    return activeZones;
+  }, []);
+};
+
+export const formatIrrigationStatusText = (activeZones = []) => {
+  if (activeZones.length === 0) return "آبیاری انجام نمی‌شود";
+  if (activeZones.length === 1) {
+    return `زون ${activeZones[0]} دارد آبیاری می‌شود`;
+  }
+  return `زون‌های ${activeZones.join("، ")} دارند آبیاری می‌شوند`;
+};

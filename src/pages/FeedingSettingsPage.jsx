@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Paper,
@@ -21,7 +21,8 @@ import {
   updateFoodstuffPreparationProgramInputWaterRatio,
 } from "../api/solubleApi";
 import { queryKeys } from "../api/queryKeys";
-import toast, { Toaster } from "react-hot-toast";
+import { getSolubleConfig } from "../api/configApi";
+import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../utils/persianDigits";
 
 const ONE_DECIMAL_INPUT = /^\d*(\.\d?)?$/;
@@ -68,7 +69,7 @@ const deepEqual = (obj1, obj2) => {
   return true;
 };
 
-const ProgramColumn = ({ number, data, onChange }) => {
+const ProgramColumn = ({ number, data, onChange, stockNumbers }) => {
   const handleChange = (field, value) => {
     const enValue = toEnglishDigits(value);
     
@@ -142,7 +143,7 @@ const ProgramColumn = ({ number, data, onChange }) => {
         />
       </Box>
 
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+      {stockNumbers.map((num) => (
         <Box key={num} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
           <Typography fontFamily="IRANSANS" sx={{ fontSize: "0.75rem", minWidth: "90px" }}>
             ماده {toPersianDigits(num)}
@@ -224,6 +225,20 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
   const [isInputWaterInitialized, setIsInputWaterInitialized] = useState(false);
 
   const [inputWaterVolume, setInputWaterVolume] = useState("");
+
+  const { data: solubleConfig } = useQuery({
+    queryKey: queryKeys.adminSolubleConfig(),
+    queryFn: getSolubleConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const stockNumbers = useMemo(() => {
+    const dosingPumpCount =
+      solubleConfig?.number_of_dosing_pumps ??
+      solubleConfig?.data?.number_of_dosing_pumps;
+    const stockPumpCount = Math.max(0, Number(dosingPumpCount || 0) - 1);
+    return Array.from({ length: stockPumpCount }, (_, index) => index + 1);
+  }, [solubleConfig]);
 
   const { data: liveEcPhData } = useQuery({
     queryKey: queryKeys.solubleEcPhTemperature(),
@@ -400,7 +415,6 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
             : undefined
         }
       >
-        <Toaster position="top-center" reverseOrder={false} />
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", direction: "rtl", pb: 1, px: 1 }}>
           <Typography fontFamily="IRANSANS" fontWeight="bold" fontSize="1.2rem" sx={{ color: "#333" }}>
             تنظیمات ساخت محلول
@@ -477,7 +491,13 @@ const FeedingSettingsPage = ({ onClose, isModal = false }) => {
 
             <Box sx={{ display: "flex", gap: 1.5, justifyContent: "center", flexWrap: "nowrap" }}>
               {[1, 2, 3].map((num) => (
-                <ProgramColumn key={num} number={num} data={programs[num]} onChange={(newData) => handleProgramChange(num, newData)} />
+                <ProgramColumn
+                  key={num}
+                  number={num}
+                  data={programs[num]}
+                  stockNumbers={stockNumbers}
+                  onChange={(newData) => handleProgramChange(num, newData)}
+                />
               ))}
             </Box>
           </Box>

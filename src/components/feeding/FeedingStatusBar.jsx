@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { TransitionGroup } from "react-transition-group";
 import IconTextButton from "../../card/IconTextButton";
+import svgTesttubeiconeAsset from "../../assets/svg/TestTube.svg";
 import svgButtonOnAsset from "../../assets/svg/buttonOn.svg";
 import svgButtonOffAsset from "../../assets/svg/buttonOff.svg";
 import svgSetting2Asset from "../../assets/svg/setting2.svg";
@@ -659,7 +660,7 @@ const FeedingStatusBar = () => {
         >
           <IconTextButton
             text="تنظیمات ساخت محلول"
-            icon={svgSetting2Asset}
+            icon={svgTesttubeiconeAsset}
             iconPosition="left"
             bgColor="#F7C98C"
             textColor="#333"

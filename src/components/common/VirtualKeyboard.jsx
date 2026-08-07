@@ -82,6 +82,33 @@ const getFieldValue = (element) => {
   return isNumericField(element) ? toEnglishDigits(raw) : raw;
 };
 
+const KEYBOARD_GAP = 10;
+const NUMPAD_SIZE = {
+  width: 360,
+  height: 360,
+};
+
+const clamp = (value, min, max) => {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
+};
+
+const getKeyboardPosition = (element) => {
+  const rect = element.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const rightX = rect.right + KEYBOARD_GAP;
+  const leftX = rect.left - NUMPAD_SIZE.width - KEYBOARD_GAP;
+  const hasRightSpace = rightX + NUMPAD_SIZE.width <= viewportWidth - KEYBOARD_GAP;
+  const x = hasRightSpace ? rightX : leftX;
+  const y = rect.top + rect.height / 2 - NUMPAD_SIZE.height / 2;
+
+  return {
+    x: clamp(x, KEYBOARD_GAP, viewportWidth - NUMPAD_SIZE.width - KEYBOARD_GAP),
+    y: clamp(y, KEYBOARD_GAP, viewportHeight - NUMPAD_SIZE.height - KEYBOARD_GAP),
+  };
+};
+
 const VirtualKeyboard = () => {
   const keyboardRef = useRef(null);
   const containerRef = useRef(null);
@@ -93,6 +120,7 @@ const VirtualKeyboard = () => {
   const [visible, setVisible] = useState(false);
   const [mode, setMode] = useState("numpad");
   const [shifted, setShifted] = useState(false);
+  const [keyboardPosition, setKeyboardPosition] = useState({ x: 0, y: 0 });
 
   modeRef.current = mode;
   const layoutName = useMemo(() => getLayoutName(mode, shifted), [mode, shifted]);
@@ -133,6 +161,7 @@ const VirtualKeyboard = () => {
       activeFieldRef.current = element;
       setMode("numpad");
       setShifted(false);
+      setKeyboardPosition(getKeyboardPosition(element));
       setVisible(true);
       document.body.classList.add("virtual-keyboard-open");
 
@@ -228,6 +257,24 @@ const VirtualKeyboard = () => {
     return () => element.removeEventListener("input", handleInput);
   }, [visible, syncKeyboardInput]);
 
+  useEffect(() => {
+    if (!visible || !isNumpadMode) return undefined;
+
+    const updatePosition = () => {
+      const element = activeFieldRef.current;
+      if (!element) return;
+      setKeyboardPosition(getKeyboardPosition(element));
+    };
+
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [visible, isNumpadMode]);
+
   if (!visible) return null;
 
   const keyboardContent = (
@@ -292,7 +339,13 @@ const VirtualKeyboard = () => {
 
   if (isNumpadMode) {
     return (
-      <Draggable handle=".handle" bounds="body">
+      <Draggable
+        handle=".handle"
+        bounds="body"
+        position={keyboardPosition}
+        onDrag={(_, data) => setKeyboardPosition({ x: data.x, y: data.y })}
+        onStop={(_, data) => setKeyboardPosition({ x: data.x, y: data.y })}
+      >
         <div className="draggable-wrapper">
           {keyboardContent}
         </div>

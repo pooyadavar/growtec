@@ -27,6 +27,18 @@ export const getIrrigationSchedules = async () => {
   return normalizeIrrigationSchedules(response);
 };
 
+export const normalizeIrrigationStatus = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.results)) return response.results;
+  return [];
+};
+
+export const getIrrigationStatus = async () => {
+  const response = await apiClient.get("/irrigation/irrigation-status/");
+  return normalizeIrrigationStatus(response);
+};
+
 export const createIrrigationSchedule = async (payload) => {
   return apiClient.post("/irrigation/irrigation-schedule/", payload);
 };

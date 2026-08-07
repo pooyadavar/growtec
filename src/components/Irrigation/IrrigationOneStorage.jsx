@@ -20,14 +20,20 @@ import {
   createIrrigationSchedule,
   deleteIrrigationSchedule,
   getIrrigationSchedules,
+  getIrrigationStatus,
   getIrrigationTanksStatusLogs,
   updateIrrigationSchedule,
 } from "../../api/irrigationApi";
 import { getIrrigationConfig } from "../../api/configApi";
 import { queryKeys } from "../../api/queryKeys";
 import { uiIrrigationTankToApi } from "../../utils/tankMapping";
-import { getTankZoneOptions } from "../../utils/irrigationConfig";
+import {
+  getActiveIrrigationZonesForTank,
+  getTankZoneOptions,
+  formatIrrigationStatusText,
+} from "../../utils/irrigationConfig";
 import { toEnglishDigits, toPersianDigits } from "../../utils/persianDigits";
+import { getIrrigationScheduleDisplayStatus } from "../../utils/irrigationScheduleStatus";
 import svgTikeAsset from "../../assets/svg/tike.svg";
 import svgCrossAsset from "../../assets/svg/cross.svg";
 import svgButtonOnAsset from "../../assets/svg/buttonOn.svg";
@@ -35,12 +41,6 @@ import svgButtonOffAsset from "../../assets/svg/buttonOff.svg";
 import svgAddFieldAsset from "../../assets/svg/addField.svg";
 
 const MANUAL_ROW_BG = "#EEEEEE";
-
-const getDisplayStatus = (startStatus, endStatus) => {
-  if (startStatus === 3 && endStatus === 3) return "tick";
-  if (startStatus === 4 || endStatus === 4) return "cross";
-  return "blank";
-};
 
 const getCleanTime = (timeStr) => {
   if (!timeStr) return "";
@@ -81,7 +81,7 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew, zoneOptions }) => {
     return index >= 0 ? index + 1 : zone;
   };
 
-  const displayStatus = getDisplayStatus(data.start_status, data.end_status);
+  const displayStatus = getIrrigationScheduleDisplayStatus(data);
 
   return (
     <Box
@@ -280,6 +280,23 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     [irrigationConfig, storageNumber],
   );
 
+  const { data: irrigationStatus = [] } = useQuery({
+    queryKey: queryKeys.irrigationStatus(),
+    queryFn: getIrrigationStatus,
+    refetchInterval: 5000,
+    placeholderData: (previousData) => previousData,
+  });
+
+  const activeIrrigationZones = useMemo(
+    () =>
+      getActiveIrrigationZonesForTank(
+        irrigationConfig,
+        storageNumber,
+        irrigationStatus,
+      ),
+    [irrigationConfig, irrigationStatus, storageNumber],
+  );
+
   const { data: tankData = { current: {}, history: [] }, isError, error } = useQuery({
     queryKey: [...queryKeys.irrigationTanksStatusLogs(), storageNumber],
     queryFn: getIrrigationTanksStatusLogs,
@@ -361,6 +378,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         id: item.id,
         start_status: item.start_status !== undefined ? item.start_status : 0,
         end_status: item.end_status !== undefined ? item.end_status : 0,
+        volume_status: item.volume_status !== undefined ? item.volume_status : 0,
         start_time: getCleanTime(item.start_time),
         end_time: getCleanTime(item.end_time),
       })),
@@ -379,6 +397,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         is_active: true,
         start_status: 0,
         end_status: 0,
+        volume_status: 0,
         isNew: true,
       },
       ...prev,
@@ -477,18 +496,37 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         </Alert>
       )}
 
-      <IrrigationCard
-        storageNumber={storageNumber}
-        storageCapacity={tankData.current?.filled_volume || 0}
-        maxStorageCapacity={tankData.current?.max_volume || 0}
-        float1={tankData.current?.buttom_float_switch || false}
-        float2={tankData.current?.middle_float_switch || false}
-        float3={tankData.current?.top_float_switch || false}
-        chartData={tankData.history}
-        onClickSettings={handleSettingsClick}
-        irrigationScheduleItems={tankSchedules}
-        zoneOptions={zoneOptions}
-      />
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          transform: "scale(0.96)",
+          transformOrigin: "center",
+        }}
+      >
+        <Typography
+          fontFamily="IRANSANS"
+          fontSize={13}
+          fontWeight="bold"
+          color={activeIrrigationZones.length > 0 ? "#1565C0" : "#666"}
+          sx={{ height: 22, mb: -1 }}
+        >
+          {toPersianDigits(formatIrrigationStatusText(activeIrrigationZones))}
+        </Typography>
+        <IrrigationCard
+          storageNumber={storageNumber}
+          storageCapacity={tankData.current?.filled_volume || 0}
+          maxStorageCapacity={tankData.current?.max_volume || 0}
+          float1={tankData.current?.buttom_float_switch || false}
+          float2={tankData.current?.middle_float_switch || false}
+          float3={tankData.current?.top_float_switch || false}
+          chartData={tankData.history}
+          onClickSettings={handleSettingsClick}
+          irrigationScheduleItems={tankSchedules}
+          zoneOptions={zoneOptions}
+        />
+      </Box>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <Box sx={modalStyle}>

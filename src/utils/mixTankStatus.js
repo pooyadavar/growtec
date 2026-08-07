@@ -9,7 +9,6 @@ import svgOutputZoneAsset from "../assets/svg/outputZone.svg";
 import svgTikeAsset from "../assets/svg/tike.svg";
 import svgStatusPhAsset from "../assets/svg/status/pH.gif";
 import svgStatusMixAsset from "../assets/svg/status/mix.gif";
-import svgStatusEcAsset from "../assets/svg/status/EC.gif";
 import svgStatusFillAsset from "../assets/svg/status/fill.gif";
 import { toPersianDigits } from "./persianDigits";
 import { formatMixTankInteger } from "./mixTankStockReport";
@@ -125,13 +124,11 @@ export const resolveMixTankProcessStatus = (data) => {
     status.finished_adding_water_and_mixing_water_before_foodstuff_preparation ||
     status.injecting_stock
   ) {
-    const ecTarget = data.ec_ph?.target_ec;
     return {
-      title: "تنظیم EC",
-      footerLabel: "EC هدف",
-      footerValue:
-        ecTarget !== undefined && ecTarget !== null ? formatTarget(ecTarget) : "",
-      icon: svgStatusEcAsset,
+      title: "پر کردن آب",
+      footerLabel: "",
+      footerValue: "",
+      icon: svgStatusFillAsset,
       iconWidth: 56,
       iconHeight: 56,
       bgColor: "#FFF8E1",

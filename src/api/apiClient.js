@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getAccessToken } from '../utils/authStorage';
+import { recordApiFailure, recordApiSuccess } from '../lib/networkStatus';
 
 // const API_BASE_URL = 'http://192.168.0.107:8000/api/v1';
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
@@ -21,8 +22,12 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    recordApiSuccess();
+    return response.data;
+  },
   (error) => {
+    recordApiFailure(error);
     console.error('API Error:', error.response);
     return Promise.reject(error);
   }

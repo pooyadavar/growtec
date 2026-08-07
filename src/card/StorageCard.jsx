@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getIrrigationSchedules } from "../api/irrigationApi";
 import { queryKeys } from "../api/queryKeys";
 import { toPersianDigits } from "../utils/persianDigits";
+import { getIrrigationScheduleDisplayStatus } from "../utils/irrigationScheduleStatus";
 
 const MANUAL_ROW_BG = "#EEEEEE";
 
@@ -37,6 +38,7 @@ const StorageCard = ({
   float1,
   float2,
   float3,
+  activeIrrigationZones = [],
 }) => {
   let waterHeight = 95 - (capacity / maxCapacity) * 100;
   if (isNaN(waterHeight) || !isFinite(waterHeight)) {
@@ -45,6 +47,11 @@ const StorageCard = ({
 
   const formattedCapacity = Math.round(Number(capacity || 0));
   const image = `url(${imgMixerBGImageAsset})`;
+  const isIrrigating = activeIrrigationZones.length > 0;
+  const irrigationHeaderText =
+    activeIrrigationZones.length === 1
+      ? `آبیاری زون ${activeIrrigationZones[0]}`
+      : `آبیاری زون‌های ${activeIrrigationZones.join("،")}`;
 
   const [open, setOpen] = React.useState(false);
   const handleClose = () => setOpen(false);
@@ -67,16 +74,6 @@ const StorageCard = ({
   const formatTime = (timeString) => {
     if (!timeString) return "";
     return timeString.length > 8 ? timeString.substring(0, 8) : timeString;
-  };
-
-  const getDisplayStatus = (startStatus, endStatus) => {
-    if (startStatus === 3 && endStatus === 3) {
-      return "tick";
-    }
-    if (startStatus === 4 || endStatus === 4) {
-      return "cross";
-    }
-    return "blank";
   };
 
   return (
@@ -102,24 +99,52 @@ const StorageCard = ({
           sx={{
             height: "20px",
             width: "100%",
-            backgroundColor: "#FFCB82",
+            backgroundColor: isIrrigating ? "#2D9AFF" : "#FFCB82",
             borderRadius: "10px 10px 0px 0px",
             display: "flex",
+            alignItems: "center",
             justifyContent: "center",
             cursor: "pointer", // نشانگر موس برای هدر
+            overflow: "hidden",
+            position: "relative",
+            "&::after": isIrrigating
+              ? {
+                  content: '""',
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.45) 45%, transparent 80%)",
+                  animation: "irrigationHeaderFlow 1.2s linear infinite",
+                }
+              : {},
+            "@keyframes irrigationHeaderFlow": {
+              "0%": { transform: "translateX(-100%)" },
+              "100%": { transform: "translateX(100%)" },
+            },
           }}
         >
-          <Typography
-            fontFamily={"IRANSANS"}
-            sx={{
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              fontSize: "10px",
-            }}
-          >
-            زون {toPersianDigits(zone)}
-          </Typography>
+          {isIrrigating && (
+            <Typography
+              component="span"
+              sx={{
+                color: "#fff",
+                fontFamily: "IRANSANS",
+                fontSize: "8px",
+                fontWeight: 700,
+                lineHeight: 1,
+                maxWidth: "78px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                position: "relative",
+                zIndex: 1,
+                textShadow: "0 1px 2px rgba(0,0,0,0.28)",
+                direction: "rtl",
+              }}
+            >
+              {toPersianDigits(irrigationHeaderText)}
+            </Typography>
+          )}
         </Box>
 
         {/* بدنه مخزن - رویداد کلیک از اینجا حذف شد */}
@@ -334,10 +359,7 @@ const StorageCard = ({
               </Box>
             ) : scheduleItems.length > 0 ? (
               scheduleItems.map((item, index) => {
-                const displayStatus = getDisplayStatus(
-                  item.start_status,
-                  item.end_status,
-                );
+                const displayStatus = getIrrigationScheduleDisplayStatus(item);
 
                 return (
                   <Box

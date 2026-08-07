@@ -9,6 +9,7 @@ import Calculator from "../components/tools/Calculator";
 import ModalCloseButton from "../components/common/ModalCloseButton";
 import { uiIrrigationTankToApi, apiIrrigationTankToUi } from "../utils/tankMapping";
 import { toPersianDigits } from "../utils/persianDigits";
+import { getIrrigationScheduleDisplayStatus } from "../utils/irrigationScheduleStatus";
 
 const MANUAL_ROW_BG = "#EEEEEE";
 
@@ -34,16 +35,6 @@ const IrrigationCard = ({
   const formatTime = (timeString) => {
     if (!timeString) return "";
     return timeString;
-  };
-
-  const getDisplayStatus = (startStatus, endStatus) => {
-    if (startStatus === 3 && endStatus === 3) {
-      return "tick";
-    }
-    if (startStatus === 4 || endStatus === 4) {
-      return "cross";
-    }
-    return "blank";
   };
 
   const getDisplayZone = (zone) => {
@@ -367,10 +358,7 @@ const IrrigationCard = ({
         >
           {irrigationScheduleItems.length > 0 ? (
             irrigationScheduleItems.map((item, index) => {
-              const displayStatus = getDisplayStatus(
-                item.start_status,
-                item.end_status,
-              );
+              const displayStatus = getIrrigationScheduleDisplayStatus(item);
 
               return (
                 <React.Fragment key={index}>

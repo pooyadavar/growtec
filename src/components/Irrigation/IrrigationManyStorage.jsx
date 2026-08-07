@@ -32,6 +32,7 @@ import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getIrrigationTanksStatusLogs,
+  getIrrigationStatus,
   getIrrigationSchedules,
   createIrrigationSchedule,
   updateIrrigationSchedule,
@@ -43,20 +44,12 @@ import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import { uiIrrigationTankToApi } from "../../utils/tankMapping";
 import {
   getActiveIrrigationTankIds,
+  getActiveIrrigationZonesForTank,
   getTankZoneOptions,
+  formatIrrigationStatusText,
 } from "../../utils/irrigationConfig";
+import { getIrrigationScheduleDisplayStatus } from "../../utils/irrigationScheduleStatus";
 import TimeInput from "../common/TimeInput";
-
-// Helper function to determine display status
-const getDisplayStatus = (startStatus, endStatus) => {
-  if (startStatus === 3 && endStatus === 3) {
-    return "tick";
-  }
-  if (startStatus === 4 || endStatus === 4) {
-    return "cross";
-  }
-  return "blank";
-};
 
 const MANUAL_ROW_BG = "#EEEEEE";
 
@@ -88,7 +81,7 @@ const ScheduleRow = ({
     }, 200);
   };
 
-  const displayStatus = getDisplayStatus(data.start_status, data.end_status);
+  const displayStatus = getIrrigationScheduleDisplayStatus(data);
   const availableZoneOptions = useMemo(() => {
     const currentZone = Number(data.zone);
     const options = [...zoneOptions];
@@ -431,6 +424,13 @@ const IrrigationManyStorage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: irrigationStatus = [] } = useQuery({
+    queryKey: queryKeys.irrigationStatus(),
+    queryFn: getIrrigationStatus,
+    refetchInterval: 5000,
+    placeholderData: (previousData) => previousData,
+  });
+
   const deleteIrrigationScheduleMutation = useMutation({
     mutationFn: deleteIrrigationSchedule,
     onSuccess: () => {
@@ -537,6 +537,7 @@ const IrrigationManyStorage = () => {
         id: item.id, // Store original API ID
         start_status: item.start_status !== undefined ? item.start_status : 0,
         end_status: item.end_status !== undefined ? item.end_status : 0,
+        volume_status: item.volume_status !== undefined ? item.volume_status : 0,
         // Clean time for inputs
         start_time: getCleanTime(item.start_time),
         end_time: getCleanTime(item.end_time),
@@ -563,6 +564,7 @@ const IrrigationManyStorage = () => {
       is_active: true,
       start_status: 0,
       end_status: 0,
+      volume_status: 0,
       isNew: true,
     };
     setModalRows((prev) => [newRow, ...prev]);
@@ -749,6 +751,11 @@ const IrrigationManyStorage = () => {
           const current = tank ? tank.current : {};
           const history = tank ? tank.history : [];
           const zoneOptions = getZoneOptions(id);
+          const activeIrrigationZones = getActiveIrrigationZonesForTank(
+            irrigationConfig,
+            id,
+            irrigationStatus,
+          );
 
           const tankSchedules = rawSchedules.filter((s) =>
             zoneOptions.length > 0
@@ -762,8 +769,26 @@ const IrrigationManyStorage = () => {
               sx={{
                 flexShrink: 0,
                 scrollSnapAlign: "start",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                transform: "scale(0.96)",
+                transformOrigin: "center",
+                position:"relative",
+                top:"-15px"
               }}
             >
+              <Typography
+                fontFamily="IRANSANS"
+                fontSize={13}
+                fontWeight="bold"
+                color={activeIrrigationZones.length > 0 ? "#1565C0" : "#666"}
+                sx={{ height: 22, mb: -1 }}
+              >
+                {toPersianDigits(
+                  formatIrrigationStatusText(activeIrrigationZones),
+                )}
+              </Typography>
               <IrrigationCard
                 storageNumber={id}
                 storageCapacity={current?.filled_volume || 0}

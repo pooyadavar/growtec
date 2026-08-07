@@ -1,7 +1,12 @@
 import * as React from "react";
 import { Container, Box, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import StorageCard from "../../card/StorageCard";
 import styled from "styled-components";
+import { getIrrigationConfig } from "../../api/configApi";
+import { getIrrigationStatus } from "../../api/irrigationApi";
+import { queryKeys } from "../../api/queryKeys";
+import { getActiveIrrigationZonesForTank } from "../../utils/irrigationConfig";
 
 // آیتم‌های تکی
 const StyledScrollItem = styled(Box)({
@@ -15,6 +20,17 @@ const StyledScrollItem = styled(Box)({
 
 const Storages = ({ storagesList = [] }) => {
   const scrollContainerRef = React.useRef(null);
+  const { data: irrigationConfig } = useQuery({
+    queryKey: queryKeys.adminIrrigationConfig(),
+    queryFn: getIrrigationConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: irrigationStatus = [] } = useQuery({
+    queryKey: queryKeys.irrigationStatus(),
+    queryFn: getIrrigationStatus,
+    refetchInterval: 5000,
+    placeholderData: (previousData) => previousData,
+  });
 
   const isDown = React.useRef(false);
   const isDragging = React.useRef(false);
@@ -170,6 +186,11 @@ const Storages = ({ storagesList = [] }) => {
                 float1={card.buttom_float_switch}
                 float2={card.middle_float_switch}
                 float3={card.top_float_switch}
+                activeIrrigationZones={getActiveIrrigationZonesForTank(
+                  irrigationConfig,
+                  card.id,
+                  irrigationStatus,
+                )}
               />
             </Box>
           </StyledScrollItem>

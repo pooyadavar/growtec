@@ -34,9 +34,11 @@ import {
   emergencyStop,
 } from "../../api/solubleApi";
 import { calibrateDosingPump } from "../../api/calibrationApi";
+import { getIrrigationConfig, getSolubleConfig } from "../../api/configApi";
 import { queryKeys } from "../../api/queryKeys";
 import toast from "react-hot-toast";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
+import { getConfigValue } from "../../utils/irrigationConfig";
 
 const isActiveStatus = (status) => status === "on" || status === "start";
 const getStatusValue = (data) =>
@@ -79,7 +81,7 @@ const Control = () => {
     setInjectionType(event.target.value);
   };
 
-  const [volume, setVolume] = React.useState(1000);
+  const [volume, setVolume] = React.useState("");
   const handleVolumeChange = (event) => {
     const raw = toEnglishDigits(event.target.value);
     setVolume(raw === "" ? "" : parseInt(raw, 10));
@@ -119,6 +121,48 @@ const Control = () => {
   const [emptyStatusText, setEmptyStatusText] = React.useState("");
 
   // --- API Mutations ---
+  const { data: irrigationConfig } = useQuery({
+    queryKey: queryKeys.adminIrrigationConfig(),
+    queryFn: getIrrigationConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: solubleConfig } = useQuery({
+    queryKey: queryKeys.adminSolubleConfig(),
+    queryFn: getSolubleConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dosingPumpOptions = React.useMemo(() => {
+    const dosingPumpCount =
+      solubleConfig?.number_of_dosing_pumps ??
+      solubleConfig?.data?.number_of_dosing_pumps;
+    const stockPumpCount = Math.max(0, Number(dosingPumpCount || 0) - 1);
+    return Array.from({ length: stockPumpCount }, (_, index) => index + 1);
+  }, [solubleConfig]);
+
+  React.useEffect(() => {
+    if (dosingPumpOptions.length === 0) {
+      setSelectedPomp("");
+      setCalibSelectedPump("");
+      return;
+    }
+
+    setSelectedPomp((current) =>
+      dosingPumpOptions.includes(Number(current)) ? current : dosingPumpOptions[0],
+    );
+    setCalibSelectedPump((current) =>
+      dosingPumpOptions.includes(Number(current)) ? current : dosingPumpOptions[0],
+    );
+  }, [dosingPumpOptions]);
+
+  React.useEffect(() => {
+    const tankVolume = Number(getConfigValue(irrigationConfig, "tank_volume_1"));
+    if (Number.isFinite(tankVolume) && tankVolume > 0) {
+      setVolume((current) => (current === "" ? tankVolume : current));
+    }
+  }, [irrigationConfig]);
+
   const {
     data: mixerStatusData,
     isError: isMixerStatusError,
@@ -277,6 +321,11 @@ const Control = () => {
   });
 
   const handleCalibrationStep = (step) => {
+    if (calibType === "stock" && calibSelectedPump === "") {
+      toast.error("شماره دوزینگ پمپ را انتخاب کنید");
+      return;
+    }
+
     const payload = {
       dosing_pump: calibType, // 'acid' or 'stock'
       step: step,
@@ -508,7 +557,7 @@ const Control = () => {
                   onChange={handlePompChange}
                   label="شماره دوزینگ پمپ"
                 >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((num) => (
+                  {dosingPumpOptions.map((num) => (
                     <MenuItem
                       key={num}
                       value={num}
@@ -544,6 +593,11 @@ const Control = () => {
             <Button
               variant="contained"
               onClick={() => {
+                if (injectionType === "stock" && selectedPomp === "") {
+                  toast.error("شماره دوزینگ پمپ را انتخاب کنید");
+                  return;
+                }
+
                 const data = {
                   dosing_pump: injectionType,
                   volume: injectionVolume,
@@ -981,7 +1035,7 @@ const Control = () => {
                 <MenuItem disabled value="">
                   <Typography fontFamily={"IRANSANS"}>شماره پمپ</Typography>
                 </MenuItem>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((num) => (
+                {dosingPumpOptions.map((num) => (
                   <MenuItem
                     key={num}
                     value={num}

@@ -28,6 +28,30 @@ const clampTimePart = (value, max) => {
   return String(Math.min(Math.max(numberValue, 0), max)).padStart(2, "0");
 };
 
+const clampTypedPart = (part, max) => {
+  if (part.length < 2) return part;
+  return clampTimePart(part, max);
+};
+
+const formatTypedTimeValue = (value, withSeconds) => {
+  const maxLength = withSeconds ? 6 : 4;
+  const digits = toEnglishDigits(String(value ?? ""))
+    .replace(/\D/g, "")
+    .slice(0, maxLength);
+
+  if (!digits) return "";
+
+  const hour = clampTypedPart(digits.slice(0, 2), 23);
+  const minute = clampTypedPart(digits.slice(2, 4), 59);
+  const second = clampTypedPart(digits.slice(4, 6), 59);
+  const parts = [hour];
+
+  if (digits.length > 2) parts.push(minute);
+  if (withSeconds && digits.length > 4) parts.push(second);
+
+  return parts.join(":");
+};
+
 const getTimeParts = (value, withSeconds) => {
   const [hour = "00", minute = "00", second = "00"] = normalizeTimeValue(
     value,
@@ -151,7 +175,7 @@ const TimeInput = ({
   const secondOptions = minuteOptions;
 
   const handleTextChange = (e) => {
-    onChange(toEnglishDigits(e.target.value));
+    onChange(formatTypedTimeValue(e.target.value, withSeconds));
   };
 
   const handlePartChange = (part, selectedValue) => {
@@ -184,7 +208,6 @@ const TimeInput = ({
 
   return (
     <Box
-      data-no-virtual-keyboard
       sx={{
         display: "flex",
         alignItems: "center",

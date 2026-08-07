@@ -25,7 +25,18 @@ function App() {
   return (
     <AuthProvider>
       <div className="App">
-        <Toaster position="top-center" />
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          containerStyle={{ zIndex: 20000 }}
+          toastOptions={{
+            style: {
+              fontFamily: "IRANSANS",
+              direction: "rtl",
+              zIndex: 20000,
+            },
+          }}
+        />
         <VirtualKeyboard />
         <ModalRequestPause />
         <Outlet />
@@ -101,4 +112,3 @@ function App() {
 }
 
 export default App;
-

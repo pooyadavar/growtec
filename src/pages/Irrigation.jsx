@@ -105,14 +105,18 @@ const Irrigation = () => {
   const { mutate: submitManualIrrigationMutation, isPending: isSubmitting } =
     useMutation({
       mutationFn: makeManualIrrigation,
-      onSuccess: () => {
+      onSuccess: (data, variables) => {
         queryClient.invalidateQueries({
           queryKey: queryKeys.irrigationSchedules(),
         });
         queryClient.invalidateQueries({
           queryKey: queryKeys.irrigationTanksStatusLogs(),
         });
-        toast.success("آبیاری دستی شروع شد");
+        toast.success(
+          variables?.status === "finish"
+            ? "آبیاری دستی متوقف شد"
+            : "آبیاری دستی شروع شد",
+        );
         handleManualClose();
       },
       onError: (err) => {
@@ -157,6 +161,10 @@ const Irrigation = () => {
     submitManualIrrigationMutation(manualPayload);
   };
 
+  const handleManualStop = () => {
+    submitManualIrrigationMutation({ status: "finish" });
+  };
+
   return (
     <Container
       disableGutters
@@ -187,6 +195,8 @@ const Irrigation = () => {
           display: "flex",
           justifyContent: "center",
           ml: 5,
+          position:"relative",
+          top:"-25px",
         }}
       >
         <IconTextButton
@@ -389,6 +399,24 @@ const Irrigation = () => {
               }}
             >
               ارسال
+            </Button>
+            <Button
+              variant="contained"
+              disabled={isSubmitting}
+              onClick={handleManualStop}
+              sx={{
+                width: "154px",
+                height: "40px",
+                color: "#7A0000",
+                backgroundColor: "#FED9D9",
+                borderRadius: "10px",
+                border: "0.5px solid #CC0000",
+                fontFamily: "IRANSANS",
+                fontSize: 16,
+                boxShadow: "none",
+              }}
+            >
+              توقف آبیاری
             </Button>
           </Box>
         </Box>
