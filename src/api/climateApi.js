@@ -47,12 +47,46 @@ export const sendOperatorCommand = async (data) => {
   return apiClient.post("/climate/operator/", data);
 };
 
+const normalizeTemperaturePart = (response) => {
+  if (typeof response === "string") {
+    return {
+      temperature_part: response,
+      minimum_temperature: null,
+      maximum_temperature: null,
+    };
+  }
+
+  return {
+    temperature_part: response?.temperature_part ?? "",
+    minimum_temperature: response?.minimum_temperature ?? null,
+    maximum_temperature: response?.maximum_temperature ?? null,
+  };
+};
+
+const normalizeHumidityPart = (response) => {
+  if (typeof response === "string") {
+    return {
+      humidity_part: response,
+      minimum_humidity: null,
+      maximum_humidity: null,
+    };
+  }
+
+  return {
+    humidity_part: response?.humidity_part ?? "",
+    minimum_humidity: response?.minimum_humidity ?? null,
+    maximum_humidity: response?.maximum_humidity ?? null,
+  };
+};
+
 export const getTemperaturePart = async (zone) => {
-  return apiClient.get(`/climate/temperature-part/?zone=${zone}`);
+  const response = await apiClient.get(`/climate/temperature-part/?zone=${zone}`);
+  return normalizeTemperaturePart(response);
 };
 
 export const getHumidityPart = async (zone) => {
-  return apiClient.get(`/climate/humidity-part/?zone=${zone}`);
+  const response = await apiClient.get(`/climate/humidity-part/?zone=${zone}`);
+  return normalizeHumidityPart(response);
 };
 
 export const getRangeStartTime = async () => {

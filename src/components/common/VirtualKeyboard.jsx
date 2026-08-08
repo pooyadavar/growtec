@@ -158,8 +158,15 @@ const VirtualKeyboard = () => {
       if (blurTimeoutRef.current) {
         clearTimeout(blurTimeoutRef.current);
       }
+      const preferredMode = element.dataset.virtualKeyboardMode;
+      const nextMode =
+        preferredMode === "farsi" || preferredMode === "english"
+          ? preferredMode
+          : isNumericField(element)
+            ? "numpad"
+            : "farsi";
       activeFieldRef.current = element;
-      setMode("numpad");
+      setMode(nextMode);
       setShifted(false);
       setKeyboardPosition(getKeyboardPosition(element));
       setVisible(true);

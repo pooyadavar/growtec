@@ -3,8 +3,10 @@ import EghlimCard from "../../card/EghlimCard";
 import { Container, Box, CircularProgress, Typography } from "@mui/material";
 import styled from "styled-components";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { getInsideCliment } from "../../api/dashboardApi";
+import { getHumidityPart, getTemperaturePart } from "../../api/climateApi";
+import { queryKeys } from "../../api/queryKeys";
 
 const StyledScrollItem = styled(Box)({
   transition: "transform 0.3s ease",
@@ -89,11 +91,33 @@ const Eghlim = () => {
     zoneIds.forEach((id) => {
       const zoneData = data[String(id)];
       if (zoneData) {
-        zoneList.push(zoneData);
+        zoneList.push({ ...zoneData, zoneId: id });
       }
     });
     return zoneList;
   }, [data]);
+
+  const temperaturePartQueries = useQueries({
+    queries: zones.map((card) => ({
+      queryKey: queryKeys.payesh.temperaturePart(card.zoneId),
+      queryFn: () => getTemperaturePart(card.zoneId),
+      enabled: Boolean(card.zoneId),
+      staleTime: 20_000,
+      gcTime: 5 * 60_000,
+      refetchInterval: 30_000,
+    })),
+  });
+
+  const humidityPartQueries = useQueries({
+    queries: zones.map((card) => ({
+      queryKey: queryKeys.payesh.humidityPart(card.zoneId),
+      queryFn: () => getHumidityPart(card.zoneId),
+      enabled: Boolean(card.zoneId),
+      staleTime: 20_000,
+      gcTime: 5 * 60_000,
+      refetchInterval: 30_000,
+    })),
+  });
 
   const baseStyles = {
     width: "730px",
@@ -186,9 +210,11 @@ const Eghlim = () => {
         {zones.map((card, index) => (
           <StyledScrollItem key={index}>
             <EghlimCard
-              zone={index + 1}
+              zone={card.zoneId}
               temp={card.temperature?.toFixed(1) || 0}
               hum={card.humidity?.toFixed(1) || 0}
+              temperatureRange={temperaturePartQueries[index]?.data}
+              humidityRange={humidityPartQueries[index]?.data}
               fan1={card.exhaust_fan || false}
               fan2={card.circule_fan || false}
               pad={card.pump_pad || false}

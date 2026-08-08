@@ -1,8 +1,9 @@
 const http = require("http");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
-const ROOT = path.join(__dirname, "..");
+const SAVE_DIR = path.join(os.homedir(), "Desktop", "برنامه ابیاری");
 const PORT = 3001;
 
 const sanitizeFileName = (name) =>
@@ -47,7 +48,8 @@ const server = http.createServer((req, res) => {
       }
 
       const fileName = `${sanitizeFileName(programName)}.json`;
-      const filePath = path.join(ROOT, fileName);
+      fs.mkdirSync(SAVE_DIR, { recursive: true });
+      const filePath = path.join(SAVE_DIR, fileName);
 
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 

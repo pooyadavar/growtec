@@ -12,8 +12,7 @@ import TimeInput from "../common/TimeInput";
 import { toPersianDigits, toEnglishDigits } from "../../utils/persianDigits";
 import { saveIrrigationProgramToFile } from "../../utils/saveIrrigationProgram";
 import { getIrrigationConfig } from "../../api/configApi";
-
-const MOCK_OPERATORS_COUNT = 8;
+import { getConfigValue } from "../../utils/irrigationConfig";
 
 const COLORS = {
   amber: "#FFCB82",
@@ -77,17 +76,7 @@ const parseTimeToSeconds = (timeStr) => {
   return h * 3600 + m * 60 + s;
 };
 
-const durationToSeconds = ({ hours = 0, minutes = 0 }) =>
-  Math.max(0, Number(hours) || 0) * 3600 +
-  Math.max(0, Number(minutes) || 0) * 60;
-
-const emptyDuration = () => ({ hours: 0, minutes: 0 });
-
-const clampDurationPart = (field, raw) => {
-  const n = Math.max(0, parseInt(toEnglishDigits(String(raw)), 10) || 0);
-  if (field === "minutes") return Math.min(59, n);
-  return Math.min(99, n);
-};
+const durationToSeconds = parseTimeToSeconds;
 
 const formatSecondsToTime = (totalSeconds) => {
   const safe = Math.max(0, totalSeconds);
@@ -97,21 +86,65 @@ const formatSecondsToTime = (totalSeconds) => {
   return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
 };
 
+const getRowDurationSeconds = (row) => {
+  const start = parseTimeToSeconds(row.start_time ?? row.start);
+  const end = parseTimeToSeconds(row.end_time ?? row.end);
+  return Math.max(0, end - start);
+};
+
+const normalizeScheduleRows = (rows, gapSeconds = 0) => {
+  let previousEnd = null;
+
+  return [...rows]
+    .sort((a, b) => {
+      const aBaseStart = parseTimeToSeconds(
+        a.base_start_time ?? a.start_time ?? a.start,
+      );
+      const bBaseStart = parseTimeToSeconds(
+        b.base_start_time ?? b.start_time ?? b.start,
+      );
+      if (aBaseStart !== bBaseStart) return aBaseStart - bBaseStart;
+      const aSequence = Number(a.sequence_order) || 0;
+      const bSequence = Number(b.sequence_order) || 0;
+      if (aSequence !== bSequence) return aSequence - bSequence;
+      const aZone = Number(a.zone) || 0;
+      const bZone = Number(b.zone) || 0;
+      if (aZone !== bZone) return aZone - bZone;
+      return (Number(a.order) || 0) - (Number(b.order) || 0);
+    })
+    .map((row, index) => {
+      const originalStart = parseTimeToSeconds(row.start_time ?? row.start);
+      const duration = getRowDurationSeconds(row);
+      const minStart = previousEnd == null ? originalStart : previousEnd + gapSeconds;
+      const nextStart = previousEnd == null ? originalStart : Math.max(originalStart, minStart);
+      const nextEnd = nextStart + duration;
+      previousEnd = nextEnd;
+
+      return {
+        ...row,
+        order: index + 1,
+        start: formatSecondsToTime(nextStart),
+        end: formatSecondsToTime(nextEnd),
+        start_time: formatSecondsToTime(nextStart),
+        end_time: formatSecondsToTime(nextEnd),
+      };
+    });
+};
+
 const createEmptyRow = (index, operator = 1) => ({
   order: index + 1,
   zone: operator,
   start: "00:00:00",
   end: "00:00:00",
+  duration: "00:00:00",
 });
 
 const resolveOperatorsCount = (config) => {
-  const count = Number(
-    config?.operators_count ??
-      config?.operator_count ??
-      config?.operators?.length ??
-      0,
+  return [1, 2, 3, 4].reduce(
+    (sum, zone) =>
+      sum + (Number(getConfigValue(config, `number_of_pumps_zone_${zone}`)) || 0),
+    0,
   );
-  return count > 0 ? count : MOCK_OPERATORS_COUNT;
 };
 
 const CustomLabel = ({ children }) => (
@@ -157,102 +190,6 @@ const TimeField = ({ value, onChange, underLabel = false, sx = {} }) => (
   </Box>
 );
 
-const durationInputSx = {
-  ...inputStyles,
-  width: "44px",
-  minWidth: "44px",
-  flexShrink: 0,
-  "& .MuiOutlinedInput-root": {
-    borderRadius: "10px",
-    backgroundColor: COLORS.bgGrey,
-    boxShadow: "none",
-    height: "28px",
-    "& fieldset": { border: "none" },
-  },
-  "& .MuiOutlinedInput-input": {
-    padding: "2px 0",
-    fontSize: "0.8rem",
-  },
-};
-
-const DurationField = ({ value, onChange, underLabel = false }) => {
-  const hours = value?.hours ?? 0;
-  const minutes = value?.minutes ?? 0;
-
-  const handlePartChange = (field, raw) => {
-    onChange({
-      ...value,
-      [field]: clampDurationPart(field, raw),
-    });
-  };
-
-  return (
-    <Box
-      sx={{
-        ...(underLabel ? labeledFieldBodySx : fieldShellSx),
-        height: "40px",
-        display: "flex",
-        flexDirection: "row",
-        flexWrap: "nowrap",
-        alignItems: "center",
-        justifyContent: "center",
-        px: 0.75,
-        gap: 0.4,
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <Typography
-        sx={{
-          fontSize: "0.72rem",
-          fontWeight: "bold",
-          fontFamily: "IRANSANS",
-          flexShrink: 0,
-          whiteSpace: "nowrap",
-        }}
-      >
-      </Typography>
-      <TextField
-        sx={durationInputSx}
-        value={toPersianDigits(minutes)}
-        onChange={(e) => handlePartChange("minutes", e.target.value)}
-        inputProps={{
-          inputMode: "numeric",
-          style: { fontFamily: "IRANSANS", textAlign: "center", padding: 0 },
-        }}
-      />
-      <Typography
-        sx={{
-          fontWeight: "bold",
-          fontFamily: "IRANSANS",
-          flexShrink: 0,
-          px: 0.2,
-        }}
-      >
-        :
-      </Typography>
-      <Typography
-        sx={{
-          fontSize: "0.72rem",
-          fontWeight: "bold",
-          fontFamily: "IRANSANS",
-          flexShrink: 0,
-          whiteSpace: "nowrap",
-        }}
-      >
-      </Typography>
-      <TextField
-        sx={durationInputSx}
-        value={toPersianDigits(hours)}
-        onChange={(e) => handlePartChange("hours", e.target.value)}
-        inputProps={{
-          inputMode: "numeric",
-          style: { fontFamily: "IRANSANS", textAlign: "center", padding: 0 },
-        }}
-      />
-    </Box>
-  );
-};
-
 const LabeledField = ({ label, children }) => (
   <Box sx={{ borderRadius: "20px" }}>
     <CustomLabel>{label}</CustomLabel>
@@ -265,6 +202,7 @@ const NumberSelect = ({
   onChange,
   min = 1,
   max = 20,
+  emptyLabel,
   underLabel = false,
   compact = false,
   sx = {},
@@ -289,14 +227,17 @@ const NumberSelect = ({
   >
     <select
       value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+      onChange={(e) =>
+        onChange(e.target.value === "" ? "" : Number(e.target.value))
+      }
       style={{
         ...selectStyles,
         height: compact ? "34px" : "40px",
         fontSize: compact ? "0.85rem" : "0.9rem",
       }}
     >
-      {Array.from({ length: max - min + 1 }, (_, i) => {
+      {emptyLabel && <option value="">{emptyLabel}</option>}
+      {Array.from({ length: Math.max(0, max - min + 1) }, (_, i) => {
         const n = min + i;
         return (
           <option key={n} value={n}>
@@ -308,9 +249,41 @@ const NumberSelect = ({
   </Box>
 );
 
+const NumberInput = ({ value, onChange, min = 1, underLabel = false }) => (
+  <TextField
+    fullWidth
+    type="text"
+    value={value === "" ? "" : toPersianDigits(value)}
+    onChange={(e) => {
+      const raw = toEnglishDigits(e.target.value).replace(/\D/g, "");
+      onChange(raw === "" ? "" : Math.max(min, Number(raw)));
+    }}
+    sx={{
+      ...inputStyles,
+      "& .MuiOutlinedInput-root": {
+        borderRadius: underLabel ? "0 0 20px 20px" : "20px",
+        backgroundColor: COLORS.white,
+        boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+        height: "40px",
+        "& fieldset": { border: "none" },
+      },
+      "& .MuiOutlinedInput-input": {
+        padding: "8px 6px",
+        textAlign: "center",
+        fontWeight: "bold",
+        fontSize: "0.9rem",
+        fontFamily: "IRANSANS",
+      },
+    }}
+    inputProps={{
+      inputMode: "numeric",
+      style: { fontFamily: "IRANSANS", textAlign: "center" },
+    }}
+  />
+);
+
 export default function IrrigationCalculatorPage({
   onClose,
-  operatorsCount: operatorsCountProp,
 }) {
   const { data: irrigationConfig } = useQuery({
     queryKey: ["irrigationConfig"],
@@ -320,84 +293,121 @@ export default function IrrigationCalculatorPage({
   });
 
   const operatorsCount = useMemo(() => {
-    if (operatorsCountProp > 0) return operatorsCountProp;
     return resolveOperatorsCount(irrigationConfig);
-  }, [operatorsCountProp, irrigationConfig]);
+  }, [irrigationConfig]);
 
   const [programName, setProgramName] = useState("");
-  const [headerOperator, setHeaderOperator] = useState(1);
+  const [filterOperator, setFilterOperator] = useState("");
   const [firstIrrigation, setFirstIrrigation] = useState("00:00:00");
-  const [irrigationCount, setIrrigationCount] = useState(1);
-  const [irrigationInterval, setIrrigationInterval] = useState(emptyDuration);
-  const [irrigationDuration, setIrrigationDuration] = useState(emptyDuration);
-  const [zoneInterval, setZoneInterval] = useState(emptyDuration);
-  const [rows, setRows] = useState([createEmptyRow(0, 1)]);
+  const [irrigationCount, setIrrigationCount] = useState("");
+  const [irrigationInterval, setIrrigationInterval] = useState("00:00:00");
+  const [irrigationDuration, setIrrigationDuration] = useState("00:00:00");
+  const [zoneInterval, setZoneInterval] = useState("00:00:00");
+  const [rows, setRows] = useState([]);
+  const [builtRows, setBuiltRows] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setHeaderOperator((prev) => Math.min(Math.max(prev, 1), operatorsCount));
+    setRows((prev) =>
+      Array.from({ length: operatorsCount }, (_, index) => {
+        const row = prev[index];
+        if (!row) return createEmptyRow(index, index + 1);
+        return {
+          ...row,
+          order: index + 1,
+          zone:
+            row.zone === ""
+              ? ""
+              : Math.min(Math.max(row.zone ?? 1, 1), operatorsCount),
+        };
+      }),
+    );
   }, [operatorsCount]);
 
   useEffect(() => {
-    setRows((prev) =>
-      Array.from({ length: irrigationCount }, (_, i) => {
-        if (prev[i]) {
-          return {
-            ...prev[i],
-            order: i + 1,
-            zone: Math.min(Math.max(prev[i].zone ?? 1, 1), operatorsCount),
-          };
-        }
-        return createEmptyRow(i, headerOperator);
-      }),
-    );
-  }, [headerOperator, irrigationCount, operatorsCount]);
+    if (filterOperator !== "" && Number(filterOperator) > operatorsCount) {
+      setFilterOperator("");
+    }
+  }, [filterOperator, operatorsCount]);
 
   const buildProgramRows = () => {
     const first = parseTimeToSeconds(firstIrrigation);
+    const count = Number(irrigationCount);
     const interval = durationToSeconds(irrigationInterval);
-    const duration = durationToSeconds(irrigationDuration);
+    const defaultDuration = durationToSeconds(irrigationDuration);
     const zoneGap = durationToSeconds(zoneInterval);
 
     const built = [];
-    for (let i = 0; i < irrigationCount; i++) {
-      let startSec;
-      if (interval > 0) {
-        startSec = first + i * interval;
-      } else if (i === 0) {
-        startSec = first;
-      } else {
-        startSec = parseTimeToSeconds(built[i - 1].end) + zoneGap;
-      }
+    const orderedZones = rows.filter((row) => row.zone !== "");
 
-      built.push({
-        order: i + 1,
-        zone: rows[i]?.zone ?? headerOperator,
-        start: formatSecondsToTime(startSec),
-        end: formatSecondsToTime(startSec + duration),
+    if (!Number.isFinite(count) || count <= 0) {
+      toast.error("تعداد دفعات روشن شدن عملگر را وارد کنید");
+      return built;
+    }
+
+    if (orderedZones.length === 0) {
+      toast.error("حداقل یک زون در ترتیب آبیاری انتخاب کنید");
+      return built;
+    }
+
+    for (let cycle = 0; cycle < count; cycle++) {
+      const cycleStart = first + cycle * interval;
+      let cursor = cycleStart;
+      orderedZones.forEach((row) => {
+        const duration = durationToSeconds(row.duration) || defaultDuration;
+        if (duration <= 0) return;
+        const start = cursor;
+        const end = start + duration;
+        built.push({
+          order: built.length + 1,
+          zone: row.zone,
+          duration: formatSecondsToTime(duration),
+          start: formatSecondsToTime(start),
+          end: formatSecondsToTime(end),
+          start_time: formatSecondsToTime(start),
+          end_time: formatSecondsToTime(end),
+          base_start_time: formatSecondsToTime(cycleStart),
+          sequence_order: row.order,
+          volume: "",
+          is_active: true,
+          start_status: 0,
+          end_status: 0,
+          volume_status: 0,
+        });
+        cursor = end + zoneGap;
       });
     }
     return built;
   };
 
-  const handleBuildProgram = async () => {
+  const handleBuildProgram = () => {
+    const built = buildProgramRows();
+    if (built.length === 0) return;
+    const gapSeconds = durationToSeconds(zoneInterval);
+    setBuiltRows((prev) => normalizeScheduleRows([...prev, ...built], gapSeconds));
+    setFilterOperator("");
+  };
+
+  const handleSaveProgram = async () => {
     if (!programName.trim()) {
       toast.error("نام برنامه را وارد کنید");
       return;
     }
 
-    const built = buildProgramRows();
-    setRows(built);
+    const built = builtRows.length > 0 ? builtRows : buildProgramRows();
+    if (built.length === 0) return;
+    setBuiltRows(normalizeScheduleRows(built, durationToSeconds(zoneInterval)));
 
     const programData = {
       programName: programName.trim(),
-      headerOperator,
+      filterOperator,
       operatorsCount,
       firstIrrigation,
       irrigationCount,
       irrigationInterval,
       irrigationDuration,
       zoneInterval,
+      zones: rows,
       schedule: built,
       createdAt: new Date().toISOString(),
     };
@@ -408,7 +418,11 @@ export default function IrrigationCalculatorPage({
         programName.trim(),
         programData,
       );
-      toast.success(`فایل ${result.fileName} در روت پروژه ذخیره شد`);
+      if (result.downloaded) {
+        toast.success(`سرور ذخیره در دسترس نبود؛ فایل ${result.fileName} دانلود شد`);
+      } else {
+        toast.success(`فایل ${result.fileName} در پوشه برنامه ابیاری ذخیره شد`);
+      }
     } catch (error) {
       toast.error(
         error.message ||
@@ -425,25 +439,51 @@ export default function IrrigationCalculatorPage({
     );
   };
 
+  const handleOrderChange = (index, nextOrder) => {
+    setRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, zone: nextOrder } : row)),
+    );
+  };
+
   const handleDeleteRow = (index) => {
-    if (rows.length <= 1) return;
-    const next = rows
-      .filter((_, i) => i !== index)
-      .map((row, i) => ({
-        ...row,
-        order: i + 1,
-        zone: i + 1,
-      }));
-    setRows(next);
-    setIrrigationCount(next.length);
+    setRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, zone: "" } : row)),
+    );
   };
 
   const handleClearTable = () => {
+    setBuiltRows([]);
     setRows(
-      Array.from({ length: irrigationCount }, (_, i) =>
-        createEmptyRow(i, headerOperator),
+      Array.from({ length: operatorsCount }, (_, index) =>
+        createEmptyRow(index, index + 1),
       ),
     );
+  };
+
+  const handleBuiltRowChange = (index, field, value) => {
+    setBuiltRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    );
+  };
+
+  const handleDeleteBuiltRow = (index) => {
+    setBuiltRows((prev) =>
+      normalizeScheduleRows(
+        prev.filter((_, i) => i !== index),
+        durationToSeconds(zoneInterval),
+      ),
+    );
+  };
+
+  const rawDisplayRows = builtRows.length > 0 ? builtRows : rows;
+  const displayRows =
+    filterOperator === ""
+      ? rawDisplayRows
+      : rawDisplayRows.filter((row) => Number(row.zone) === Number(filterOperator));
+  const isPreviewMode = builtRows.length > 0;
+
+  const updateFormValue = (setter) => (value) => {
+    setter(value);
   };
 
   return (
@@ -496,9 +536,10 @@ export default function IrrigationCalculatorPage({
               </Typography>
               <Box sx={{ width: 72, flexShrink: 0 }}>
                 <NumberSelect
-                  value={headerOperator}
+                  value={filterOperator}
+                  emptyLabel="همه"
                   max={operatorsCount}
-                  onChange={setHeaderOperator}
+                  onChange={setFilterOperator}
                   sx={{
                     backgroundColor: COLORS.white,
                     boxShadow: "0px 2px 6px rgba(0,0,0,0.12)",
@@ -538,23 +579,33 @@ export default function IrrigationCalculatorPage({
                   </Typography>
                   <Typography
                     sx={{
-                      width: "32%",
+                      width: "22%",
                       fontWeight: "bold",
                       fontSize: "0.85rem",
                       fontFamily: "IRANSANS",
                     }}
                   >
-                    شروع آبیاری
+                    مدت
                   </Typography>
                   <Typography
                     sx={{
-                      width: "32%",
+                      width: "24%",
                       fontWeight: "bold",
                       fontSize: "0.85rem",
                       fontFamily: "IRANSANS",
                     }}
                   >
                     پایان آبیاری
+                  </Typography>
+                  <Typography
+                    sx={{
+                      width: "24%",
+                      fontWeight: "bold",
+                      fontSize: "0.85rem",
+                      fontFamily: "IRANSANS",
+                    }}
+                  >
+                    شروع آبیاری
                   </Typography>
                   <Typography
                     sx={{
@@ -577,7 +628,7 @@ export default function IrrigationCalculatorPage({
                     direction: "ltr",
                   }}
                 >
-                  {rows.map((row, idx) => (
+                  {displayRows.map((row, idx) => (
                     <Box
                       key={idx}
                       sx={{
@@ -588,27 +639,53 @@ export default function IrrigationCalculatorPage({
                         minHeight: "40px",
                       }}
                     >
-                      <NumberSelect
-                        value={row.zone}
-                        max={operatorsCount}
-                        onChange={(v) => handleRowChange(idx, "zone", v)}
+                      <Box
                         sx={{
                           width: "16%",
+                          height: "40px",
+                          borderRadius: "20px",
+                          backgroundColor: COLORS.white,
                           boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
-                      />
+                      >
+                        <Typography fontFamily="IRANSANS" fontWeight="bold">
+                          {row.zone === "" ? "پوچ" : toPersianDigits(row.zone)}
+                        </Typography>
+                      </Box>
 
-                      <Box sx={{ width: "32%" }}>
+                      <Box sx={{ width: "22%" }}>
                         <TimeField
-                          value={row.start}
-                          onChange={(v) => handleRowChange(idx, "start", v)}
+                          value={row.duration ?? irrigationDuration}
+                          onChange={(v) =>
+                            isPreviewMode
+                              ? handleBuiltRowChange(idx, "duration", v)
+                              : handleRowChange(idx, "duration", v)
+                          }
                         />
                       </Box>
 
-                      <Box sx={{ width: "32%" }}>
+                      <Box sx={{ width: "24%" }}>
                         <TimeField
                           value={row.end}
-                          onChange={(v) => handleRowChange(idx, "end", v)}
+                          onChange={(v) =>
+                            isPreviewMode
+                              ? handleBuiltRowChange(idx, "end", v)
+                              : handleRowChange(idx, "end", v)
+                          }
+                        />
+                      </Box>
+
+                      <Box sx={{ width: "24%" }}>
+                        <TimeField
+                          value={row.start}
+                          onChange={(v) =>
+                            isPreviewMode
+                              ? handleBuiltRowChange(idx, "start", v)
+                              : handleRowChange(idx, "start", v)
+                          }
                         />
                       </Box>
 
@@ -620,7 +697,11 @@ export default function IrrigationCalculatorPage({
                         }}
                       >
                         <Box
-                          onClick={() => handleDeleteRow(idx)}
+                          onClick={() =>
+                            isPreviewMode
+                              ? handleDeleteBuiltRow(idx)
+                              : handleDeleteRow(idx)
+                          }
                           sx={{
                             p: 0.5,
                             border: `2px solid ${COLORS.red}`,
@@ -628,8 +709,9 @@ export default function IrrigationCalculatorPage({
                             color: COLORS.red,
                             display: "flex",
                             alignItems: "center",
-                            cursor: rows.length > 1 ? "pointer" : "not-allowed",
-                            opacity: rows.length > 1 ? 1 : 0.4,
+                            cursor:
+                              displayRows.length > 1 ? "pointer" : "not-allowed",
+                            opacity: displayRows.length > 1 ? 1 : 0.4,
                           }}
                         >
                           <CloseIcon fontSize="small" />
@@ -718,9 +800,10 @@ export default function IrrigationCalculatorPage({
                           <NumberSelect
                             key={idx}
                             compact
-                            value={row.order}
-                            max={15}
-                            onChange={(v) => handleRowChange(idx, "order", v)}
+                            value={row.zone}
+                            emptyLabel="پوچ"
+                            max={operatorsCount}
+                            onChange={(v) => handleOrderChange(idx, v)}
                             sx={{ width: 44 }}
                           />
                         ))}
@@ -752,9 +835,17 @@ export default function IrrigationCalculatorPage({
                               "& fieldset": { border: "none" },
                             },
                           }}
+                          type="text"
                           value={programName}
                           onChange={(e) => setProgramName(e.target.value)}
-                          inputProps={{ style: { fontFamily: "IRANSANS" } }}
+                          inputProps={{
+                            inputMode: "text",
+                            lang: "fa",
+                            dir: "rtl",
+                            "data-virtual-keyboard-mode": "farsi",
+                            autoComplete: "off",
+                            style: { fontFamily: "IRANSANS" },
+                          }}
                         />
                       </LabeledField>
 
@@ -762,41 +853,40 @@ export default function IrrigationCalculatorPage({
                         <TimeField
                           underLabel
                           value={firstIrrigation}
-                          onChange={setFirstIrrigation}
+                          onChange={updateFormValue(setFirstIrrigation)}
                         />
                       </LabeledField>
 
                       <LabeledField label="تعداد دفعات روشن شدن عملگر">
-                        <NumberSelect
+                        <NumberInput
                           underLabel
                           value={irrigationCount}
                           min={1}
-                          max={20}
-                          onChange={setIrrigationCount}
+                          onChange={updateFormValue(setIrrigationCount)}
                         />
                       </LabeledField>
 
                       <LabeledField label="فاصله بین دو زمان کارکرد">
-                        <DurationField
+                        <TimeField
                           underLabel
                           value={irrigationInterval}
-                          onChange={setIrrigationInterval}
+                          onChange={updateFormValue(setIrrigationInterval)}
                         />
                       </LabeledField>
 
                       <LabeledField label="مدت زمان کارکرد">
-                        <DurationField
+                        <TimeField
                           underLabel
                           value={irrigationDuration}
-                          onChange={setIrrigationDuration}
+                          onChange={updateFormValue(setIrrigationDuration)}
                         />
                       </LabeledField>
 
                       <LabeledField label="فاصله بین دو عملگر">
-                        <DurationField
+                        <TimeField
                           underLabel
                           value={zoneInterval}
-                          onChange={setZoneInterval}
+                          onChange={updateFormValue(setZoneInterval)}
                         />
                       </LabeledField>
 
@@ -855,11 +945,14 @@ export default function IrrigationCalculatorPage({
                                                     icon={<SaveIcon />}
                                                     bgColor={COLORS.amber}
                                                     textColor="#000"
-                                                    width="87%"
-                                                    height="35px"
+                          width="87%"
+                          height="35px"
+                          onClick={isSaving ? undefined : handleSaveProgram}
                           sx={{
                             borderRadius: "15px",
                             py: 0.5,
+                            opacity: isSaving ? 0.7 : 1,
+                            pointerEvents: isSaving ? "none" : "auto",
                             "& .MuiTypography-root": {
                               fontSize: "0.85rem",
                               fontFamily: "IRANSANS",

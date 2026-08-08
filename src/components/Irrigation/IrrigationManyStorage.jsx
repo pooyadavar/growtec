@@ -31,10 +31,12 @@ import SaveIcon from "@mui/icons-material/Save";
 import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  batchDeleteIrrigationSchedules,
   getIrrigationTanksStatusLogs,
   getIrrigationStatus,
   getIrrigationSchedules,
   createIrrigationSchedule,
+  createIrrigationSchedules,
   updateIrrigationSchedule,
   deleteIrrigationSchedule,
 } from "../../api/irrigationApi";
@@ -49,6 +51,7 @@ import {
   formatIrrigationStatusText,
 } from "../../utils/irrigationConfig";
 import { getIrrigationScheduleDisplayStatus } from "../../utils/irrigationScheduleStatus";
+import { buildRowsFromIrrigationProgramFile } from "../../utils/irrigationProgramFile";
 import TimeInput from "../common/TimeInput";
 
 const MANUAL_ROW_BG = "#EEEEEE";
@@ -61,6 +64,25 @@ const hasEndTimeOrVolume = (row) => {
 
   return endTime !== "" || hasVolume;
 };
+
+const convertToISO = (timeString) => {
+  if (!timeString) return null;
+  const parts = timeString.split(":");
+  if (parts.length === 2) parts.push("00");
+  return `${parts.join(":")}.000Z`;
+};
+
+const buildSchedulePayload = (row, { forceReadyStatus = false } = {}) => ({
+  is_active: row.is_active,
+  is_manual: false,
+  start_status: forceReadyStatus ? 1 : (row.start_status ?? 1),
+  end_status: forceReadyStatus ? 1 : (row.end_status ?? 1),
+  volume_status: row.volume_status ?? 0,
+  zone: row.zone,
+  volume: row.volume === "" ? 0 : row.volume,
+  start_time: convertToISO(row.start_time),
+  end_time: convertToISO(row.end_time),
+});
 
 const ScheduleRow = ({
   id,
@@ -367,6 +389,7 @@ const IrrigationManyStorage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTankId, setSelectedTankId] = useState(null);
   const [modalRows, setModalRows] = useState([]);
+  const programFileInputRef = useRef(null);
 
   // Fetch real-time tank data
   const { data: tanksData = {}, isError: isTanksError, error: tanksError } =
@@ -570,6 +593,42 @@ const IrrigationManyStorage = () => {
     setModalRows((prev) => [newRow, ...prev]);
   };
 
+  const handleProgramFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const payload = JSON.parse(await file.text());
+      const importedRows = buildRowsFromIrrigationProgramFile(
+        payload,
+        getZoneOptions(selectedTankId),
+      );
+      if (importedRows.length === 0) {
+        toast.error("ردیف قابل استفاده برای این مخزن پیدا نشد.");
+        return;
+      }
+      const zoneOptions = getZoneOptions(selectedTankId);
+      const fallbackZone = uiIrrigationTankToApi(selectedTankId);
+      const ids = rawSchedules
+        .filter((item) =>
+          zoneOptions.length > 0
+            ? zoneOptions.includes(Number(item.zone))
+            : item.zone === fallbackZone,
+        )
+        .map((row) => row.id)
+        .filter(Boolean);
+      if (ids.length > 0) {
+        await batchDeleteIrrigationSchedules(ids);
+        queryClient.invalidateQueries({ queryKey: queryKeys.irrigationSchedules() });
+      }
+      setModalRows(importedRows);
+      toast.success("قبلی‌ها حذف شد؛ برنامه زمانی آماده جایگزین جدول شد.");
+    } catch {
+      toast.error("فایل برنامه زمانی نامعتبر است.");
+    }
+  };
+
   const handleDeleteRow = (tempIdToDelete) => {
     const rowToDelete = modalRows.find((row) => row.tempId === tempIdToDelete);
 
@@ -614,47 +673,34 @@ const IrrigationManyStorage = () => {
       return;
     }
 
-    const convertToISO = (timeString) => {
-      if (!timeString) return null;
-      const parts = timeString.split(":");
-      if (parts.length === 2) parts.push("00");
-      return `${parts.join(":")}.000Z`;
-    };
-
-    const createPromises = newRows.map((row) => {
-      const payload = {
-        is_active: row.is_active,
-        start_status: 1, // Default status for new rows
-        end_status: 1, // Default status for new rows
-        zone: row.zone,
-        volume: row.volume === "" ? 0 : row.volume,
-        start_time: convertToISO(row.start_time),
-        end_time: convertToISO(row.end_time),
-      };
-      return createIrrigationScheduleMutation.mutateAsync(payload);
-    });
+    const createPromises =
+      newRows.length > 1
+        ? [
+            createIrrigationSchedules(
+              newRows.map((row) =>
+                buildSchedulePayload(row, { forceReadyStatus: true }),
+              ),
+            ),
+          ]
+        : newRows.map((row) =>
+            createIrrigationScheduleMutation.mutateAsync(
+              buildSchedulePayload(row, { forceReadyStatus: true }),
+            ),
+          );
 
     const updatePromises = updatedRows.map((row) => {
-      const payload = {
-        is_active: row.is_active,
-        start_status: row.start_status,
-        end_status: row.end_status,
-        zone: row.zone,
-        volume: row.volume,
-        start_time: convertToISO(row.start_time),
-        end_time: convertToISO(row.end_time),
-      };
+      const payload = buildSchedulePayload(row);
       return updateIrrigationScheduleMutation.mutateAsync({ id: row.id, payload });
     });
 
     try {
       await Promise.all([...createPromises, ...updatePromises]);
-      // Invalidation and toast are handled by onSuccess of individual mutations
-      toast.success("تغییرات با موفقیت ذخیره شد."); // General success message for batch operation
-      handleModalClose(); // Close modal after successful save
+      queryClient.invalidateQueries({ queryKey: queryKeys.irrigationSchedules() });
+      toast.success("تغییرات با موفقیت ذخیره شد.");
+      handleModalClose();
     } catch (error) {
       console.error("Error during batch save/update:", error);
-      toast.error("خطا در ذخیره تغییرات."); // Generic error for batch operation
+      toast.error("خطا در ذخیره تغییرات.");
     }
   };
 
@@ -894,6 +940,26 @@ const IrrigationManyStorage = () => {
             <Box
               sx={{ display: "flex", flexDirection: "column", mb: 5, gap: 5 }}
             >
+              <input
+                ref={programFileInputRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={handleProgramFileChange}
+              />
+              <IconTextButton
+                text="برنامه زمانی آماده"
+                icon={<SaveIcon />}
+                iconPosition="left"
+                bgColor="#FFFFFF"
+                textColor="#000000"
+                width="160px"
+                height="40px"
+                borderColor="#c59b61ff"
+                onClick={() => programFileInputRef.current?.click()}
+                sx={{ "& .MuiTypography-root": { fontSize: "12px" } }}
+              />
+
               {/* Save Button */}
               <IconTextButton
                 text="ذخیره"

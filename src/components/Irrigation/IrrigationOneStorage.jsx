@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -17,7 +17,9 @@ import IconTextButton from "../../card/IconTextButton";
 import ModalCloseButton from "../common/ModalCloseButton";
 import TimeInput from "../common/TimeInput";
 import {
+  batchDeleteIrrigationSchedules,
   createIrrigationSchedule,
+  createIrrigationSchedules,
   deleteIrrigationSchedule,
   getIrrigationSchedules,
   getIrrigationStatus,
@@ -34,6 +36,7 @@ import {
 } from "../../utils/irrigationConfig";
 import { toEnglishDigits, toPersianDigits } from "../../utils/persianDigits";
 import { getIrrigationScheduleDisplayStatus } from "../../utils/irrigationScheduleStatus";
+import { buildRowsFromIrrigationProgramFile } from "../../utils/irrigationProgramFile";
 import svgTikeAsset from "../../assets/svg/tike.svg";
 import svgCrossAsset from "../../assets/svg/cross.svg";
 import svgButtonOnAsset from "../../assets/svg/buttonOn.svg";
@@ -64,6 +67,18 @@ const hasEndTimeOrVolume = (row) => {
 
   return endTime !== "" || hasVolume;
 };
+
+const buildSchedulePayload = (row, { forceReadyStatus = false } = {}) => ({
+  is_active: row.is_active,
+  is_manual: false,
+  start_status: forceReadyStatus ? 1 : (row.start_status ?? 1),
+  end_status: forceReadyStatus ? 1 : (row.end_status ?? 1),
+  volume_status: row.volume_status ?? 0,
+  zone: row.zone,
+  volume: row.volume === "" ? 0 : row.volume,
+  start_time: convertToISO(row.start_time),
+  end_time: convertToISO(row.end_time),
+});
 
 const ScheduleRow = ({ id, data, onChange, onDelete, isNew, zoneOptions }) => {
   const [isChanging, setIsChanging] = useState(false);
@@ -268,6 +283,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalRows, setModalRows] = useState([]);
+  const programFileInputRef = useRef(null);
 
   const { data: irrigationConfig } = useQuery({
     queryKey: queryKeys.adminIrrigationConfig(),
@@ -404,6 +420,30 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     ]);
   };
 
+  const handleProgramFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const payload = JSON.parse(await file.text());
+      const importedRows = buildRowsFromIrrigationProgramFile(payload, zoneOptions);
+      if (importedRows.length === 0) {
+        toast.error("ردیف قابل استفاده برای این مخزن پیدا نشد.");
+        return;
+      }
+      const ids = tankSchedules.map((row) => row.id).filter(Boolean);
+      if (ids.length > 0) {
+        await batchDeleteIrrigationSchedules(ids);
+        queryClient.invalidateQueries({ queryKey: queryKeys.irrigationSchedules() });
+      }
+      setModalRows(importedRows);
+      toast.success("قبلی‌ها حذف شد؛ برنامه زمانی آماده جایگزین جدول شد.");
+    } catch {
+      toast.error("فایل برنامه زمانی نامعتبر است.");
+    }
+  };
+
   const handleDeleteRow = (tempId) => {
     const row = modalRows.find((item) => item.tempId === tempId);
     if (row?.id) deleteMutation.mutate(row.id);
@@ -443,33 +483,31 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     }
 
     try {
+      const createRequests =
+        newRows.length > 1
+          ? [
+              createIrrigationSchedules(
+                newRows.map((row) =>
+                  buildSchedulePayload(row, { forceReadyStatus: true }),
+                ),
+              ),
+            ]
+          : newRows.map((row) =>
+              createMutation.mutateAsync(
+                buildSchedulePayload(row, { forceReadyStatus: true }),
+              ),
+            );
+
       await Promise.all([
-        ...newRows.map((row) =>
-          createMutation.mutateAsync({
-            is_active: row.is_active,
-            start_status: 1,
-            end_status: 1,
-            zone: row.zone,
-            volume: row.volume === "" ? 0 : row.volume,
-            start_time: convertToISO(row.start_time),
-            end_time: convertToISO(row.end_time),
-          }),
-        ),
+        ...createRequests,
         ...updatedRows.map((row) =>
           updateMutation.mutateAsync({
             id: row.id,
-            payload: {
-              is_active: row.is_active,
-              start_status: row.start_status,
-              end_status: row.end_status,
-              zone: row.zone,
-              volume: row.volume,
-              start_time: convertToISO(row.start_time),
-              end_time: convertToISO(row.end_time),
-            },
+            payload: buildSchedulePayload(row),
           }),
         ),
       ]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.irrigationSchedules() });
       toast.success("تغییرات با موفقیت ذخیره شد.");
       setModalOpen(false);
     } catch {
@@ -528,10 +566,19 @@ const IrrigationOneStorage = ({ storageNumber }) => {
         />
       </Box>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+        }}
+      >
         <Box sx={modalStyle}>
           <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}>
-            <ModalCloseButton onClick={() => setModalOpen(false)} />
+            <ModalCloseButton
+              onClick={() => {
+                setModalOpen(false);
+              }}
+            />
           </Box>
 
           <Box
@@ -580,6 +627,26 @@ const IrrigationOneStorage = ({ storageNumber }) => {
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", mb: 5, gap: 5 }}>
+              <input
+                ref={programFileInputRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={handleProgramFileChange}
+              />
+              <IconTextButton
+                text="استفاده از برنامه زمانی آماده"
+                icon={<SaveIcon />}
+                iconPosition="left"
+                bgColor="#FFFFFF"
+                textColor="#000000"
+                width="160px"
+                height="40px"
+                borderColor="#c59b61ff"
+                onClick={() => programFileInputRef.current?.click()}
+                sx={{ "& .MuiTypography-root": { fontSize: "12px" } }}
+              />
+
               <IconTextButton
                 text="ذخیره"
                 icon={<SaveIcon />}

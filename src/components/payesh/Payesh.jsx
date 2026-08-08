@@ -567,6 +567,16 @@ const Payesh = () => {
     refetchInterval: 30_000,
   });
 
+  const temperaturePartLabel =
+    typeof temperaturePartStatus === "string"
+      ? temperaturePartStatus
+      : temperaturePartStatus?.temperature_part ?? "";
+
+  const humidityPartLabel =
+    typeof humidityPartStatus === "string"
+      ? humidityPartStatus
+      : humidityPartStatus?.humidity_part ?? "";
+
   const sensorCount = useMemo(() => {
     const zoneConfig =
       climateConfig?.zones?.[String(zone)] ??
@@ -898,7 +908,7 @@ const Payesh = () => {
                 وضعیت عملگر دما:
               </Typography>
               <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                {toPersianDigits(temperaturePartStatus)}
+                {toPersianDigits(temperaturePartLabel)}
               </Typography>
             </Box>
 
@@ -919,7 +929,7 @@ const Payesh = () => {
                 وضعیت عملگرها رطوبت:
               </Typography>
               <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                {toPersianDigits(humidityPartStatus)}
+                {toPersianDigits(humidityPartLabel)}
               </Typography>
             </Box>
             <Box

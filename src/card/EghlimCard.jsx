@@ -39,6 +39,8 @@ const EghlimCard = ({
   zone,
   temp,
   hum,
+  temperatureRange,
+  humidityRange,
   fan1,
   fan2,
   bokhari,
@@ -68,6 +70,39 @@ const EghlimCard = ({
 
   const getDeviceIcon = (isOn, greenAn, colorGreen, manualOn, manualOff) =>
     isAuto ? (isOn ? greenAn : colorGreen) : isOn ? manualOn : manualOff;
+
+  const getRangeIcon = (value, minimum, maximum) => {
+    const numericValue = Number(value);
+    const numericMin = Number(minimum);
+    const numericMax = Number(maximum);
+
+    if (Number.isFinite(numericMin) && numericValue < numericMin) {
+      return svgInBlueAsset;
+    }
+
+    if (Number.isFinite(numericMax) && numericValue > numericMax) {
+      return svgInRedAsset;
+    }
+
+    if (Number.isFinite(numericMin) && Number.isFinite(numericMax)) {
+      return svgInGreenAsset;
+    }
+
+    if (numericValue < 33) return svgInBlueAsset;
+    if (numericValue < 66) return svgInGreenAsset;
+    return svgInRedAsset;
+  };
+
+  const tempIcon = getRangeIcon(
+    temp,
+    temperatureRange?.minimum_temperature,
+    temperatureRange?.maximum_temperature,
+  );
+  const humIcon = getRangeIcon(
+    hum,
+    humidityRange?.minimum_humidity,
+    humidityRange?.maximum_humidity,
+  );
 
   return (
     <Box
@@ -210,9 +245,7 @@ const EghlimCard = ({
               alignItems: "center",
             }}
           >
-            {temp < 33 && <img src={svgInBlueAsset} alt="" />}
-            {33 <= temp && temp < 66 && <img src={svgInGreenAsset} alt="" />}
-            {66 <= temp && <img src={svgInRedAsset} alt="" />}
+            <img src={tempIcon} alt="" />
             <div
               style={{
                 display: "flex",
@@ -252,9 +285,7 @@ const EghlimCard = ({
               alignItems: "center",
             }}
           >
-            {hum < 33 && <img src={svgInBlueAsset} alt="" />}
-            {33 <= hum && hum < 66 && <img src={svgInGreenAsset} alt="" />}
-            {66 <= hum && <img src={svgInRedAsset} alt="" />}
+            <img src={humIcon} alt="" />
             <div
               style={{
                 display: "flex",

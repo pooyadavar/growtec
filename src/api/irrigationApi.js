@@ -43,12 +43,22 @@ export const createIrrigationSchedule = async (payload) => {
   return apiClient.post("/irrigation/irrigation-schedule/", payload);
 };
 
+export const createIrrigationSchedules = async (payloads) => {
+  return apiClient.post("/irrigation/irrigation-schedule/", payloads);
+};
+
 export const updateIrrigationSchedule = async (id, payload) => {
   return apiClient.patch(`/irrigation/irrigation-schedule/${id}/`, payload);
 };
 
 export const deleteIrrigationSchedule = async (id) => {
   return apiClient.delete(`/irrigation/irrigation-schedule/${id}/`);
+};
+
+export const batchDeleteIrrigationSchedules = async (ids) => {
+  return apiClient.delete("/irrigation/irrigation-schedule/batch-delete/", {
+    data: { ids },
+  });
 };
 
 export const makeManualIrrigation = async (data) => {
