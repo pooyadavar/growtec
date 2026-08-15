@@ -66,6 +66,21 @@ import {
 } from "../../utils/climateChart";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+const PART_PRIORITY_LABELS = {
+  A: "اولویت ۴",
+  B: "اولویت ۳",
+  C: "اولویت ۲",
+  D: "اولویت ۱",
+};
+
+const formatRangeValue = (value) => {
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue)) return "-";
+  return toPersianDigits(numberValue.toFixed(1));
+};
+
+const getPartPriorityLabel = (part) => PART_PRIORITY_LABELS[part] ?? "-";
+
 const StatusIndicators = ({ states }) => (
   <Box
     sx={{
@@ -285,7 +300,14 @@ const Payesh = () => {
   // Modal States --------
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    operatorStatusSyncLockRef.current = 0;
+    queryClient.invalidateQueries({ queryKey: queryKeys.operatorStatus(zone) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.operatorMode(zone) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.payesh.temperaturePart(zone) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.payesh.humidityPart(zone) });
+  }, [queryClient, zone]);
   // Modal States --------
 
   // Exhaust Fan Modal States
@@ -577,6 +599,20 @@ const Payesh = () => {
       ? humidityPartStatus
       : humidityPartStatus?.humidity_part ?? "";
 
+  const temperatureRangeText =
+    typeof temperaturePartStatus === "string"
+      ? "-"
+      : `${formatRangeValue(
+          temperaturePartStatus?.minimum_temperature,
+        )} تا ${formatRangeValue(temperaturePartStatus?.maximum_temperature)}`;
+
+  const humidityRangeText =
+    typeof humidityPartStatus === "string"
+      ? "-"
+      : `${formatRangeValue(humidityPartStatus?.minimum_humidity)} تا ${formatRangeValue(
+          humidityPartStatus?.maximum_humidity,
+        )}`;
+
   const sensorCount = useMemo(() => {
     const zoneConfig =
       climateConfig?.zones?.[String(zone)] ??
@@ -861,6 +897,7 @@ const Payesh = () => {
               width: "901px",
               height: "56px",
               display: "flex",
+              gap: "7px",
               justifyContent: "space-around",
               alignItems: "center",
               marginBottom: "10px",
@@ -893,44 +930,120 @@ const Payesh = () => {
             </Box>
             <Box
               sx={{
-                width: "130px",
+                width: "178px",
                 height: "56px",
-                border: "0.5px solid #9F9F9F",
-                borderRadius: "10px",
-                display: "flex",
-                justifyContent: "space-around",
-                alignItems: "center",
-                backgroundColor: "#FFFFFF",
-                px: 1,
+                position: "relative",
               }}
             >
-              <Typography fontFamily={"IRANSANS"} fontSize={12}>
-                وضعیت عملگر دما:
-              </Typography>
-              <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                {toPersianDigits(temperaturePartLabel)}
-              </Typography>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "-22px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "82px",
+                  height: "23px",
+                  borderRadius: "10px 10px 0 0",
+                  backgroundColor: "#FFCB82",
+                  border: "0.5px solid #9F9F9F",
+                  borderBottom: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
+                }}
+              >
+                <Typography fontFamily={"IRANSANS"} fontSize={14} fontWeight="bold">
+                  دما
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "56px",
+                  border: "0.5px solid #9F9F9F",
+                  borderRadius: "10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  px: 0,
+                  gap: "7px",
+                }}
+              >
+                <Typography fontFamily={"IRANSANS"} fontSize={12} fontWeight="bold">
+                  {getPartPriorityLabel(temperaturePartLabel)}
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={12}
+                  color="#3A3A3A"
+                  whiteSpace="nowrap"
+                  sx={{ lineHeight: 1.05 }}
+                >
+                  بازه مطلوب دما {temperatureRangeText}
+                </Typography>
+              </Box>
             </Box>
 
             <Box
               sx={{
-                width: "120px",
+                width: "195px",
                 height: "56px",
-                border: "0.5px solid #9F9F9F",
-                borderRadius: "10px",
-                display: "flex",
-                justifyContent: "space-around",
-                alignItems: "center",
-                backgroundColor: "#FFFFFF",
-                px: 1,
+                position: "relative",
               }}
             >
-              <Typography fontFamily={"IRANSANS"} fontSize={12}>
-                وضعیت عملگرها رطوبت:
-              </Typography>
-              <Typography fontSize={36} color="#000000" fontWeight={"bold"}>
-                {toPersianDigits(humidityPartLabel)}
-              </Typography>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "-22px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "82px",
+                  height: "23px",
+                  borderRadius: "10px 10px 0 0",
+                  backgroundColor: "#FFCB82",
+                  border: "0.5px solid #9F9F9F",
+                  borderBottom: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
+                }}
+              >
+                <Typography fontFamily={"IRANSANS"} fontSize={14} fontWeight="bold">
+                  رطوبت
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "56px",
+                  border: "0.5px solid #9F9F9F",
+                  borderRadius: "10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  px: 0,
+                  gap: "7px",
+                }}
+              >
+                <Typography fontFamily={"IRANSANS"} fontSize={12} fontWeight="bold">
+                  {getPartPriorityLabel(humidityPartLabel)}
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={12}
+                  color="#3A3A3A"
+                  whiteSpace="nowrap"
+                  sx={{ lineHeight: 1.05 }}
+                >
+                  بازه مطلوب رطوبت {humidityRangeText}
+                </Typography>
+              </Box>
             </Box>
             <Box
               sx={{

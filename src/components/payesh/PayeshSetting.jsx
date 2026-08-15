@@ -416,6 +416,13 @@ const controllerRowSx = {
   gap: "4px",
 };
 
+const PART_LABELS = {
+  A: "اولویت ۴",
+  B: "اولویت ۳",
+  C: "اولویت ۲",
+  D: "اولویت ۱",
+};
+
 const PayeshSetting = ({ zone, onClose }) => {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState("A");
@@ -1439,7 +1446,7 @@ const PayeshSetting = ({ zone, onClose }) => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  minWidth: "60px",
+                  minWidth: label === "ویژه" ? "60px" : "82px",
                   pointerEvents: isSaving ? "none" : "auto",
                 }}
               >
@@ -1449,7 +1456,7 @@ const PayeshSetting = ({ zone, onClose }) => {
                   color={"#111111"}
                   fontWeight={selected === label ? "bold" : "normal"}
                 >
-                  {label}
+                  {PART_LABELS[label] ?? label}
                 </Typography>
               </Box>
             ))}
