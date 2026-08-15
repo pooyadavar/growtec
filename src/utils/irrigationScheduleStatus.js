@@ -2,6 +2,8 @@ const toNumber = (value) => Number(value);
 
 const isStatus = (value, expected) => toNumber(value) === expected;
 
+const hasError = (value) => value === true || value === "true";
+
 const hasNonZeroVolumeStatus = (value) => {
   if (value === null || value === undefined || value === "") return false;
   const numberValue = toNumber(value);
@@ -40,7 +42,7 @@ export const getIrrigationScheduleDisplayStatus = (row, now) => {
   const volumeDone = hasNonZeroVolumeStatus(row?.volume_status);
 
   if (isStatus(row?.start_status, 2) && (isStatus(row?.end_status, 2) || volumeDone)) {
-    return "tick";
+    return hasError(row?.has_error) ? "cross" : "tick";
   }
 
   if (
@@ -53,7 +55,7 @@ export const getIrrigationScheduleDisplayStatus = (row, now) => {
   }
 
   if (isStatus(row?.start_status, 3) && isStatus(row?.end_status, 3)) {
-    return "tick";
+    return hasError(row?.has_error) ? "cross" : "tick";
   }
 
   if (isStatus(row?.start_status, 4) || isStatus(row?.end_status, 4)) {

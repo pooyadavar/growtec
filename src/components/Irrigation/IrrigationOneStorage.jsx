@@ -12,7 +12,7 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import IrrigationCard from "../../card/IrrigationCard";
+import IrrigationOneCard from "../../card/IrrigationOneCard";
 import IconTextButton from "../../card/IconTextButton";
 import ModalCloseButton from "../common/ModalCloseButton";
 import TimeInput from "../common/TimeInput";
@@ -539,8 +539,10 @@ const IrrigationOneStorage = ({ storageNumber }) => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          transform: "scale(0.96)",
+          transform: "scale(0.95)",
           transformOrigin: "center",
+          position: "relative",
+          top: "-17px",
         }}
       >
         <Typography
@@ -548,11 +550,11 @@ const IrrigationOneStorage = ({ storageNumber }) => {
           fontSize={13}
           fontWeight="bold"
           color={activeIrrigationZones.length > 0 ? "#1565C0" : "#666"}
-          sx={{ height: 22, mb: -1 }}
+          sx={{ height: 22, mb: -2 }}
         >
           {toPersianDigits(formatIrrigationStatusText(activeIrrigationZones))}
         </Typography>
-        <IrrigationCard
+        <IrrigationOneCard
           storageNumber={storageNumber}
           storageCapacity={tankData.current?.filled_volume || 0}
           maxStorageCapacity={tankData.current?.max_volume || 0}

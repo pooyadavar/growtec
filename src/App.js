@@ -18,6 +18,12 @@ const PayeshTimePlansPage = lazy(() => import("./pages/PayeshTimePlansPage"));
 const AdminSetting = lazy(() => import("./components/admin/AdminSetting"));
 const Login = lazy(() => import("./pages/Login"));
 const CalculatorPreviewPage = lazy(() => import("./pages/CalculatorPreviewPage"));
+const IrrigationOneCardPreviewPage = lazy(
+  () => import("./pages/IrrigationOneCardPreviewPage"),
+);
+const IrrigationManyCardsPreviewPage = lazy(
+  () => import("./pages/IrrigationManyCardsPreviewPage"),
+);
 
 const PageFallback = () => null;
 
@@ -87,6 +93,14 @@ function App() {
             />
             <Route path="/login" element={<Login />} />
             <Route path="/dev/calculator" element={<CalculatorPreviewPage />} />
+            <Route
+              path="/dev/irrigation-one-card"
+              element={<IrrigationOneCardPreviewPage />}
+            />
+            <Route
+              path="/dev/irrigation-many-cards"
+              element={<IrrigationManyCardsPreviewPage />}
+            />
             <Route
               path="/feeding-history"
               element={

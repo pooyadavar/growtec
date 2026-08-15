@@ -12,6 +12,36 @@ import { toPersianDigits } from "../utils/persianDigits";
 import { getIrrigationScheduleDisplayStatus } from "../utils/irrigationScheduleStatus";
 
 const MANUAL_ROW_BG = "#EEEEEE";
+const DAY_SECONDS = 24 * 60 * 60;
+
+const timeToSeconds = (time) => {
+  if (!time) return null;
+  const cleanTime = String(time).includes("T")
+    ? String(time).split("T")[1].substring(0, 8)
+    : String(time).substring(0, 8);
+  const [hours, minutes, seconds = "0"] = cleanTime.split(":").map(Number);
+
+  if ([hours, minutes, seconds].some(Number.isNaN)) return null;
+  return hours * 3600 + minutes * 60 + seconds;
+};
+
+const getNextIrrigationIndex = (items = [], now = new Date()) => {
+  const nowSeconds =
+    now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+  return items.reduce(
+    (best, item, index) => {
+      if (item?.is_active === false) return best;
+      const startSeconds = timeToSeconds(item?.start_time);
+      if (startSeconds === null) return best;
+
+      const delay = (startSeconds - nowSeconds + DAY_SECONDS) % DAY_SECONDS;
+      if (delay < best.delay) return { index, delay };
+      return best;
+    },
+    { index: -1, delay: Infinity },
+  ).index;
+};
 
 const IrrigationCard = ({
   storageNumber,
@@ -25,9 +55,26 @@ const IrrigationCard = ({
   onClickSettings,
   irrigationScheduleItems = [],
   zoneOptions = [],
+  cardWidth = "288px",
+  cardScale = "scale(0.92)",
+  titleWidth = "220px",
+  titleBoxWidth = "180px",
+  titleLabelWidth = "102px",
+  chartAreaWidth = "259px",
+  chartBoxWidth = "237px",
+  tableWidth = "280px",
+  scheduleRowWidth = "280px",
+  scheduleRowScale = "0.9",
+  timeBoxWidth = "65px",
+  smallBoxWidth = "35px",
+  scheduleRowJustifyContent = "space-between",
+  scheduleFieldGap,
+  unitInsideTitle = false,
 }) => {
   const [isModalAOpen, setIsModalAOpen] = React.useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = React.useState(false);
+  const scheduleListRef = React.useRef(null);
+  const scheduleRowRefs = React.useRef([]);
   const apiTankNumber = uiIrrigationTankToApi(storageNumber);
   const displayStorageCapacity = Math.round(Number(storageCapacity || 0));
   const displayMaxStorageCapacity = Math.round(Number(maxStorageCapacity || 0));
@@ -141,6 +188,23 @@ const IrrigationCard = ({
     setIsCalculatorModalOpen(false);
   };
 
+  React.useEffect(() => {
+    const nextIndex = getNextIrrigationIndex(irrigationScheduleItems);
+    const listElement = scheduleListRef.current;
+    const targetIndex = Math.min(
+      irrigationScheduleItems.length - 1,
+      Math.max(0, nextIndex + 3),
+    );
+    const rowElement = scheduleRowRefs.current[targetIndex];
+    if (!listElement || !rowElement) return;
+
+    const listRect = listElement.getBoundingClientRect();
+    const rowRect = rowElement.getBoundingClientRect();
+    const relativeTop = rowRect.top - listRect.top + listElement.scrollTop;
+
+    listElement.scrollTop = Math.max(0, relativeTop - 6);
+  }, [irrigationScheduleItems]);
+
   const calculatorModalStyle = {
     position: "absolute",
     top: "50%",
@@ -162,7 +226,7 @@ const IrrigationCard = ({
     <Paper
       onClick={onClick}
       sx={{
-        width: "288px",
+        width: cardWidth,
         height: "560px",
         bgcolor: "#FFFFFF",
         borderRadius: "10px",
@@ -174,14 +238,14 @@ const IrrigationCard = ({
         cursor: onClick ? "pointer" : "default",
         transition: "transform 0.2s",
         p: 1.5,
-        transform: "scale(0.92)",
+        transform: cardScale,
         "&:hover": onClick ? { transform: "scale(1.02)" } : {},
       }}
     >
       <Box
         className="irrigation-card-title"
         sx={{
-          width: "220px",
+          width: titleWidth,
           height: "37px",
           display: "flex",
           justifyContent: "space-between",
@@ -191,7 +255,7 @@ const IrrigationCard = ({
       >
         <Box
           sx={{
-            width: "180px",
+            width: titleBoxWidth,
             height: "37px",
             borderRadius: "10px",
             border: "0.5px solid #9F9F9F",
@@ -202,7 +266,7 @@ const IrrigationCard = ({
         >
           <Box
             sx={{
-              width: "102px",
+              width: titleLabelWidth,
               height: "37px",
               borderRadius: "10px",
               borderRight: "0.5px solid #9F9F9F",
@@ -220,19 +284,49 @@ const IrrigationCard = ({
               مخزن {toPersianDigits(storageNumber)}
             </Typography>
           </Box>
-          <Typography
-            fontFamily={"IRANSANS"}
-            fontSize={21}
-            textAlign={"center"}
-            flexGrow={1}
-            alignContent={"center"}
-          >
-            {toPersianDigits(displayStorageCapacity)}
-          </Typography>
+          {unitInsideTitle ? (
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <Typography
+                fontFamily={"IRANSANS"}
+                fontSize={21}
+                textAlign={"center"}
+              >
+                {toPersianDigits(displayStorageCapacity)}
+              </Typography>
+              <Typography
+                color="#5B5B5B"
+                fontFamily={"IRANSANS"}
+                fontSize={18}
+                sx={{ mr: 0.25 }}
+              >
+                لیتر
+              </Typography>
+            </Box>
+          ) : (
+            <Typography
+              fontFamily={"IRANSANS"}
+              fontSize={21}
+              textAlign={"center"}
+              flexGrow={1}
+              alignContent={"center"}
+            >
+              {toPersianDigits(displayStorageCapacity)}
+            </Typography>
+          )}
         </Box>
-        <Typography color="#5B5B5B" fontFamily={"IRANSANS"} fontSize={18}>
-          لیتر
-        </Typography>
+        {!unitInsideTitle && (
+          <Typography color="#5B5B5B" fontFamily={"IRANSANS"} fontSize={18}>
+            لیتر
+          </Typography>
+        )}
       </Box>
 
       <Box sx={{ flexShrink: 0 }}>
@@ -249,7 +343,7 @@ const IrrigationCard = ({
 
       <Box
         sx={{
-          width: "259px",
+          width: chartAreaWidth,
           height: "102px",
           display: "flex",
           flexDirection: "row-reverse",
@@ -261,7 +355,7 @@ const IrrigationCard = ({
       >
         <Box
           sx={{
-            width: "237px",
+            width: chartBoxWidth,
             height: "102px",
             border: "0.5px solid #9F9F9F",
             borderRadius: "10px",
@@ -330,7 +424,7 @@ const IrrigationCard = ({
       <Box
         className="irrigation-card-table"
         sx={{
-          width: "280px",
+          width: tableWidth,
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
@@ -338,6 +432,7 @@ const IrrigationCard = ({
         }}
       >
         <Box
+          ref={scheduleListRef}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
@@ -363,14 +458,18 @@ const IrrigationCard = ({
               return (
                 <React.Fragment key={index}>
                   <Box
+                    ref={(element) => {
+                      scheduleRowRefs.current[index] = element;
+                    }}
                     sx={{
-                      width: "280px",
+                      width: scheduleRowWidth,
                       height: "56px",
                       display: "flex",
-                      justifyContent: "space-between",
+                      justifyContent: scheduleRowJustifyContent,
                       alignItems: "center",
+                      gap: scheduleFieldGap,
                       flexShrink: 0,
-                      scale: "0.9",
+                      scale: scheduleRowScale,
                       backgroundColor: item.is_manual ? MANUAL_ROW_BG : "transparent",
                       borderRadius: item.is_manual ? "8px" : 0,
                       px: item.is_manual ? 0.5 : 0,
@@ -381,6 +480,7 @@ const IrrigationCard = ({
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
+                        alignItems: "center",
                       }}
                     >
                       <Typography
@@ -392,7 +492,7 @@ const IrrigationCard = ({
                       </Typography>
                       <Box
                         sx={{
-                          width: "65px",
+                          width: timeBoxWidth,
                           height: "32px",
                           border: "0.3px solid #9F9F9F",
                           borderRadius: "10px",
@@ -411,6 +511,7 @@ const IrrigationCard = ({
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
                       <Typography
@@ -422,7 +523,7 @@ const IrrigationCard = ({
                       </Typography>
                       <Box
                         sx={{
-                          width: "65px",
+                          width: timeBoxWidth,
                           height: "32px",
                           border: "0.5px solid #9F9F9F",
                           borderRadius: "10px",
@@ -441,6 +542,7 @@ const IrrigationCard = ({
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
                       <Typography
@@ -452,7 +554,7 @@ const IrrigationCard = ({
                       </Typography>
                       <Box
                         sx={{
-                          width: "35px",
+                          width: smallBoxWidth,
                           height: "32px",
                           border: "0.5px solid #9F9F9F",
                           borderRadius: "10px",
@@ -471,6 +573,7 @@ const IrrigationCard = ({
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
                       <Typography
@@ -482,7 +585,7 @@ const IrrigationCard = ({
                       </Typography>
                       <Box
                         sx={{
-                          width: "35px",
+                          width: smallBoxWidth,
                           height: "32px",
                           border: "0.5px solid #9F9F9F",
                           borderRadius: "10px",
@@ -501,6 +604,7 @@ const IrrigationCard = ({
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
                       <Typography
@@ -512,7 +616,7 @@ const IrrigationCard = ({
                       </Typography>
                       <Box
                         sx={{
-                          width: "35px",
+                          width: smallBoxWidth,
                           height: "32px",
                           border:
                             displayStatus === "tick"

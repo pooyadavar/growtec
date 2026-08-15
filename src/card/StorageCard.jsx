@@ -39,6 +39,16 @@ const StorageCard = ({
   float2,
   float3,
   activeIrrigationZones = [],
+  tankWidth = "85px",
+  tankHeight = "110px",
+  headerHeight = "20px",
+  bodyHeight = "90px",
+  capacityBoxWidth = "40px",
+  capacityBoxHeight = "16px",
+  tankTitleFontSize = "14px",
+  capacityFontSize = "12px",
+  unitFontSize = 14,
+  floatColumnOffset = "-19px",
 }) => {
   let waterHeight = 95 - (capacity / maxCapacity) * 100;
   if (isNaN(waterHeight) || !isFinite(waterHeight)) {
@@ -87,8 +97,8 @@ const StorageCard = ({
     >
       <Box
         sx={{
-          width: "85px",
-          height: "110px",
+          width: tankWidth,
+          height: tankHeight,
           borderRadius: "10px",
           border: "0.5px solid #9F9F9F",
         }}
@@ -97,7 +107,7 @@ const StorageCard = ({
         <Box
           onClick={handleOpen}
           sx={{
-            height: "20px",
+            height: headerHeight,
             width: "100%",
             backgroundColor: isIrrigating ? "#2D9AFF" : "#FFCB82",
             borderRadius: "10px 10px 0px 0px",
@@ -153,7 +163,7 @@ const StorageCard = ({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: "90px",
+            height: bodyHeight,
             borderRadius: "0 0 10px 10px",
             backgroundImage: image,
             backgroundSize: "100%",
@@ -162,7 +172,7 @@ const StorageCard = ({
             // cursor: "pointer" حذف شد
           }}
         >
-          <Typography fontFamily={"IRANSANS"} sx={{ fontSize: "14px" }}>
+          <Typography fontFamily={"IRANSANS"} sx={{ fontSize: tankTitleFontSize }}>
             مخزن {toPersianDigits(zone)}
           </Typography>
           <div
@@ -172,7 +182,7 @@ const StorageCard = ({
               height: "100%",
               justifyContent: "space-around",
               position: "relative",
-              right: "-19px",
+              right: floatColumnOffset,
             }}
           >
             <div
@@ -215,8 +225,8 @@ const StorageCard = ({
       >
         <Box
           sx={{
-            width: "40px",
-            height: "16px",
+            width: capacityBoxWidth,
+            height: capacityBoxHeight,
             backgroundColor: "#ffffff",
             borderRadius: "4px",
             border: "0.5px solid #9F9F9F",
@@ -225,11 +235,11 @@ const StorageCard = ({
             alignItems: "center",
           }}
         >
-          <Typography color="initial" fontSize={"12px"} fontFamily={"IRANSANS"}>
+          <Typography color="initial" fontSize={capacityFontSize} fontFamily={"IRANSANS"}>
             {toPersianDigits(formattedCapacity)}
           </Typography>
         </Box>
-        <Typography color="initial" fontSize={14} pl={"6px"}>
+        <Typography color="initial" fontSize={unitFontSize} pl={"6px"}>
           L
         </Typography>
       </Box>

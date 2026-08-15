@@ -18,19 +18,28 @@ const StyledScrollItem = styled(Box)({
   msUserSelect: "none",
 });
 
-const Storages = ({ storagesList = [] }) => {
+const Storages = ({
+  storagesList = [],
+  mockIrrigationConfig,
+  mockIrrigationStatus,
+}) => {
   const scrollContainerRef = React.useRef(null);
-  const { data: irrigationConfig } = useQuery({
+  const hasOneStorage = storagesList.length === 1;
+  const { data: fetchedIrrigationConfig } = useQuery({
     queryKey: queryKeys.adminIrrigationConfig(),
     queryFn: getIrrigationConfig,
     staleTime: 5 * 60 * 1000,
+    enabled: !mockIrrigationConfig,
   });
-  const { data: irrigationStatus = [] } = useQuery({
+  const { data: fetchedIrrigationStatus = [] } = useQuery({
     queryKey: queryKeys.irrigationStatus(),
     queryFn: getIrrigationStatus,
     refetchInterval: 5000,
     placeholderData: (previousData) => previousData,
+    enabled: !mockIrrigationStatus,
   });
+  const irrigationConfig = mockIrrigationConfig ?? fetchedIrrigationConfig;
+  const irrigationStatus = mockIrrigationStatus ?? fetchedIrrigationStatus;
 
   const isDown = React.useRef(false);
   const isDragging = React.useRef(false);
@@ -128,13 +137,14 @@ const Storages = ({ storagesList = [] }) => {
         backgroundColor: "#ffffff",
         display: "flex",
         alignItems: "center",
+        justifyContent: hasOneStorage ? "center" : "flex-start",
         direction: "ltr",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 5px 20px 10px",
         borderRadius: "10px",
         p: "0 12px 14px 12px !important",
-        cursor: "grab",
-        "&:active": { cursor: "grabbing" },
-        overflowX: "auto",
+        cursor: hasOneStorage ? "default" : "grab",
+        "&:active": { cursor: hasOneStorage ? "default" : "grabbing" },
+        overflowX: hasOneStorage ? "hidden" : "auto",
         scrollPaddingLeft: "12px",
         userSelect: "none",
         touchAction: "pan-x", // <--- برای اینکه اسکرول با انگشت به روان‌ترین شکل کار کند
@@ -163,7 +173,8 @@ const Storages = ({ storagesList = [] }) => {
           flexDirection: "row",
           gap: 2,
           pt: 2,
-          width: "max-content",
+          width: hasOneStorage ? "100%" : "max-content",
+          justifyContent: hasOneStorage ? "center" : "flex-start",
         }}
       >
         {storagesList.map((card) => (
@@ -191,6 +202,20 @@ const Storages = ({ storagesList = [] }) => {
                   card.id,
                   irrigationStatus,
                 )}
+                {...(hasOneStorage
+                  ? {
+                      tankWidth: "128px",
+                      tankHeight: "124px",
+                      headerHeight: "24px",
+                      bodyHeight: "100px",
+                      capacityBoxWidth: "62px",
+                      capacityBoxHeight: "18px",
+                      tankTitleFontSize: "16px",
+                      capacityFontSize: "13px",
+                      unitFontSize: 15,
+                      floatColumnOffset: "-40px",
+                    }
+                  : {})}
               />
             </Box>
           </StyledScrollItem>
