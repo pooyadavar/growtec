@@ -55,6 +55,8 @@ import { buildRowsFromIrrigationProgramFile } from "../../utils/irrigationProgra
 import TimeInput from "../common/TimeInput";
 
 const MANUAL_ROW_BG = "#EEEEEE";
+const SCHEDULE_GRID_COLUMNS =
+  "50px 1.2fr 1.2fr 0.7fr 1fr 0.7fr 0.9fr 0.7fr";
 
 const hasEndTimeOrVolume = (row) => {
   const endTime = String(row.end_time ?? "").trim();
@@ -84,6 +86,50 @@ const buildSchedulePayload = (row, { forceReadyStatus = false } = {}) => ({
   end_time: convertToISO(row.end_time),
 });
 
+const renderStatusIcon = (status) => {
+  switch (status) {
+    case "tick":
+      return (
+        <img
+          src={svgTikeAsset}
+          alt="Success"
+          style={{ width: "16px", height: "16px" }}
+        />
+      );
+    case "cross":
+      return (
+        <img
+          src={svgCrossAsset}
+          alt="Error"
+          style={{ width: "16px", height: "16px" }}
+        />
+      );
+    case "blank":
+    default:
+      return null;
+  }
+};
+
+const statusCellSx = (status) => ({
+  height: "35px",
+  border:
+    status === "tick"
+      ? "1px solid #4CAF50"
+      : status === "cross"
+        ? "1px solid #F44336"
+        : "0.5px solid #E0E0E0",
+  borderRadius: "10px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor:
+    status === "tick"
+      ? "#E8F5E9"
+      : status === "cross"
+        ? "#FFEBEE"
+        : "#FFFFFF",
+});
+
 const ScheduleRow = ({
   id,
   data,
@@ -104,6 +150,12 @@ const ScheduleRow = ({
   };
 
   const displayStatus = getIrrigationScheduleDisplayStatus(data);
+  const volumeStatus =
+    data.volume_status === null ||
+    data.volume_status === undefined ||
+    data.volume_status === ""
+      ? "-"
+      : data.volume_status;
   const availableZoneOptions = useMemo(() => {
     const currentZone = Number(data.zone);
     const options = [...zoneOptions];
@@ -117,35 +169,11 @@ const ScheduleRow = ({
     return index >= 0 ? index + 1 : zone;
   };
 
-  const statusContent = useMemo(() => {
-    switch (displayStatus) {
-      case "tick":
-        return (
-          <img
-            src={svgTikeAsset}
-            alt="Success"
-            style={{ width: "16px", height: "16px" }}
-          />
-        );
-      case "cross":
-        return (
-          <img
-            src={svgCrossAsset}
-            alt="Error"
-            style={{ width: "16px", height: "16px" }}
-          />
-        );
-      case "blank":
-      default:
-        return null;
-    }
-  }, [displayStatus]);
-
   return (
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: "50px 1.2fr 1.2fr 0.7fr 1fr 0.7fr 0.7fr", // Delete button moved to start
+        gridTemplateColumns: SCHEDULE_GRID_COLUMNS,
         gap: 1,
         width: "100%",
         alignItems: "center",
@@ -333,23 +361,25 @@ const ScheduleRow = ({
       </Box>
 
       {/* Status (Derived Display) */}
+      <Box sx={statusCellSx(displayStatus)}>
+        {renderStatusIcon(displayStatus)}
+      </Box>
+
       <Box
         sx={{
           height: "35px",
-          border: "0.5px solid #E0E0E0",
+          border: "0.5px solid #9F9F9F",
           borderRadius: "10px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor:
-            displayStatus === "tick"
-              ? "#E8F5E9"
-              : displayStatus === "cross"
-                ? "#FFEBEE"
-                : "transparent",
+          bgcolor: "#FFFFFF",
+          overflow: "hidden",
         }}
       >
-        {statusContent}
+        <Typography fontFamily="IRANSANS" fontSize={12}>
+          {toPersianDigits(volumeStatus)}
+        </Typography>
       </Box>
 
       {/* Status 2 (is_active toggle) */}
@@ -432,7 +462,7 @@ const IrrigationManyStorage = () => {
   } = useQuery({
     queryKey: queryKeys.irrigationSchedules(),
     queryFn: getIrrigationSchedules,
-    refetchInterval: 60000,
+    refetchInterval: 5000,
     networkMode: "always",
     retry: 1,
     placeholderData: (previousData) => previousData,
@@ -1024,7 +1054,7 @@ const IrrigationManyStorage = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "50px 1.2fr 1.2fr 0.7fr 1fr 0.7fr 0.7fr", // Updated grid to match ScheduleRow
+                  gridTemplateColumns: SCHEDULE_GRID_COLUMNS,
                   gap: 1,
                   width: "96%",
                   marginBottom: "5px",
@@ -1067,6 +1097,13 @@ const IrrigationManyStorage = () => {
                   textAlign={"center"}
                 >
                   وضعیت
+                </Typography>
+                <Typography
+                  fontFamily={"IRANSANS"}
+                  fontSize={10}
+                  textAlign={"center"}
+                >
+                  آب‌رفته
                 </Typography>
                 <Typography
                   fontFamily={"IRANSANS"}

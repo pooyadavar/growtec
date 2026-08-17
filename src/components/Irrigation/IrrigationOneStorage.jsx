@@ -44,6 +44,8 @@ import svgButtonOffAsset from "../../assets/svg/buttonOff.svg";
 import svgAddFieldAsset from "../../assets/svg/addField.svg";
 
 const MANUAL_ROW_BG = "#EEEEEE";
+const SCHEDULE_GRID_COLUMNS =
+  "50px 1.2fr 1.2fr 0.7fr 1fr 0.7fr 0.9fr 0.7fr";
 
 const getCleanTime = (timeStr) => {
   if (!timeStr) return "";
@@ -80,6 +82,33 @@ const buildSchedulePayload = (row, { forceReadyStatus = false } = {}) => ({
   end_time: convertToISO(row.end_time),
 });
 
+const renderStatusIcon = (status) => (
+  <>
+    {status === "tick" && (
+      <img src={svgTikeAsset} alt="Success" style={{ width: 16, height: 16 }} />
+    )}
+    {status === "cross" && (
+      <img src={svgCrossAsset} alt="Error" style={{ width: 16, height: 16 }} />
+    )}
+  </>
+);
+
+const statusCellSx = (status) => ({
+  ...cellSx,
+  border:
+    status === "tick"
+      ? "1px solid #4CAF50"
+      : status === "cross"
+        ? "1px solid #F44336"
+        : "0.5px solid #E0E0E0",
+  backgroundColor:
+    status === "tick"
+      ? "#E8F5E9"
+      : status === "cross"
+        ? "#FFEBEE"
+        : "#FFFFFF",
+});
+
 const ScheduleRow = ({ id, data, onChange, onDelete, isNew, zoneOptions }) => {
   const [isChanging, setIsChanging] = useState(false);
   const [isZoneOpen, setIsZoneOpen] = useState(false);
@@ -97,12 +126,18 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew, zoneOptions }) => {
   };
 
   const displayStatus = getIrrigationScheduleDisplayStatus(data);
+  const volumeStatus =
+    data.volume_status === null ||
+    data.volume_status === undefined ||
+    data.volume_status === ""
+      ? "-"
+      : data.volume_status;
 
   return (
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: "50px 1.2fr 1.2fr 0.7fr 1fr 0.7fr 0.7fr",
+        gridTemplateColumns: SCHEDULE_GRID_COLUMNS,
         gap: 1,
         width: "100%",
         alignItems: "center",
@@ -224,24 +259,14 @@ const ScheduleRow = ({ id, data, onChange, onDelete, isNew, zoneOptions }) => {
         />
       </Box>
 
-      <Box
-        sx={{
-          ...cellSx,
-          border: "0.5px solid #E0E0E0",
-          backgroundColor:
-            displayStatus === "tick"
-              ? "#E8F5E9"
-              : displayStatus === "cross"
-                ? "#FFEBEE"
-                : "transparent",
-        }}
-      >
-        {displayStatus === "tick" && (
-          <img src={svgTikeAsset} alt="Success" style={{ width: 16, height: 16 }} />
-        )}
-        {displayStatus === "cross" && (
-          <img src={svgCrossAsset} alt="Error" style={{ width: 16, height: 16 }} />
-        )}
+      <Box sx={statusCellSx(displayStatus)}>
+        {renderStatusIcon(displayStatus)}
+      </Box>
+
+      <Box sx={cellSx}>
+        <Typography fontFamily="IRANSANS" fontSize={12}>
+          {toPersianDigits(volumeStatus)}
+        </Typography>
       </Box>
 
       <Box sx={{ height: "35px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -343,7 +368,7 @@ const IrrigationOneStorage = ({ storageNumber }) => {
     useQuery({
       queryKey: queryKeys.irrigationSchedules(),
       queryFn: getIrrigationSchedules,
-      refetchInterval: 60000,
+      refetchInterval: 5000,
       networkMode: "always",
       retry: 1,
       placeholderData: (previousData) => previousData,
@@ -686,14 +711,22 @@ const IrrigationOneStorage = ({ storageNumber }) => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "50px 1.2fr 1.2fr 0.7fr 1fr 0.7fr 0.7fr",
+                  gridTemplateColumns: SCHEDULE_GRID_COLUMNS,
                   gap: 1,
                   width: "96%",
                   marginBottom: "5px",
                 }}
               >
                 <Box />
-                {["زمان شروع", "زمان پایان", "زون", "حجم", "وضعیت", "فعال"].map((label) => (
+                {[
+                  "زمان شروع",
+                  "زمان پایان",
+                  "زون",
+                  "حجم",
+                  "وضعیت",
+                  "آب‌رفته",
+                  "فعال",
+                ].map((label) => (
                   <Typography key={label} fontFamily="IRANSANS" fontSize={12} textAlign="center">
                     {label}
                   </Typography>

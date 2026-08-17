@@ -79,6 +79,8 @@ const StorageCard = ({
       );
     },
     enabled: open,
+    refetchInterval: open ? 5000 : false,
+    placeholderData: (previousData) => previousData,
   });
 
   const formatTime = (timeString) => {

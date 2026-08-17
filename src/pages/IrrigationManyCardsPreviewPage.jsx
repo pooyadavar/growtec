@@ -30,6 +30,9 @@ const makeSchedules = (zoneOffset = 0) => [
     end_time: "06:03:00",
     is_active: true,
     is_manual: false,
+    start_status: 2,
+    end_status: 2,
+    volume_status: 78,
   },
   {
     id: 2 + zoneOffset,
@@ -39,6 +42,9 @@ const makeSchedules = (zoneOffset = 0) => [
     end_time: nextEndTime,
     is_active: true,
     is_manual: false,
+    start_status: 1,
+    end_status: 1,
+    volume_status: 0,
   },
   {
     id: 3 + zoneOffset,
@@ -48,6 +54,9 @@ const makeSchedules = (zoneOffset = 0) => [
     end_time: "08:12:00",
     is_active: true,
     is_manual: true,
+    start_status: 3,
+    end_status: 3,
+    volume_status: 50,
   },
 ];
 

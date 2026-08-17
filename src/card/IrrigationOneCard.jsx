@@ -12,14 +12,18 @@ const IrrigationOneCard = (props) => {
       titleLabelWidth="170px"
       chartAreaWidth="650px"
       chartBoxWidth="620px"
-      tableWidth="650px"
-      scheduleRowWidth="640px"
+      tableWidth="612px"
+      scheduleRowWidth="580px"
       scheduleRowScale="1"
-      timeBoxWidth="130px"
-      smallBoxWidth="72px"
-      scheduleRowJustifyContent="center"
-      scheduleFieldGap="17px"
+      timeBoxWidth="100px"
+      smallBoxWidth="48px"
+      scheduleRowJustifyContent="space-between"
       unitInsideTitle
+      titleJustifyContent="center"
+      showScheduleScrollbar
+      showScheduleDetailStatus
+      scheduleLabelFontSize={11}
+      volumeStatusBoxWidth="64px"
     />
   );
 };

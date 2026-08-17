@@ -4,6 +4,7 @@ import { AgCharts } from "ag-charts-react";
 import svgTikeAsset from "../assets/svg/tike.svg";
 import svgCrossAsset from "../assets/svg/cross.svg";
 import svgSetting2Asset from "../assets/svg/setting2.svg";
+import svgScheduleAsset from "../assets/svg/schedule.svg";
 import TankCalibrationModal from "../components/common/TankCalibrationModal";
 import Calculator from "../components/tools/Calculator";
 import ModalCloseButton from "../components/common/ModalCloseButton";
@@ -43,6 +44,85 @@ const getNextIrrigationIndex = (items = [], now = new Date()) => {
   ).index;
 };
 
+const renderStatusIcon = (status, size = 16) => (
+  <>
+    {status === "tick" && (
+      <img
+        src={svgTikeAsset}
+        alt="Success"
+        style={{ width: size, height: size }}
+      />
+    )}
+    {status === "cross" && (
+      <img
+        src={svgCrossAsset}
+        alt="Error"
+        style={{ width: size, height: size }}
+      />
+    )}
+  </>
+);
+
+const getStatusCellSx = (status, width) => ({
+  width,
+  height: "32px",
+  border:
+    status === "tick"
+      ? "1px solid #4CAF50"
+      : status === "cross"
+        ? "1px solid #F44336"
+        : "0.5px solid #9F9F9F",
+  borderRadius: "10px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor:
+    status === "tick"
+      ? "#E8F5E9"
+      : status === "cross"
+        ? "#FFEBEE"
+        : "transparent",
+});
+
+const ScheduleCell = ({
+  label,
+  children,
+  width,
+  labelFontSize,
+  boxSx,
+  alignTop = false,
+}) => (
+  <div
+    style={{
+      height: alignTop ? "100%" : undefined,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: alignTop ? undefined : "center",
+      alignItems: "center",
+    }}
+  >
+    <Typography color="initial" fontFamily="IRANSANS" fontSize={labelFontSize}>
+      {label}
+    </Typography>
+    <Box
+      sx={{
+        width,
+        height: "32px",
+        border: "0.5px solid #9F9F9F",
+        borderRadius: "10px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "12px",
+        fontFamily: "IRANSANS",
+        ...boxSx,
+      }}
+    >
+      {children}
+    </Box>
+  </div>
+);
+
 const IrrigationCard = ({
   storageNumber,
   storageCapacity,
@@ -70,6 +150,11 @@ const IrrigationCard = ({
   scheduleRowJustifyContent = "space-between",
   scheduleFieldGap,
   unitInsideTitle = false,
+  titleJustifyContent = "space-between",
+  showScheduleScrollbar = false,
+  showScheduleDetailStatus = false,
+  scheduleLabelFontSize = 14,
+  volumeStatusBoxWidth = smallBoxWidth,
 }) => {
   const [isModalAOpen, setIsModalAOpen] = React.useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = React.useState(false);
@@ -248,7 +333,7 @@ const IrrigationCard = ({
           width: titleWidth,
           height: "37px",
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: titleJustifyContent,
           alignItems: "center",
           flexShrink: 0,
         }}
@@ -442,18 +527,36 @@ const IrrigationCard = ({
             overflowX: "hidden",
             display: "flex",
             flexDirection: "column",
+            alignItems: "center",
             gap: 0.5,
             WebkitOverflowScrolling: "touch",
             touchAction: "pan-y",
             overscrollBehavior: "contain",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: showScheduleScrollbar ? "thin" : "none",
+            msOverflowStyle: showScheduleScrollbar ? "auto" : "none",
+            "&::-webkit-scrollbar": {
+              display: showScheduleScrollbar ? "block" : "none",
+              width: "6px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#BDBDBD",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "#F1F1F1",
+              borderRadius: "4px",
+            },
           }}
         >
           {irrigationScheduleItems.length > 0 ? (
             irrigationScheduleItems.map((item, index) => {
               const displayStatus = getIrrigationScheduleDisplayStatus(item);
+              const volumeStatus =
+                item.volume_status === null ||
+                item.volume_status === undefined ||
+                item.volume_status === ""
+                  ? "-"
+                  : item.volume_status;
 
               return (
                 <React.Fragment key={index}>
@@ -469,189 +572,60 @@ const IrrigationCard = ({
                       alignItems: "center",
                       gap: scheduleFieldGap,
                       flexShrink: 0,
+                      alignSelf: "center",
                       scale: scheduleRowScale,
                       backgroundColor: item.is_manual ? MANUAL_ROW_BG : "transparent",
                       borderRadius: item.is_manual ? "8px" : 0,
                       px: item.is_manual ? 0.5 : 0,
                     }}
                   >
-                    <div
-                      style={{
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                      }}
+                    <ScheduleCell
+                      label="زمان شروع"
+                      width={timeBoxWidth}
+                      labelFontSize={scheduleLabelFontSize}
+                      alignTop
+                      boxSx={{ border: "0.3px solid #9F9F9F" }}
                     >
-                      <Typography
-                        color="initial"
-                        fontFamily={"IRANSANS"}
-                        fontSize={14}
-                      >
-                        زمان شروع
-                      </Typography>
-                      <Box
-                        sx={{
-                          width: timeBoxWidth,
-                          height: "32px",
-                          border: "0.3px solid #9F9F9F",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "12px",
-                          fontFamily: "IRANSANS",
-                        }}
-                      >
                         {toPersianDigits(formatTime(item.start_time))}
-                      </Box>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
+                    </ScheduleCell>
+                    <ScheduleCell
+                      label="زمان پایان"
+                      width={timeBoxWidth}
+                      labelFontSize={scheduleLabelFontSize}
                     >
-                      <Typography
-                        color="initial"
-                        fontFamily={"IRANSANS"}
-                        fontSize={14}
-                      >
-                        زمان پایان
-                      </Typography>
-                      <Box
-                        sx={{
-                          width: timeBoxWidth,
-                          height: "32px",
-                          border: "0.5px solid #9F9F9F",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "12px",
-                          fontFamily: "IRANSANS",
-                        }}
-                      >
                         {toPersianDigits(formatTime(item.end_time))}
-                      </Box>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
+                    </ScheduleCell>
+                    <ScheduleCell
+                      label="زون"
+                      width={smallBoxWidth}
+                      labelFontSize={scheduleLabelFontSize}
                     >
-                      <Typography
-                        color="initial"
-                        fontFamily={"IRANSANS"}
-                        fontSize={14}
-                      >
-                        زون
-                      </Typography>
-                      <Box
-                        sx={{
-                          width: smallBoxWidth,
-                          height: "32px",
-                          border: "0.5px solid #9F9F9F",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "12px",
-                          fontFamily: "IRANSANS",
-                        }}
-                      >
                         {toPersianDigits(getDisplayZone(item.zone))}
-                      </Box>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
+                    </ScheduleCell>
+                    <ScheduleCell
+                      label="حجم"
+                      width={smallBoxWidth}
+                      labelFontSize={scheduleLabelFontSize}
                     >
-                      <Typography
-                        color="initial"
-                        fontFamily={"IRANSANS"}
-                        fontSize={14}
-                      >
-                        حجم
-                      </Typography>
-                      <Box
-                        sx={{
-                          width: smallBoxWidth,
-                          height: "32px",
-                          border: "0.5px solid #9F9F9F",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "12px",
-                          fontFamily: "IRANSANS",
-                        }}
-                      >
                         {toPersianDigits(item.volume)}
-                      </Box>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
+                    </ScheduleCell>
+                    <ScheduleCell
+                      label="وضعیت"
+                      width={smallBoxWidth}
+                      labelFontSize={scheduleLabelFontSize}
+                      boxSx={getStatusCellSx(displayStatus, smallBoxWidth)}
                     >
-                      <Typography
-                        color="initial"
-                        fontFamily={"IRANSANS"}
-                        fontSize={14}
+                      {renderStatusIcon(displayStatus)}
+                    </ScheduleCell>
+                    {showScheduleDetailStatus && (
+                      <ScheduleCell
+                        label="آب‌رفته"
+                        width={volumeStatusBoxWidth}
+                        labelFontSize={scheduleLabelFontSize}
                       >
-                        وضعیت
-                      </Typography>
-                      <Box
-                        sx={{
-                          width: smallBoxWidth,
-                          height: "32px",
-                          border:
-                            displayStatus === "tick"
-                              ? "1px solid #4CAF50"
-                              : displayStatus === "cross"
-                                ? "1px solid #F44336"
-                                : "0.5px solid #9F9F9F",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor:
-                            displayStatus === "tick"
-                              ? "#E8F5E9"
-                              : displayStatus === "cross"
-                                ? "#FFEBEE"
-                                : "transparent",
-                        }}
-                      >
-                        {displayStatus === "tick" && (
-                          <img
-                            src={svgTikeAsset}
-                            alt="Success"
-                            style={{ width: "16px", height: "16px" }}
-                          />
-                        )}
-                        {displayStatus === "cross" && (
-                          <img
-                            src={svgCrossAsset}
-                            alt="Error"
-                            style={{ width: "16px", height: "16px" }}
-                          />
-                        )}
-                      </Box>
-                    </div>
+                        {toPersianDigits(volumeStatus)}
+                      </ScheduleCell>
+                    )}
                   </Box>
                   {index < irrigationScheduleItems.length - 1 && (
                     <Divider
@@ -712,13 +686,20 @@ const IrrigationCard = ({
                 backgroundColor: "#6CCDB0",
                 color: "#000",
                 fontFamily: "IRANSANS",
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: "bold",
                 borderRadius: "8px",
                 boxShadow: "none",
                 "&:hover": { backgroundColor: "#5bbd9e", boxShadow: "none" },
+                display: "flex",
+                gap: 1,
               }}
             >
+              <img
+                src={svgSetting2Asset}
+                alt="calibration"
+                style={{ width: "18px", height: "18px" }}
+              />
               کالیبره مخزن
             </Button>
 
@@ -734,7 +715,7 @@ const IrrigationCard = ({
                 backgroundColor: "#FFCB82",
                 color: "#000",
                 fontFamily: "IRANSANS",
-                fontSize: "14px",
+                fontSize: "11px",
                 fontWeight: "bold",
                 borderRadius: "8px",
                 boxShadow: "none",
@@ -744,11 +725,11 @@ const IrrigationCard = ({
               }}
             >
               <img
-                src={svgSetting2Asset}
-                alt="settings"
+                src={svgScheduleAsset}
+                alt="schedule"
                 style={{ width: "18px", height: "18px" }}
               />
-              تنظیمات
+              برنامه زمانی آبیاری
             </Button>
           </Box>
 

@@ -33,6 +33,7 @@ const mockSchedules = [
     is_manual: false,
     start_status: 2,
     end_status: 2,
+    volume_status: 118,
     has_error: true,
   },
   {
@@ -43,6 +44,9 @@ const mockSchedules = [
     end_time: nextEndTime,
     is_active: true,
     is_manual: false,
+    start_status: 1,
+    end_status: 1,
+    volume_status: 0,
   },
   {
     id: 3,
@@ -52,6 +56,9 @@ const mockSchedules = [
     end_time: "08:13:00",
     is_active: false,
     is_manual: false,
+    start_status: 3,
+    end_status: 3,
+    volume_status: 75,
   },
   {
     id: 4,
@@ -61,6 +68,9 @@ const mockSchedules = [
     end_time: "09:17:00",
     is_active: true,
     is_manual: true,
+    start_status: 4,
+    end_status: 1,
+    volume_status: 20,
   },
 ];
 
