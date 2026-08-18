@@ -87,6 +87,8 @@ const Feeding = () => {
     queryKey: queryKeys.aiStatus(),
     queryFn: getAiStatus,
     refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchInterval: 20000,
   });
 
   const isAiOn = aiStatusData?.status === "on";
@@ -107,8 +109,9 @@ const Feeding = () => {
     onSuccess: (data, variables) => {
       queryClient.setQueryData(queryKeys.aiStatus(), {
         ...data,
-        status: variables.status,
+        status: data?.status ?? variables.status,
       });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiStatus() });
       toast.success(
         `هوش مصنوعی ${variables.status === "on" ? "فعال شد" : "غیرفعال شد"}`,
       );

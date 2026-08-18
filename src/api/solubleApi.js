@@ -57,11 +57,21 @@ export const getMixTankStatus = async () => {
 };
 
 export const getAiStatus = async () => {
-  return apiClient.get('/soluble/ai/');
+  const response = await apiClient.get('/soluble/ai/');
+  const status =
+    typeof response === "string"
+      ? response
+      : response?.status ?? response?.data?.status ?? "off";
+  return { status };
 };
 
 export const setAiStatus = async (data) => {
-  return apiClient.post('/soluble/ai/', data);
+  const response = await apiClient.post('/soluble/ai/', data);
+  const status =
+    typeof response === "string"
+      ? response
+      : response?.status ?? response?.data?.status ?? data?.status ?? "off";
+  return { status };
 };
 
 const STOCK_PERCENT_KEYS = Array.from({ length: 10 }, (_, i) =>
@@ -173,6 +183,21 @@ export const updateFoodstuffPreparationProgramInputWaterRatio = async (
   return apiClient.post(
     "/soluble/foodstuff-preparation-program-input-water-ratio/",
     { input_water_ratio: normalized },
+  );
+};
+
+export const getFoodstuffPreparationProgramSpecialParameters = async () => {
+  return apiClient.get(
+    "/soluble/foodstuff-preparation-program-special-parameters/",
+  );
+};
+
+export const updateFoodstuffPreparationProgramSpecialParameters = async (
+  data,
+) => {
+  return apiClient.post(
+    "/soluble/foodstuff-preparation-program-special-parameters/",
+    { foodstuff_preparation_program_special_parameters: data },
   );
 };
 

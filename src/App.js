@@ -11,6 +11,9 @@ import ModalRequestPause from "./components/common/ModalRequestPause";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Feeding = lazy(() => import("./pages/Feeding"));
 const FeedingSettingsPage = lazy(() => import("./pages/FeedingSettingsPage"));
+const FeedingSettingsPreviewPage = lazy(
+  () => import("./pages/FeedingSettingsPreviewPage"),
+);
 const FeedingHistoryPage = lazy(() => import("./pages/FeedingHistoryPage"));
 const Irrigation = lazy(() => import("./pages/Irrigation"));
 const Payesh = lazy(() => import("./components/payesh/Payesh"));
@@ -100,6 +103,10 @@ function App() {
             <Route
               path="/dev/irrigation-many-cards"
               element={<IrrigationManyCardsPreviewPage />}
+            />
+            <Route
+              path="/dev/feeding-settings"
+              element={<FeedingSettingsPreviewPage />}
             />
             <Route
               path="/feeding-history"

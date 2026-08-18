@@ -11,6 +11,7 @@ export const queryKeys = {
   foodstuffHistory: (limit) => ["foodstuffHistory", limit],
   foodstuffProgram: (num) => ["foodstuffProgram", num],
   foodstuffInputWaterRatio: () => ["foodstuffInputWaterRatio"],
+  foodstuffSpecialParameters: () => ["foodstuffSpecialParameters"],
   irrigationTanksStatusLogs: () => ["irrigationTanksStatusLogs"],
   irrigationStatus: () => ["irrigationStatus"],
   irrigationSchedules: () => ["irrigationSchedules"],
